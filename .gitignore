@@ -1,0 +1,19 @@
+# Build output
+dist/
+
+# Dependencies and caches
+node_modules/
+.cache/
+
+# Local runtime and secret files
+.env
+.env.*
+.dev.vars
+.wrangler/
+
+# Logs, test output, OS files
+*.log
+test-results/
+playwright-report/
+.DS_Store
+Thumbs.db
