@@ -73,6 +73,7 @@
     demo.classList.add('is-live');
 
     var filmTime = null; // set while the video is being recorded
+    var filmScriptStarted = false;
     var now = function () { return filmTime !== null ? filmTime : performance.now() / 1000; };
     // Touch and pen follow the app's timing; a mouse double click follows desktop timing,
     // so a real double click resolves to exactly one right click with no left click before it.
@@ -705,6 +706,7 @@
           autoplayed = true;
           if (script) endScript(true);
           filmTime = 0;
+          filmScriptStarted = false;
           demo.classList.add('is-film');
           if (options && options.neutral) demo.classList.add('is-neutral');
           resetScene();
@@ -713,7 +715,8 @@
         // t: seconds since the scripted demo started; negative values show the resting scene.
         seek: function (t) {
           if (t < 0) { filmTime = t; render(t); return; }
-          if (!script && !scriptStart && filmTime < 0) { filmTime = 0; startScript(); scriptStart = 0; }
+          // The film always runs its own copy of the script from t = 0, whatever played before.
+          if (!filmScriptStarted) { filmScriptStarted = true; filmTime = 0; startScript(); scriptStart = 0; }
           filmTime = t;
           if (script) script.update(t);
           dispatch(touchGestures.advance(t));
