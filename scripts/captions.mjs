@@ -52,13 +52,14 @@ const plain = (value, key) => {
 
 /**
  * WebVTT for one language. The simulation label stays at the top for the whole video;
- * the narration cues sit at the bottom.
+ * the narration cues use the player's default placement at the bottom.
  */
 export function toVtt(strings, data) {
   const lines = ['WEBVTT', ''];
   lines.push('label', `${stamp(data.label.start)} --> ${stamp(data.label.end)} line:4% position:50% align:center`, plain(strings[data.label.key], data.label.key), '');
   data.cues.forEach((cue, i) => {
-    lines.push(String(i + 1), `${stamp(cue.start)} --> ${stamp(cue.end)} line:88% position:50% align:center`, plain(strings[cue.key], cue.key), '');
+    // No explicit line: players then keep the narration clear of their own controls.
+    lines.push(String(i + 1), `${stamp(cue.start)} --> ${stamp(cue.end)}`, plain(strings[cue.key], cue.key), '');
   });
   return lines.join('\n');
 }

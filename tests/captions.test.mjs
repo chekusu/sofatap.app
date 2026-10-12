@@ -24,6 +24,9 @@ test('every language has every caption, as valid WebVTT and ASS', async () => {
     assert.match(vtt, /^WEBVTT\n/);
     assert.equal(vtt.match(/ --> /g).length, 9, l.lang);
     assert.ok(vtt.includes(strings['video.label']), l.lang);
+    // Only the label is placed; narration keeps the default line so native controls never cover it.
+    assert.equal(vtt.match(/ line:/g).length, 1, l.lang);
+    assert.match(vtt, /--> 00:00:24\.800\n/);
     // A blank line inside a cue would end it early.
     for (const block of vtt.trimEnd().split('\n\n').slice(1)) assert.ok(block.split('\n').every((line) => line.trim()), `${l.lang}: ${block}`);
     const ass = toAss(strings, cues);

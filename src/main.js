@@ -461,7 +461,11 @@
       var handled = true;
       if (dirs[e.key]) { takeOver(); keyMove(dirs[e.key]); }
       else if (e.key === 'Enter' || e.key === ' ') { takeOver(); leftClick(); ripple(fingerRest(), 'tap'); }
-      else if (e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey)) { takeOver(); lastRightAt = now(); rightClick(); ripple(fingerRest(), 'double'); }
+      else if (e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey)) {
+        takeOver(); lastRightAt = now(); rightClick(); ripple(fingerRest(), 'double');
+        // Keyboard users land on the first menu entry, so Enter chooses it straight away.
+        if (state.menu) { pointAt(menuItems[0]); say(tr(state.menu.kind === 'player' ? 'demo.s.menuPlayer' : 'demo.s.menu', { item: titles[state.menu.index], items: state.menu.actions.map(function (a) { return tr('demo.menu.' + a); }).join(', ') })); }
+      }
       else if (e.key === 'Escape') {
         if (state.menu) { closeMenu(); say(tr('demo.s.close')); }
         else if (state.playing) stopPlayer(true);
@@ -470,6 +474,14 @@
       else handled = false;
       if (handled) { e.preventDefault(); schedule(); }
     });
+    function pointAt(el) {
+      var box = screenBox();
+      var c = centre(el);
+      state.pointer.x = c.x / box.width;
+      state.pointer.y = c.y / box.height;
+      state.hover = null;
+      updateHover();
+    }
     function fingerRest() { var r = pad.getBoundingClientRect(); return { x: r.width / 2, y: r.height * 0.55 }; }
 
     function keyMove(dir) {

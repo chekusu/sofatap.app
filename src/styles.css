@@ -358,7 +358,7 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
   gap: 0.75rem 1rem;
   margin-bottom: 1.25rem;
 }
-.demo__title { margin: 0; font-weight: 650; font-size: 1.05rem; line-height: 1.45; }
+.demo__title { margin: 0; min-width: 0; font-weight: 650; font-size: 1.05rem; line-height: 1.45; overflow-wrap: anywhere; }
 .label--sim { background: transparent; border: 1px dashed var(--mint); color: var(--mint); }
 .demo__play {
   display: inline-flex;
@@ -375,6 +375,7 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
   font-size: 0.95rem;
   cursor: pointer;
 }
+.demo__play { max-width: 100%; }
 .demo__play:hover { background: #B3F0D3; }
 .demo__play svg { width: 1.1rem; height: 1.1rem; flex: none; }
 .demo__stop-icon, .demo__play.is-running .demo__play-icon { display: none; }
@@ -771,14 +772,14 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
 .setup p { margin: 0; color: var(--muted); }
 
 .privacy {
-  padding: 1.75rem;
+  padding: clamp(1rem, 4vw, 1.75rem);
   border-radius: var(--radius-lg);
   background: var(--surface);
   border: 1px solid var(--border);
 }
 .privacy h3 { font-size: 1.25rem; margin-bottom: 1rem; }
 .privacy ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.85rem; }
-.privacy li { position: relative; padding-inline-start: 1.75rem; }
+.privacy li { position: relative; padding-inline-start: 1.75rem; overflow-wrap: anywhere; }
 .privacy li::before {
   content: "";
   position: absolute;
@@ -860,6 +861,7 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
   font-weight: 600;
   font-size: 1.08rem;
   list-style: none;
+  overflow-wrap: anywhere; /* long words wrap instead of widening the page at large text sizes */
 }
 .faq summary::-webkit-details-marker { display: none; }
 .faq summary::after {
@@ -898,9 +900,11 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
 .video__figure { margin: 0; }
 .video__player { display: block; width: 100%; height: auto; border-radius: var(--radius-lg); background: #000; border: 1px solid var(--border); }
 .video__downloads { display: grid; gap: 1rem; margin-top: 1.5rem; justify-items: start; }
+.video__downloads .button { flex-wrap: wrap; }
+.video__downloads .button span { overflow-wrap: anywhere; }
 .video__size { color: var(--muted); font-weight: 500; font-size: 0.85rem; }
 .video__more { width: 100%; }
-.video__more summary { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--mint); cursor: pointer; font-weight: 600; }
+.video__more summary { overflow-wrap: anywhere; display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--mint); cursor: pointer; font-weight: 600; }
 .video__more ul { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.25rem 2rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); }
 .video__more li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1rem; padding: 0.2rem 0; border-bottom: 1px solid rgb(51 67 70 / 0.6); }
 .video__more li[aria-current] .video__lang { color: var(--mint); font-weight: 650; }
