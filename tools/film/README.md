@@ -46,3 +46,13 @@ node scripts/check.mjs --media <输出目录>/site
 - 视频总长随实际旁白而定（约 27–30 秒），片尾至少停留 4.2 秒，最后一句之后留出约 1.4 秒。
 
 `record.mjs` 也可以单独录一支无声母版（`--duration` 指定长度），用于检查画面。
+
+## 修改片尾或字幕（不重录、不重新配音）
+
+`outro.mjs` 以一次已完成的输出为来源，只重新渲染片尾卡（从最后一个片段开始的那一帧起，前面的画面原样沿用），拼接后重新编码；旁白音轨原样复制（检查数据包完全一致），帧数与原视频相同。字幕按 `site/timing.json` 的实测时间和当前的字幕设置重新生成，分享用的烧录字幕版也从新的无字幕视频重新烧录。
+
+```sh
+node tools/film/outro.mjs --from <上一次的输出目录> --out <新输出目录> --playwright <playwright 包路径> [--langs en,zh-CN] [--jobs 3]
+```
+
+新输出目录与 `voice.mjs` 的布局相同（`site/`、`promo/`、`report.json`），另有 `outro-report.json`。片尾显示 `sofatap.app`；烧录字幕距画面底部 112 像素，网站字幕使用 `line:-2`（比播放器默认位置高一行）。

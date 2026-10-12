@@ -72,3 +72,19 @@ test('timestamp matching maps folded text back exactly, including expanding and 
   const spans = cueSpans(a, ['A…𝒳 b', '…c']);
   assert.deepEqual([spans[0].start, spans[0].end, spans[1].start, spans[1].end], [0, 5, 6, 8]);
 });
+
+test('outro revision: the end card starts where the last segment begins, on a whole frame', async () => {
+  const { endSegment, parseArgs } = await import('../tools/film/outro.mjs');
+  // English as measured: last cue spoken at 22.39 s with a 0.2 s lead after its anchor (20.6).
+  const end = endSegment(cues, { cues: [...Array(7).fill({}), { speechAt: 22.39 }] });
+  assert.ok(Math.abs(end.filmFrom - 22.19) < 1e-9);
+  assert.equal(end.sceneFrom, 20.6);
+  assert.equal(end.firstFrame, 665); // 22.19 s × 30 fps = 665.7: the frame showing the card's first moment
+  // An end exactly on a frame boundary starts on that frame (no rounding drift below it).
+  assert.equal(endSegment(cues, { cues: [...Array(7).fill({}), { speechAt: 21.2 }] }).firstFrame, 630);
+  // Arguments: jobs must be 1–8, and the previous videos are never overwritten.
+  const base = ['--from', 'a', '--out', 'b', '--playwright', 'playwright'];
+  for (const jobs of ['0', '-1', 'NaN', '9', '1.5']) assert.throws(() => parseArgs([...base, '--jobs', jobs], {}), /jobs/);
+  assert.equal(parseArgs([...base, '--jobs', '2'], {}).jobs, 2);
+  assert.throws(() => parseArgs(['--from', 'a', '--out', 'a', '--playwright', 'p'], {}), /must differ/);
+});

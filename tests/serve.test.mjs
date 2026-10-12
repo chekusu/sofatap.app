@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
+import { downloadName } from '../scripts/serve.mjs';
 import { fileURLToPath } from 'node:url';
 
 const SERVE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'scripts', 'serve.mjs');
@@ -123,4 +124,19 @@ test('videos and subtitles have their MIME types and byte ranges', async () => {
   const bad = await fetch(new URL('/media/v.mp4', origin), { headers: { Range: 'bytes=20-30' } });
   assert.equal(bad.status, 416);
   assert.equal(bad.headers.get('content-range'), 'bytes */10');
+});
+
+test('?download=1 saves an MP4 under its own safe name; playback and other files are unchanged', async () => {
+  const save = await fetch(new URL('/media/v.mp4?download=1', origin));
+  assert.equal(save.headers.get('content-disposition'), 'attachment; filename="v.mp4"');
+  assert.equal(save.headers.get('content-type'), 'video/mp4');
+  assert.equal(await save.text(), '0123456789');
+  assert.equal((await fetch(new URL('/media/v.mp4', origin))).headers.get('content-disposition'), null);
+  assert.equal((await fetch(new URL('/media/v.mp4?download=0', origin))).headers.get('content-disposition'), null);
+  assert.equal((await fetch(new URL('/media/c.vtt?download=1', origin))).headers.get('content-disposition'), null);
+  const part = await fetch(new URL('/media/v.mp4?download=1', origin), { headers: { Range: 'bytes=0-1' } });
+  assert.equal(part.status, 206);
+  assert.equal(downloadName('/x/sofatap-demo-zh-cn.mp4?download=1', '/srv/sofatap-demo-zh-cn.mp4'), 'sofatap-demo-zh-cn.mp4');
+  assert.equal(downloadName('/x/a b"c.mp4?download=1', '/srv/a b"c.mp4'), 'a_b_c.mp4');
+  assert.equal(downloadName('/x/.mp4?download=1', '/srv/.mp4'), null);
 });

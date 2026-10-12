@@ -72,7 +72,7 @@ function setUpFilm({ intro, script, outro, fade }) {
   const lockup = `<img class="film__mark" src="${mark}" alt=""><img class="film__wordmark" src="${wordmark}" alt="Sofatap">`;
   film.innerHTML = `<div class="film__brand">${lockup}</div>`
     + `<div class="film__card film__card--intro">${lockup}<span class="film__rule"></span></div>`
-    + `<div class="film__card film__card--outro">${lockup}<p class="film__url">github.com/chekusu/sofatap</p></div>`;
+    + `<div class="film__card film__card--outro">${lockup}<p class="film__url">sofatap.app</p></div>`;
   film.insertBefore(demo, film.firstChild);
   document.body.appendChild(film);
   document.body.classList.add('is-filming');
@@ -134,8 +134,10 @@ export async function record(args) {
     }
     ffmpeg = spawn(args.ffmpeg, [
       '-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(args.fps), '-i', '-',
-      '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-tune', 'animation', '-profile:v', 'high',
-      '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', output,
+      // A tail is spliced into an existing video later, so it is kept lossless until then.
+      ...(args.tail ? ['-c:v', 'libx264', '-preset', 'veryfast', '-qp', '0', '-pix_fmt', 'yuv420p']
+        : ['-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-tune', 'animation', '-profile:v', 'high', '-pix_fmt', 'yuv420p']),
+      '-movflags', '+faststart', '-an', output,
     ], { stdio: ['pipe', 'inherit', 'inherit'] });
     // Spawn failures (missing ffmpeg) and broken pipes surface as errors instead of crashing.
     let failure = null;
@@ -161,7 +163,15 @@ export async function record(args) {
     };
     const frames = Math.round(duration * args.fps);
     const marks = [];
-    for (let i = 0; i < frames; i += 1) {
+    // --tail (tools/film/outro.mjs): only frames from `firstFrame` on are captured; the scene
+    // before them is stepped through without screenshots so its state is exactly as recorded.
+    const firstFrame = args.tail ? args.tail.firstFrame : 0;
+    if (args.tail) {
+      for (let k = 0; k < Math.ceil(sceneAt(firstFrame / args.fps) * args.fps); k += 1) {
+        await page.evaluate((time) => window.__filmSeek(time), k / args.fps);
+      }
+    }
+    for (let i = firstFrame; i < frames; i += 1) {
       const t = i / args.fps;
       const state = await page.evaluate((time) => window.__filmSeek(time), sceneAt(t));
       if (state.step && state.step !== marks.at(-1)?.step) marks.push({ step: state.step, time: +t.toFixed(3) });
@@ -172,6 +182,7 @@ export async function record(args) {
     await done;
     ffmpeg = null;
     if (errors.length) throw new Error(`page errors: ${errors.join('; ')}`);
+    if (args.tail) return { output, marks };
     // Poster: the moment the right-click menu is open.
     const poster = path.join(args.out, 'sofatap-demo-poster.jpg');
     const p = spawnSync(args.ffmpeg, ['-y', '-loglevel', 'error', '-ss', String(args.posterAt ?? 13.4), '-i', output, '-frames:v', '1', '-q:v', '3', poster], { stdio: 'inherit' });

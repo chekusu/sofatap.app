@@ -222,7 +222,7 @@ test('with --media: each page plays its own narrated video with its own captions
   }
   const vtt = await readFile(path.join(out, 'media', 'sofatap-demo.ja.vtt'), 'utf8');
   assert.match(vtt, /^WEBVTT/);
-  assert.match(vtt, /00:00:01\.000 --> 00:00:03\.000\nSofatap。/);
+  assert.match(vtt, /00:00:01\.000 --> 00:00:03\.000 line:-2\nSofatap。/);
   assert.equal((await readFile(path.join(out, 'media', 'sofatap-demo.en.vtt'), 'utf8')).match(/ --> /g).length, 8);
   assert.deepEqual((await checkSite(out)).problems, []);
   // Without --media there is no video section and nothing refers to media/.

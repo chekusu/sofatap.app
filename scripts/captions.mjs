@@ -45,6 +45,12 @@ export function cueTimes(data, timing) {
 /** Keys every language file must provide for the video. */
 export const cueKeys = (data) => data.cues.map((c) => c.key);
 
+// Burned captions sit this far above the bottom of a 1080p frame (raised from 64 px).
+// Website captions use line:-2: snapped one line above the default place, so they move up
+// with the player's own layout instead of a fixed percentage that controls could overlap.
+export const CAPTION_MARGIN = 112;
+export const VTT_LINE = '-2';
+
 const stamp = (seconds) => {
   const ms = Math.round(seconds * 1000);
   const h = String(Math.floor(ms / 3600000)).padStart(2, '0');
@@ -63,16 +69,15 @@ const plain = (value, key) => {
 };
 
 /**
- * WebVTT for one language: the narration cues, in the player's default placement so native
- * controls never cover them. `timing` (optional) replaces the planned cue times with the
+ * WebVTT for one language: the narration cues, snapped one line above the player's default
+ * place (line:-2). `timing` (optional) replaces the planned cue times with the
  * measured ones from the voiced video: [{ start, end }, …] in cue order.
  */
 export function toVtt(strings, data, timing = null) {
   const at = cueTimes(data, timing);
   const lines = ['WEBVTT', ''];
   data.cues.forEach((cue, i) => {
-    // No explicit line: players then keep the narration clear of their own controls.
-    lines.push(String(i + 1), `${stamp(at[i].start)} --> ${stamp(at[i].end)}`, plain(strings[cue.key], cue.key), '');
+    lines.push(String(i + 1), `${stamp(at[i].start)} --> ${stamp(at[i].end)} line:${VTT_LINE}`, plain(strings[cue.key], cue.key), '');
   });
   return lines.join('\n');
 }
@@ -98,7 +103,7 @@ export function toAss(strings, data, { font = 'sans-serif', rtl = false, width =
   const size = Math.round(50 * scale);
   // Colours are &HAABBGGRR. Text #F0F5F3, box #11191B at ~15% transparency.
   const styles = [
-    `Style: Caption,${font},${size},&H00F3F5F0,&H00F3F5F0,&H2611191B,&H2611191B,0,0,0,0,100,100,0,0,3,${Math.round(18 * scale)},0,2,${Math.round(160 * scale)},${Math.round(160 * scale)},${Math.round(64 * scale)},${encoding}`,
+    `Style: Caption,${font},${size},&H00F3F5F0,&H00F3F5F0,&H2611191B,&H2611191B,0,0,0,0,100,100,0,0,3,${Math.round(18 * scale)},0,2,${Math.round(160 * scale)},${Math.round(160 * scale)},${Math.round(CAPTION_MARGIN * scale)},${encoding}`,
   ];
   const events = [
     ...data.cues.map((cue, i) => `Dialogue: 0,${assTime(at[i].start)},${assTime(at[i].end)},Caption,,0,0,0,,${line(assText(strings[cue.key], cue.key))}`),

@@ -2,7 +2,8 @@
 // Usage: node scripts/serve.mjs [--dir dist] [--port 4173] [--base /some/prefix/]
 // Directories redirect to a trailing slash (so zh -> zh/), like typical static hosts.
 // --port 0 picks a free port; the actual URL is printed on start.
-// Videos are served with their MIME type and single byte ranges, as browsers expect.
+// Videos are served with their MIME type and single byte ranges, as browsers expect;
+// ?download=1 on an MP4 adds Content-Disposition: attachment.
 import { createServer } from 'node:http';
 import { readFile, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
@@ -35,6 +36,15 @@ export function parseRange(header, size) {
   else { start = Number(m[1]); end = m[2] === '' ? size - 1 : Math.min(Number(m[2]), size - 1); }
   if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start > end || start >= size) return 'invalid';
   return { start, end };
+}
+
+/** The attachment file name for `?download=1` on an MP4, or null. */
+export function downloadName(url, file) {
+  let wanted;
+  try { wanted = new URL(url, 'http://localhost').searchParams.get('download') === '1'; } catch { return null; }
+  if (!wanted || path.extname(file).toLowerCase() !== '.mp4') return null;
+  const name = path.basename(file).replace(/[^A-Za-z0-9._-]/g, '_');
+  return /^[A-Za-z0-9][A-Za-z0-9._-]*\.mp4$/.test(name) ? name : null;
 }
 
 const main = process.argv[1] === fileURLToPath(import.meta.url);
@@ -101,6 +111,10 @@ const server = createServer(async (req, res) => {
     }
     const body = await readFile(real);
     const headers = { 'Content-Type': TYPES[path.extname(real)] ?? 'application/octet-stream', 'Accept-Ranges': 'bytes' };
+    // ?download=1 on an MP4 asks the browser to save it (for links shared outside the site);
+    // without it the same file plays as usual. The name is the file's own, restricted to safe characters.
+    const disposition = downloadName(req.url, real);
+    if (disposition) headers['Content-Disposition'] = `attachment; filename="${disposition}"`;
     const range = parseRange(req.headers.range, body.length);
     if (range === 'invalid') {
       res.writeHead(416, { ...headers, 'Content-Range': `bytes */${body.length}` }).end();

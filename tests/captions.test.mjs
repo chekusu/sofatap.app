@@ -22,14 +22,16 @@ test('every language has every caption, as valid WebVTT and ASS', async () => {
     const vtt = toVtt(strings, cues);
     assert.match(vtt, /^WEBVTT\n/);
     assert.equal(vtt.match(/ --> /g).length, 8, l.lang);
-    // No cue is placed: narration keeps the default line so native controls never cover it.
-    assert.equal(/ line:/.test(vtt), false, l.lang);
-    assert.match(vtt, /--> 00:00:24\.800\n/);
+    // Every cue sits one snapped line above the default, never at a percentage that controls could cover.
+    assert.equal(vtt.match(/ line:-2\n/g).length, 8, l.lang);
+    assert.doesNotMatch(vtt, /line:\d+%/, l.lang);
+    assert.match(vtt, /--> 00:00:24\.800 line:-2\n/);
     // A blank line inside a cue would end it early.
     for (const block of vtt.trimEnd().split('\n\n').slice(1)) assert.ok(block.split('\n').every((line) => line.trim()), `${l.lang}: ${block}`);
     const ass = toAss(strings, cues);
     assert.equal(ass.match(/^Dialogue:/gm).length, 8);
     assert.doesNotMatch(ass, /Style: Label/);
+    assert.match(ass, /^Style: Caption,.*,112,(?:1|-1)$/m);
     assert.match(ass, /PlayResX: 1920\nPlayResY: 1080/);
   }
 });
@@ -50,7 +52,7 @@ test('caption validation rejects broken timing and unsafe or multi-paragraph tex
   assert.throws(() => toVtt({ ...strings, 'video.cue.a': 'a --> b' }, base));
   assert.throws(() => toVtt({}, base), /缺少/);
   // Measured timing from the narrated video replaces the plan, and must be well formed.
-  assert.match(toVtt(strings, base, [{ start: 0.5, end: 2.75 }]), /00:00:00\.500 --> 00:00:02\.750/);
+  assert.match(toVtt(strings, base, [{ start: 0.5, end: 2.75 }]), /00:00:00\.500 --> 00:00:02\.750 line:-2\n/);
   assert.throws(() => toVtt(strings, base, [{ start: 2, end: 1 }]), /实测时间/);
   assert.throws(() => toVtt(strings, base, []), /实测时间/);
   assert.match(toVtt({ ...strings, 'video.cue.a': '\nA & B\n' }, base), /\nA &amp; B\n/);
