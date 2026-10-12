@@ -83,7 +83,7 @@ test('desktop downloads link the real release assets with architecture and alpha
     assert.doesNotMatch(page, /logo\.svg|tilt|倾斜|v0\.1\.1-alpha/i);
   }
   // One factual note about what the published downloads include; no badges.
-  assert.match(html, /aren’t included yet/);
+  assert.match(html, /They do not include/);
   assert.doesNotMatch(html, /class="label|In development|Development preview|Simulation/);
 });
 

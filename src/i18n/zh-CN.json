@@ -56,7 +56,7 @@
   "download.lead": "Sofatap 需要 iPhone App，以及电脑上的一个小接收端。两者都还是早期 alpha 软件。",
   "platform.iphone.req": "需要 iOS 17 或更高版本",
   "platform.iphone.source": "从源码构建 iPhone App",
-  "download.preview": "下面的电脑端下载是较早的 alpha 版本。本页介绍的单屏触控、应用内语音输入、自动弹出键盘和新版接收端窗口仍在开发中，尚未包含在这些下载里。",
+  "download.preview": "下面的电脑端下载是较早的 alpha 版本，尚未包含本页介绍的单屏触控、应用内语音输入、自动弹出键盘和新版接收端窗口。",
   "platform.windows.name": "Windows",
   "platform.windows.req": "Windows x64",
   "platform.windows.note": "早期 alpha，尚未进行商业代码签名。解压后运行 SofaTap.exe；只在可信的家庭网络中允许网络访问。",

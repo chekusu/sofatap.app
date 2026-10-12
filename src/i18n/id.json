@@ -56,7 +56,7 @@
   "download.lead": "Sofatap membutuhkan aplikasi iPhone dan aplikasi penerima kecil di komputer. Keduanya masih perangkat lunak alfa awal.",
   "platform.iphone.req": "iOS 17 atau lebih baru",
   "platform.iphone.source": "Bangun aplikasi iPhone dari kode sumber",
-  "download.preview": "Unduhan komputer ini adalah rilis alfa yang lebih lama. Desain sentuh satu permukaan, input suara di dalam aplikasi, keyboard otomatis, dan jendela penerima yang diperbarui yang dijelaskan di halaman ini masih dalam pengembangan dan belum disertakan.",
+  "download.preview": "Unduhan komputer ini adalah rilis alfa yang lebih lama. Unduhan ini belum menyertakan desain sentuh satu permukaan, input suara di dalam aplikasi, keyboard otomatis, dan jendela penerima yang diperbarui yang dijelaskan di halaman ini.",
   "platform.windows.name": "Windows",
   "platform.windows.req": "Windows x64",
   "platform.windows.note": "Alfa awal, belum ditandatangani dengan sertifikat kode komersial. Ekstrak file zip dan jalankan SofaTap.exe. Izinkan akses jaringan hanya di jaringan rumah tepercaya Anda.",

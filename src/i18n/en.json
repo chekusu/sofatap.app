@@ -56,7 +56,7 @@
   "download.lead": "Sofatap needs the iPhone app and a small receiver app on the computer. Both are early alpha software.",
   "platform.iphone.req": "iOS 17 or later",
   "platform.iphone.source": "Build the iPhone app from source",
-  "download.preview": "These computer downloads are earlier alpha releases. The single-surface touch design, in-app voice input, automatic keyboard and refreshed receiver windows described on this page are in development and aren’t included yet.",
+  "download.preview": "These computer downloads are earlier alpha releases. They do not include the single-surface touch design, in-app voice input, automatic keyboard or refreshed receiver windows described on this page.",
   "platform.windows.name": "Windows",
   "platform.windows.req": "Windows x64",
   "platform.windows.note": "Early alpha, not yet commercially code-signed. Extract the zip and run SofaTap.exe. Allow network access only on your trusted home network.",

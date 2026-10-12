@@ -56,7 +56,7 @@
   "download.lead": "Sofatap을 쓰려면 iPhone 앱과 컴퓨터용 작은 수신 앱이 필요합니다. 둘 다 초기 알파 소프트웨어입니다.",
   "platform.iphone.req": "iOS 17 이상",
   "platform.iphone.source": "소스 코드로 iPhone 앱 빌드하기",
-  "download.preview": "이 컴퓨터용 다운로드는 이전 알파 버전입니다. 이 페이지에서 소개한 하나의 화면 터치 디자인, 앱 내 음성 입력, 자동 키보드, 새로워진 수신 앱 창은 개발 중이며 아직 포함되어 있지 않습니다.",
+  "download.preview": "이 컴퓨터용 다운로드는 이전 알파 버전입니다. 이 페이지에서 소개한 하나의 화면 터치 디자인, 앱 내 음성 입력, 자동 키보드, 새로워진 수신 앱 창은 아직 포함되어 있지 않습니다.",
   "platform.windows.name": "Windows",
   "platform.windows.req": "Windows x64",
   "platform.windows.note": "초기 알파이며 아직 상용 코드 서명이 없습니다. zip 파일의 압축을 풀고 SofaTap.exe를 실행하세요. 네트워크 액세스는 신뢰할 수 있는 홈 네트워크에서만 허용하세요.",

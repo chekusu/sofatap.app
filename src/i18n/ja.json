@@ -56,7 +56,7 @@
   "download.lead": "Sofatap には iPhone アプリと、パソコン用の小さなレシーバーアプリが必要です。どちらも初期のアルファ版ソフトウェアです。",
   "platform.iphone.req": "iOS 17 以降",
   "platform.iphone.source": "iPhone アプリをソースコードからビルド",
-  "download.preview": "このパソコン用ダウンロードは以前のアルファ版です。このページで紹介しているひとつの面のタッチデザイン、アプリ内音声入力、自動キーボード、新しいレシーバーウインドウは開発中で、まだ含まれていません。",
+  "download.preview": "このパソコン用ダウンロードは以前のアルファ版です。このページで紹介しているひとつの面のタッチデザイン、アプリ内音声入力、自動キーボード、新しいレシーバーウインドウはまだ含まれていません。",
   "platform.windows.name": "Windows",
   "platform.windows.req": "Windows x64",
   "platform.windows.note": "初期アルファ版で、商用のコード署名はまだありません。zip を展開して SofaTap.exe を実行してください。ネットワークへのアクセスは、信頼できる家庭内ネットワークでのみ許可してください。",
