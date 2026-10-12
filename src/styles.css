@@ -197,7 +197,9 @@ main:focus { outline: none; }
 }
 
 @media (max-width: 44rem) {
-  .site-header { position: static; }
+  /* Not sticky on small screens, but still positioned: its z-index keeps the open language
+     menu above the hero (the header's backdrop filter makes it its own stacking context). */
+  .site-header { position: relative; }
   .site-nav { order: 3; width: 100%; }
   .site-nav ul { justify-content: space-between; column-gap: 0; }
   .site-nav a { padding: 0 0.6rem; }
