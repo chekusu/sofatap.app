@@ -100,3 +100,13 @@ test('the output is never reached through a symbolic link, so its delete cannot 
   // The output must also stay inside its base directory.
   await assert.rejects(prepareDeploy({ dist, out: path.join(os.tmpdir(), 'elsewhere-assets'), base: path.join(tmp, 'link-to-keep') }), /之内/);
 });
+
+test('a build missing a script, the styles or a brand asset is rejected', async () => {
+  const out = path.join(tmp, 'missing-out');
+  for (const gone of ['main.js', 'styles.css', 'assets/sofatap-wordmark.svg']) {
+    const dist = await releaseBuild(`gone-${gone.replace(/\W/g, '-')}`);
+    await rm(path.join(dist, gone));
+    await assert.rejects(prepareDeploy({ dist, out, base: tmp }), new RegExp(`缺少 ${gone.replace(/\./g, '\\.')}`), gone);
+    assert.equal(existsSync(out), false, gone);
+  }
+});

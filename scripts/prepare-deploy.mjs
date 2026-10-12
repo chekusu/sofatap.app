@@ -82,6 +82,8 @@ export async function checkBuild(dist) {
   // Only the site's own public files are published: anything else (a private note, .env,
   // _redirects or _headers) stops the release instead of being uploaded.
   for (const rel of files) if (!expected.has(rel)) problems.push(`不应发布的文件：${rel}`);
+  // And every one of them must be there (pages, scripts, styles, brand assets, media, exports).
+  for (const rel of expected) if (!have.has(rel) && !problems.some((p) => p === `缺少 ${rel}`)) problems.push(`缺少 ${rel}`);
   if (problems.length) throw new Error(`构建不完整，拒绝准备发布（不会自动重新构建）：\n- ${problems.join('\n- ')}`);
   return files;
 }
