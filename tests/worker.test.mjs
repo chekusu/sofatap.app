@@ -114,3 +114,18 @@ test('exports keep their attachment download; validators and other files pass th
   assert.equal(vtt.headers.get('Accept-Ranges'), null);
   assert.equal(env.seen.at(-1).range, 'bytes=0-1');
 });
+
+test('HEAD reports the full length even when static assets give none', async () => {
+  const env = assets({ length: false });
+  const head = await get(env, '/media/sofatap-demo-en.mp4', {}, 'HEAD');
+  assert.equal(head.status, 200);
+  assert.equal(head.headers.get('Content-Length'), '5000');
+  assert.equal(head.headers.get('Accept-Ranges'), 'bytes');
+  assert.equal(head.headers.get('Content-Type'), 'video/mp4');
+  assert.equal(head.body, null);
+  const ranged = await get(env, '/media/sofatap-demo-en.mp4', { Range: 'bytes=-10' }, 'HEAD');
+  assert.equal(ranged.status, 206);
+  assert.equal(ranged.headers.get('Content-Range'), 'bytes 4990-4999/5000');
+  assert.equal(ranged.headers.get('Content-Length'), '10');
+  assert.equal(ranged.body, null);
+});

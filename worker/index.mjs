@@ -68,16 +68,20 @@ export default {
     let size = known === null ? null : Number(known);
     let body = full.body;
     const wanted = range && ifRangeMatches(request, full);
-    if (wanted && (size === null || !Number.isFinite(size))) {
-      // No length given: read the file once to know it.
+    if ((wanted || request.method === 'HEAD') && (size === null || !Number.isFinite(size))) {
+      // No length given: read the file once to know it (a range needs it; HEAD reports it).
       const bytes = new Uint8Array(await full.arrayBuffer());
       size = bytes.byteLength;
       body = new ReadableStream({ start(c) { c.enqueue(bytes); c.close(); } });
     }
     const span = wanted ? parseRange(range, size) : null;
     if (span === null) {
-      if (request.method === 'HEAD') await body?.cancel().catch(() => {});
-      return new Response(request.method === 'HEAD' ? null : fixedLength(body, size), { status: 200, headers: out });
+      if (request.method === 'HEAD') {
+        await body?.cancel().catch(() => {});
+        out.set('Content-Length', String(size));
+        return new Response(null, { status: 200, headers: out });
+      }
+      return new Response(fixedLength(body, size), { status: 200, headers: out });
     }
     if (span === 'unsatisfiable' || request.method === 'HEAD') await body?.cancel().catch(() => {});
     if (span === 'unsatisfiable') {
