@@ -1,11 +1,11 @@
 // Records the website's phone → TV simulation as the silent 1920x1080 base video.
 // It loads a fresh build of the real page, frames the same demo with film.css, and steps the
 // demo's own clock frame by frame (SofatapDemo.film), so the video follows exactly the
-// scripted timeline the "Play demo" button uses. Captions are added by burn.mjs.
+// scripted timeline the "Play demo" button uses. Narration and captions are added by voice.mjs.
 //
 // Usage:
 //   node tools/film/record.mjs --out <dir> --playwright <path to the playwright package>
-//        [--browser <chromium executable>] [--ffmpeg ffmpeg] [--lang en] [--fps 30]
+//        [--browser <chromium executable>] [--ffmpeg ffmpeg] [--lang en] [--fps 30] [--duration 30]
 // Paths can also come from SOFATAP_PLAYWRIGHT, SOFATAP_BROWSER and SOFATAP_FFMPEG.
 // Writes <out>/sofatap-demo.mp4 (H.264, yuv420p, faststart, no audio) and sofatap-demo-poster.jpg.
 import { spawn, spawnSync } from 'node:child_process';
@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { build } from '../../scripts/build.mjs';
 import { loadCues } from '../../scripts/captions.mjs';
 import { LOCALES } from '../../scripts/locales.mjs';
+import { sceneTime } from './timeline.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..');
@@ -31,17 +32,18 @@ const FADE = 0.5;
 export function parseArgs(argv, env = process.env) {
   const args = {
     out: null, playwright: env.SOFATAP_PLAYWRIGHT ?? null, browser: env.SOFATAP_BROWSER ?? null,
-    ffmpeg: env.SOFATAP_FFMPEG ?? 'ffmpeg', lang: 'en', fps: 30,
+    ffmpeg: env.SOFATAP_FFMPEG ?? 'ffmpeg', lang: 'en', fps: 30, duration: null,
   };
   for (let i = 0; i < argv.length; i += 2) {
     const key = argv[i]?.replace(/^--/, '');
     if (!(key in args) || argv[i + 1] === undefined) throw new Error(`Unknown or incomplete option: ${argv[i]}`);
-    args[key] = key === 'fps' ? Number(argv[i + 1]) : argv[i + 1];
+    args[key] = key === 'fps' || key === 'duration' ? Number(argv[i + 1]) : argv[i + 1];
   }
   if (!args.out) throw new Error('--out <dir> is required');
   if (!args.playwright) throw new Error('--playwright <path> or SOFATAP_PLAYWRIGHT is required');
   if (!LOCALES.some((l) => l.lang === args.lang)) throw new Error(`Unknown --lang ${args.lang}`);
   if (!Number.isInteger(args.fps) || args.fps < 24 || args.fps > 60) throw new Error('--fps must be 24–60');
+  if (args.duration !== null && !(args.duration >= 20 && args.duration <= 40)) throw new Error('--duration must be 20–40 seconds');
   // A path to the playwright package is taken relative to where the command runs;
   // a bare package name (for example "playwright") is resolved like an import.
   const playwright = /^[./]|^[A-Za-z]:[\\/]/.test(args.playwright) ? path.resolve(args.playwright) : args.playwright;
@@ -63,11 +65,13 @@ function setUpFilm({ intro, script, outro, fade }) {
   const film = document.createElement('div');
   film.className = 'film';
   film.setAttribute('aria-hidden', 'true');
+  // Every brand appearance is the same wordmark SVG the site uses, next to the app mark.
   const mark = document.querySelector('.brand__mark').getAttribute('src');
-  const brand = `<img src="${mark}" alt="">`;
-  film.innerHTML = `<div class="film__brand">${brand}<span>Sofatap</span></div>`
-    + `<div class="film__card film__card--intro">${brand}<p class="film__name">Sofatap</p><span class="film__rule"></span></div>`
-    + `<div class="film__card film__card--outro">${brand}<p class="film__name">Sofatap</p><p class="film__url">github.com/chekusu/sofatap</p></div>`;
+  const wordmark = document.querySelector('.brand__wordmark').getAttribute('src');
+  const lockup = `<img class="film__mark" src="${mark}" alt=""><img class="film__wordmark" src="${wordmark}" alt="Sofatap">`;
+  film.innerHTML = `<div class="film__brand">${lockup}</div>`
+    + `<div class="film__card film__card--intro">${lockup}<span class="film__rule"></span></div>`
+    + `<div class="film__card film__card--outro">${lockup}<p class="film__url">github.com/chekusu/sofatap</p></div>`;
   film.insertBefore(demo, film.firstChild);
   document.body.appendChild(film);
   document.body.classList.add('is-filming');
@@ -87,14 +91,18 @@ export async function record(args) {
   const require = createRequire(import.meta.url);
   const { chromium } = require(args.playwright);
   const cues = await loadCues();
-  const duration = cues.duration;
+  // A longer master (for example 30 s) leaves room for each language's narration;
+  // tools/film/voice.mjs trims every language to its own length.
+  const duration = args.plan?.duration ?? args.duration ?? cues.duration;
+  // With a plan (tools/film/timeline.mjs) each film frame shows its retimed scene moment.
+  const sceneAt = args.plan ? (t) => sceneTime(args.plan, t) : (t) => t;
   await mkdir(args.out, { recursive: true });
   const tmp = await mkdtemp(path.join(os.tmpdir(), 'sofatap-film-'));
   const site = path.join(tmp, 'site');
   let server = null;
   let browser = null;
   let ffmpeg = null;
-  const output = path.join(args.out, 'sofatap-demo.mp4');
+  const output = path.join(args.out, args.name ?? 'sofatap-demo.mp4');
   try {
     await build({ config: path.join(ROOT, 'site.config.json'), out: site });
     server = await serve(site);
@@ -142,10 +150,10 @@ export async function record(args) {
     const marks = [];
     for (let i = 0; i < frames; i += 1) {
       const t = i / args.fps;
-      const state = await page.evaluate((time) => window.__filmSeek(time), t);
+      const state = await page.evaluate((time) => window.__filmSeek(time), sceneAt(t));
       if (state.step && state.step !== marks.at(-1)?.step) marks.push({ step: state.step, time: +t.toFixed(3) });
       await write(await page.screenshot({ type: 'png', animations: 'disabled', caret: 'hide' }));
-      if (i % (args.fps * 5) === 0) console.log(`frame ${i}/${frames}`);
+      if (i % (args.fps * 5) === 0 && !args.quiet) console.log(`frame ${i}/${frames}`);
     }
     ffmpeg.stdin.end();
     await done;
@@ -153,7 +161,7 @@ export async function record(args) {
     if (errors.length) throw new Error(`page errors: ${errors.join('; ')}`);
     // Poster: the moment the right-click menu is open.
     const poster = path.join(args.out, 'sofatap-demo-poster.jpg');
-    const p = spawnSync(args.ffmpeg, ['-y', '-loglevel', 'error', '-ss', '13.4', '-i', output, '-frames:v', '1', '-q:v', '3', poster], { stdio: 'inherit' });
+    const p = spawnSync(args.ffmpeg, ['-y', '-loglevel', 'error', '-ss', String(args.posterAt ?? 13.4), '-i', output, '-frames:v', '1', '-q:v', '3', poster], { stdio: 'inherit' });
     if (p.status !== 0) throw new Error('poster extraction failed');
     await writeFile(path.join(args.out, 'timeline.json'), `${JSON.stringify({ duration, fps: args.fps, scriptStart: SCRIPT_START, steps: marks }, null, 2)}\n`);
     return { output, poster, marks };

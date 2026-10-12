@@ -51,28 +51,29 @@ body.is-filming > :not(.film) { display: none !important; }
 .film__brand {
   position: absolute;
   z-index: 1;
-  top: 34px;
+  top: 30px;
   right: 56px;
   display: flex;
   align-items: center;
   gap: 14px;
-  color: #F0F5F3;
-  font: 700 34px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
 }
-.film__brand img { width: 52px; height: 52px; border-radius: 13px; }
+.film__brand .film__mark { width: 54px; height: 54px; border-radius: 14px; }
+.film__brand .film__wordmark { height: 40px; width: auto; }
 .film__card {
   position: absolute;
   z-index: 2;
   inset: 0;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  align-items: center;
+  gap: 40px 44px;
   background: radial-gradient(70rem 40rem at 50% 45%, #1E2A2C, #11191B 70%);
-  color: #F0F5F3;
   opacity: 0;
 }
-.film__card img { width: 236px; height: 236px; border-radius: 54px; box-shadow: 0 30px 80px rgb(0 0 0 / 0.5); }
-.film__name { margin: 0; font: 800 136px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif; letter-spacing: -2px; }
-.film__rule { width: 120px; height: 6px; border-radius: 3px; background: #98E9C4; }
-.film__url { margin: 0; color: #98E9C4; font: 600 40px/1.2 system-ui, sans-serif; }
+.film__card .film__mark { width: 200px; height: 200px; border-radius: 48px; box-shadow: 0 30px 80px rgb(0 0 0 / 0.5); }
+.film__card .film__wordmark { height: 156px; width: auto; }
+.film__rule, .film__url { flex-basis: 100%; }
+.film__rule { max-width: 120px; height: 6px; border-radius: 3px; background: #98E9C4; margin: 0 calc(50% - 60px); }
+.film__url { margin: 0; text-align: center; color: #98E9C4; font: 600 38px/1.2 system-ui, sans-serif; }

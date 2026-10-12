@@ -1,6 +1,6 @@
 // Subtitles for the demo video, generated from the language files and src/video/cues.json.
 // The same cues produce the WebVTT tracks on the website and the ASS files that
-// tools/film/burn.mjs renders into the downloadable per-language videos.
+// tools/film/voice.mjs burns into the per-language sharing copies.
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +24,8 @@ export function validateCues(data) {
   for (const cue of all) {
     if (!cue || typeof cue.key !== 'string' || !/^video\.[\w.]+$/.test(cue.key)) fail(`键名无效：${JSON.stringify(cue?.key)}`);
     if (!num(cue.start) || !num(cue.end) || !(cue.start >= 0 && cue.end > cue.start && cue.end <= data.duration)) fail(`${cue.key} 的时间无效`);
+    // The scene moment a cue belongs to (tools/film/timeline.mjs); speech starts at or after it.
+    if ('anchor' in cue && (!num(cue.anchor) || cue.anchor < 0 || cue.anchor > cue.start)) fail(`${cue.key} 的 anchor 无效`);
   }
   data.cues.forEach((cue, i) => {
     if (i > 0 && cue.start < data.cues[i - 1].end) fail(`${cue.key} 与上一条重叠`);

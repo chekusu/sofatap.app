@@ -1,45 +1,48 @@
 # 演示视频工具
 
-把网站上的手机 → 电视模拟演示录成视频，并按语言加上字幕。录制的是真实页面上的同一个演示：同一份 `src/demo-core.js` 时间轴、同样的手势规则和画面，只是用 `film.css` 排成 1920×1080。
+把网站上的手机 → 电视演示做成每种语言一支带旁白的视频。录制的是真实页面上的同一个演示：同一份 `src/demo-core.js` 时间轴、同样的手势规则和画面，用 `film.css` 排成 1920×1080。角标、片头和片尾使用网站同一个文字标志 SVG。画面里没有文字说明。
 
-视频文件不放进 Git。导出目录、Playwright 和浏览器的位置都通过参数或环境变量传入，脚本里没有本机路径。
+视频和音频文件不放进 Git。导出目录、Playwright、浏览器的位置都通过参数或环境变量传入，脚本里没有本机路径。
 
 ## 需要
 
 - Node.js 18 以上。
-- Playwright（Chromium）。本仓库不安装依赖，用 `--playwright` 指向一个已有的 `playwright` 包目录（相对路径按当前目录解析），或用 `SOFATAP_PLAYWRIGHT`。需要指定浏览器时用 `--browser` 或 `SOFATAP_BROWSER`。
-- 带 libx264 和 libass 的 `ffmpeg`（`--ffmpeg` 或 `SOFATAP_FFMPEG`，默认用 PATH 里的 `ffmpeg`）。
-- 能显示各语言文字的字体：中文、日文、韩文、阿拉伯文、天城文（印地语）。
+- Playwright（Chromium）。用 `--playwright` 指向一个已有的 `playwright` 包（相对路径按当前目录解析），或用 `SOFATAP_PLAYWRIGHT`；`--browser` / `SOFATAP_BROWSER` 可指定浏览器。
+- 带 libx264、AAC 和 libass 的 `ffmpeg`（`--ffmpeg` 或 `SOFATAP_FFMPEG`）。
+- 能显示各语言文字的字体（烧录字幕用）。
 
 ## 步骤
 
 ```sh
-# 1. 录制无声底片（约 4 分钟）：sofatap-demo.mp4、sofatap-demo-poster.jpg、timeline.json
-node tools/film/record.mjs --out <导出目录> --playwright <playwright 包路径>
+# 1. 配音稿：12 种语言 × 8 条，每种语言一整段（每条一行）和每条的字符位置
+node tools/film/narration.mjs --out <目录>/narration-ready.json
 
-# 2. 为 12 种语言烧录字幕：sofatap-demo-<语言>.mp4，以及对应的 .vtt
-node tools/film/burn.mjs --base <导出目录>/sofatap-demo.mp4 --out <导出目录> [--font "<字体>"]
+# 2. 用配音服务为每种语言生成整段旁白和字符时间戳（不在本仓库内完成），放进一个目录：
+#    <lang>.mp3 + <lang>.json（或 narration-<lang>.mp3 + .json，或 8 段 narration-<lang>-1…8.mp3）
 
-# 3. 构建带视频的网站，并检查
-node scripts/build.mjs --out <输出目录> --media <导出目录>
-node scripts/check.mjs --media <导出目录>
+# 3. 按旁白录制并合成每种语言的视频
+node tools/film/voice.mjs --audio <旁白目录> --out <输出目录> --playwright <playwright 包路径> [--jobs 3]
+
+# 4. 网站构建
+node scripts/build.mjs --out <网站输出目录> --media <输出目录>/site
+node scripts/check.mjs --media <输出目录>/site
 ```
 
-- 字幕字体用 `--font` 指定；某种语言要用别的字体时设 `SOFATAP_FONT_<语言>`，例如 `SOFATAP_FONT_JA`、`SOFATAP_FONT_ZH_CN`、`SOFATAP_FONT_HI`。缺字时由 fontconfig 回退。字幕使用复杂文字排版（印地语连字、阿拉伯语从右到左）。
-- 只想重做部分语言：`--langs en,ja`。
-- 构建的 `--media` 目录必须在输出目录之外；它需要底片、封面和 12 个语言版本，缺一个或格式不对都会在写入前报错。
+`voice.mjs` 的输出：
 
-## 时间轴
+| 路径 | 内容 |
+| --- | --- |
+| `site/sofatap-demo-<lang>.mp4` | 网站播放的视频：H.264 + AAC，带旁白，不烧字幕 |
+| `site/sofatap-demo.<lang>.vtt`、`site/timing.json` | 按实测时间生成的字幕（构建会用 `timing.json`） |
+| `site/sofatap-demo-poster.jpg` | 右键菜单打开时的一帧 |
+| `promo/sofatap-demo-<lang>-subtitled.mp4` | 烧录字幕的版本，供推广分享，不放进网站 |
+| `report.json` | 每条旁白的位置、长度、停留时间、响度和警告 |
 
-| 时间（秒） | 画面 | 字幕键 |
-| --- | --- | --- |
-| 0–3.2 | 标题卡：标志和 Sofatap | `video.cue.intro` |
-| 3.2–6.3 | 电视（显示电脑画面）和手机 | `video.cue.setup` |
-| 6.5 | 在手机上滑动，电视指针移到一部影片上 | `video.cue.slide` |
-| 9.5 | 轻点：左键单击，选中影片 | `video.cue.tap` |
-| 11.5 | 连续轻点两下：右键，打开菜单 | `video.cue.double` |
-| 14.5–15.6 | 滑到「播放」，轻点，开始模拟播放 | `video.cue.play` |
-| 17.3 | 继续播放 | `video.cue.sofa` |
-| 20.6–25 | 结尾卡：标志、Sofatap、GitHub 地址 | `video.cue.end` |
+## 旁白如何对齐画面
 
-左上角全程显示「模拟演示 · 开发预览」标注（`video.label`），右上角是品牌标志。字幕时间在 `src/video/cues.json`，演示步骤的时间在 `src/demo-core.js` 的 `SCRIPT`，两者需要一起改；`record.mjs` 会把实际的步骤时间写到 `timeline.json` 里以便核对。
+- 画面有 8 个时刻，对应 8 条旁白（`src/video/cues.json` 的 `anchor`）：片头、出现电视和手机、开始滑动、轻点、连点两下（菜单打开）、滑到「播放」并轻点、影片开始、片尾。
+- 字符时间戳在一段文字内可能是平均分配的，所以两条旁白之间的切点会移到附近音频里最安静的 120 毫秒正中。各段首尾相接，覆盖整个音频文件，不丢、不重复任何声音。
+- 每个画面片段按原速播放；如果这条旁白更长，画面停在片段最后一个静止帧上等旁白说完（`tools/film/timeline.mjs`）。画面不会加速、不会剪掉，每个动作都在说到它的那句话开始时发生。
+- 视频总长随实际旁白而定（约 27–30 秒），片尾至少停留 4.2 秒，最后一句之后留出约 1.4 秒。
+
+`record.mjs` 也可以单独录一支无声母版（`--duration` 指定长度），用于检查画面。
