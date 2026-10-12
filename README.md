@@ -139,7 +139,7 @@ node scripts/check.mjs --media <网站用视频目录>
 
 ## 发布到 sofatap.app
 
-生产环境是 Cloudflare Workers Static Assets（只有静态文件，没有 Worker 代码），配置在 `wrangler.jsonc`：Worker 名 `sofatap-website`，自定义域名 `sofatap.app`，不开 workers.dev 和预览地址，HTML 自动处理末尾斜杠，没有单页应用回退。
+生产环境是 Cloudflare Workers Static Assets，配置在 `wrangler.jsonc`：Worker 名 `sofatap-website`，自定义域名 `sofatap.app`，不开 workers.dev 和预览地址，HTML 自动处理末尾斜杠，没有单页应用回退。
 
 发布的是已经审核过、含视频的构建，不要为发布重新运行不带 `--media` 的 `npm run build`（那样的构建没有视频区）：
 
@@ -156,7 +156,9 @@ wrangler deploy --dry-run         # 只检查配置和文件，不上传
 wrangler deploy
 ```
 
-`deploy:prepare` 不会构建：12 种语言的视频、封面和 18 条字幕的 WebVTT、两个宣传视频缺一不可，否则直接失败。它不复制构建记录 `.sofatap-build`，逐字节核对复制结果，并只加一份 `_headers`：`/exports/` 下的两个宣传视频以附件方式下载；网站 `/media/` 里的视频照常在页面内播放。MIME、分段请求和缓存使用平台默认。
+`deploy:prepare` 不会构建：12 种语言的视频、封面和 18 条字幕的 WebVTT、两个宣传视频缺一不可，否则直接失败。它不复制构建记录 `.sofatap-build`，逐字节核对复制结果，并只加一份 `_headers`：`/exports/` 下的两个宣传视频以附件方式下载；网站 `/media/` 里的视频照常在页面内播放。MIME 和缓存使用平台默认。
+
+静态文件服务对视频的分段请求（Range）只会返回整个文件，浏览器因此无法拖动进度。`worker/index.mjs` 只在 `/media/` 和 `/exports/` 下先运行（`run_worker_first`），只处理 MP4：从静态文件取得原样的文件和响应头（类型、ETag、缓存、宣传视频的附件下载），对单个字节范围（含 `bytes=N-` 和 `bytes=-N`）返回 206 和 `Content-Range`，无法满足的范围返回 416，多个范围返回整个文件；GET 和 HEAD 都支持，`If-Range` 不匹配时返回整个文件。其他文件（网页、字幕、封面等）仍由静态文件直接返回。
 
 ## 文件
 
@@ -170,7 +172,7 @@ wrangler deploy
 | `src/styles.css`、`src/main.js` | 样式；语言菜单、模拟演示和点阵（均为渐进增强） |
 | `src/assets/` | 标志和产品图片 |
 | `scripts/` | 语言清单、构建、配置与发行包校验、字幕、静态检查、预览服务器、发布准备 |
-| `wrangler.jsonc` | 生产发布配置（Cloudflare Workers Static Assets） |
+| `wrangler.jsonc`、`worker/` | 生产发布配置（Cloudflare Workers Static Assets）和为视频提供字节范围的 Worker |
 | `tools/film/` | 演示视频的录制、配音稿、旁白合成与字幕烧录 |
 | `tools/brand/` | 文字标志生成脚本 |
 | `tests/` | `node:test` 单元测试 |

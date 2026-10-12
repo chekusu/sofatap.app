@@ -1,12 +1,17 @@
-// Production: Cloudflare Workers Static Assets only (no Worker code). Deploy a reviewed,
-// media-inclusive build with `npm run deploy:prepare` and then `wrangler deploy` (see README).
+// Production: Cloudflare Workers Static Assets. Deploy a reviewed, media-inclusive build with
+// `npm run deploy:prepare` and then `wrangler deploy` (see README). Static files are served
+// directly; the small Worker runs first only under /media/ and /exports/, where it adds byte
+// ranges (seeking) to the MP4 videos and passes everything else through unchanged.
 {
   "name": "sofatap-website",
+  "main": "worker/index.mjs",
   "compatibility_date": "2026-10-12",
   "assets": {
     "directory": "./.wrangler/production-assets",
+    "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
-    "not_found_handling": "none"
+    "not_found_handling": "none",
+    "run_worker_first": ["/media/*", "/exports/*"]
   },
   "workers_dev": false,
   "preview_urls": false,
