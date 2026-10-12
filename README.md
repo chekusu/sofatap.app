@@ -10,17 +10,6 @@ Sofatap 的公开网站：移动优先的静态页面，共 12 种语言。英�
 - Windows / Mac 下载来自 `v0.3.0-alpha`，Linux 来自 `v0.4.0-alpha`；iPhone App 暂无已确认的公开安装入口。
 - 未实现或尚待验证的方向（如 Windows 锁屏 PIN、Face ID、语音代操电脑）不出现在页面上。
 
-## 宣传视频 / Promo film
-
-[![Sofatap 宣传视频（中文）](https://sofatap.app/media/sofatap-demo-poster-zh-cn.jpg)](https://sofatap.app/zh/#video)
-
-约一分钟：触控指针、手机键盘打字、语音听写，都在沙发上完成。
-
-- 在线观看：[中文](https://sofatap.app/zh/#video) · [English](https://sofatap.app/#video)（其他语言用网站的语言菜单切换）
-- 带字幕的 MP4：[中文](https://sofatap.app/exports/sofatap-promo-zh-cn.mp4) · [English](https://sofatap.app/exports/sofatap-promo-en.mp4)
-
-视频和封面作为网站文件托管在 `sofatap.app`，README 只引用这个官方域名下的固定地址；MP4 不放进 Git，生成服务给出的临时链接也不对外发布。
-
 ## 命令
 
 需要 Node.js 18 或更高版本，不需要 `npm install`。
