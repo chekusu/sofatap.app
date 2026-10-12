@@ -98,26 +98,50 @@ export function validateDownloadConfig(config) {
   return { kind, url: parsed.href };
 }
 
-/** Text shown for each state. */
-export function downloadCopy(kind) {
-  switch (kind) {
-    case 'testflight':
-      return {
-        action: '通过 TestFlight 安装测试版',
-        status: 'TestFlight 测试中',
-        receiverNote: '需要配合 iPhone App 使用，iPhone App 目前通过 TestFlight 测试。',
-      };
-    case 'appstore':
-      return {
-        action: '前往 App Store',
-        status: '可在 App Store 获取',
-        receiverNote: '需要配合 iPhone App 使用。',
-      };
-    default:
-      return {
-        action: 'TestFlight 即将开放',
-        status: 'TestFlight 即将开放',
-        receiverNote: '需要配合 iPhone App 使用，iPhone App 暂未开放安装。',
-      };
-  }
+export const LANGS = ['en', 'zh-CN'];
+
+const COPY = {
+  en: {
+    unavailable: {
+      action: 'iPhone beta not open yet',
+      status: 'Beta not open yet',
+      note: 'There’s no confirmed public install link yet. Developers can build and install it from source with Xcode.',
+    },
+    testflight: {
+      action: 'Join the iPhone beta on TestFlight',
+      status: 'TestFlight beta',
+      note: 'The iPhone app is in beta testing through TestFlight.',
+    },
+    appstore: {
+      action: 'View on the App Store',
+      status: 'On the App Store',
+      note: 'Install the iPhone app from the App Store.',
+    },
+    meta: 'iPhone app · iOS 17 or later',
+  },
+  'zh-CN': {
+    unavailable: {
+      action: 'iPhone 测试版尚未开放',
+      status: '测试版尚未开放',
+      note: '暂无已确认的公开安装入口。开发者可以用 Xcode 从源码构建并安装。',
+    },
+    testflight: {
+      action: '通过 TestFlight 加入 iPhone 测试',
+      status: 'TestFlight 测试中',
+      note: 'iPhone App 正在通过 TestFlight 测试。',
+    },
+    appstore: {
+      action: '前往 App Store',
+      status: '可在 App Store 获取',
+      note: '从 App Store 安装 iPhone App。',
+    },
+    meta: 'iPhone App · 需要 iOS 17 或更高版本',
+  },
+};
+
+/** Text shown for each state, in the page language. */
+export function downloadCopy(kind, lang = 'en') {
+  const table = COPY[lang];
+  if (!table) throw new Error(`未知语言：${lang}`);
+  return { ...(table[kind] ?? table.unavailable), meta: table.meta };
 }

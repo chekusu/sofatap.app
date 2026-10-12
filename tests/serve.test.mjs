@@ -29,7 +29,7 @@ function get(pathname) {
       const req = request({ host: u.hostname, port: u.port, path: pathname }, (res) => {
         let body = '';
         res.on('data', (c) => { body += c; });
-        res.on('end', () => resolve({ status: res.statusCode, body }));
+        res.on('end', () => resolve({ status: res.statusCode, body, location: res.headers.location }));
       });
       req.on('error', reject);
       req.end();
@@ -41,6 +41,8 @@ before(async () => {
   await mkdir(path.join(dist, 'assets'), { recursive: true });
   await writeFile(path.join(dist, 'index.html'), '<title>fixture</title>');
   await writeFile(path.join(dist, 'assets', 'a.svg'), '<svg/>');
+  await mkdir(path.join(dist, 'zh'));
+  await writeFile(path.join(dist, 'zh', 'index.html'), '<title>zh fixture</title>');
   await mkdir(path.join(tmp, 'dist-private'));
   await writeFile(path.join(tmp, 'dist-private', 'example.txt'), 'private fixture');
   await writeFile(path.join(tmp, 'outside.txt'), 'outside fixture');
@@ -80,6 +82,25 @@ test('serves under a path prefix', async () => {
     const res = await fetch(new URL('assets/a.svg', url));
     assert.equal(res.status, 200);
     assert.equal((await fetch(new URL('/assets/a.svg', url))).status, 404);
+  } finally {
+    proc.kill();
+  }
+});
+
+test('directories redirect to a trailing slash, never to another host', async () => {
+  const res = await get('/zh');
+  assert.equal(res.status, 301);
+  assert.equal(res.location, '/zh/');
+  assert.equal((await get('/zh/')).status, 200);
+  for (const p of ['/%2Fzh', '//zh', '/.//zh', '///zh?x=1']) {
+    const r = await get(p);
+    if (r.status === 301) assert.ok(r.location.startsWith('/') && !r.location.startsWith('//'), `${p} -> ${r.location}`);
+  }
+  const { proc, url } = await start(['--base', '/sofatap/']);
+  try {
+    const r = await fetch(new URL('zh', url), { redirect: 'manual' });
+    assert.equal(r.status, 301);
+    assert.equal(r.headers.get('location'), '/sofatap/zh/');
   } finally {
     proc.kill();
   }

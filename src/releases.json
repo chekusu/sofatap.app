@@ -1,0 +1,30 @@
+{
+  "platforms": [
+    {
+      "id": "windows",
+      "tag": "v0.3.0-alpha",
+      "guide": "docs/WINDOWS-START.md",
+      "packages": [
+        { "label": "x64", "file": "SofaTap-Windows-x64.zip", "bytes": 90535184 }
+      ]
+    },
+    {
+      "id": "mac",
+      "tag": "v0.3.0-alpha",
+      "guide": "docs/MAC-START.md",
+      "packages": [
+        { "label": "Apple Silicon", "file": "SofaTap-macOS-arm64-notarized.zip", "bytes": 42156515 },
+        { "label": "Intel", "file": "SofaTap-macOS-x64-notarized.zip", "bytes": 45021229 }
+      ]
+    },
+    {
+      "id": "linux",
+      "tag": "v0.4.0-alpha",
+      "guide": "desktop/linux/README.md",
+      "packages": [
+        { "label": "x64", "file": "SofaTap-Linux-x64.tar.gz", "bytes": 44394815 },
+        { "label": "ARM64", "file": "SofaTap-Linux-arm64.tar.gz", "bytes": 42206265 }
+      ]
+    }
+  ]
+}

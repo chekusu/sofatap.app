@@ -1,5 +1,6 @@
 // Minimal loopback-only static server for previewing dist/.
 // Usage: node scripts/serve.mjs [--dir dist] [--port 4173] [--base /some/prefix/]
+// Directories redirect to a trailing slash (so zh -> zh/), like typical static hosts.
 // --port 0 picks a free port; the actual URL is printed on start.
 import { createServer } from 'node:http';
 import { readFile, realpath, stat } from 'node:fs/promises';
@@ -61,7 +62,16 @@ const server = createServer(async (req, res) => {
       res.writeHead(403).end('Forbidden');
       return;
     }
-    if ((await stat(file)).isDirectory()) file = path.join(file, 'index.html');
+    if ((await stat(file)).isDirectory()) {
+      // Relative links inside a directory page only resolve with a trailing slash.
+      if (!pathname.endsWith('/')) {
+        const { pathname: raw, search } = new URL(req.url, 'http://localhost');
+        // Collapse leading slashes so the redirect can never become a //other-host URL.
+        res.writeHead(301, { Location: `/${raw.replace(/^\/+/, '')}/${search}` }).end();
+        return;
+      }
+      file = path.join(file, 'index.html');
+    }
     // Symlinks must not lead outside the served directory.
     const real = await realpath(file);
     if (!isWithin(real, rootDir)) {

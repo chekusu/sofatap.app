@@ -1,387 +1,209 @@
 <!doctype html>
-<html lang="zh-CN" class="no-js">
+<html lang="{{LANG}}" class="no-js">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Sofa Tap · 用 iPhone，轻松操作客厅电脑</title>
-  <meta name="description" content="Sofa Tap 把 iPhone 变成客厅电脑的触控板、空中鼠标和文字输入器。坐在沙发上选片、移动光标、把写好的文字发到电脑。">
-  <meta name="theme-color" content="#0A0D11">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{t:meta.title}}</title>
+  <meta name="description" content="{{a:meta.description}}">
+  <meta name="theme-color" content="#11191B">
   <meta name="color-scheme" content="dark">
-  <meta property="og:type" content="website">
-  <meta property="og:locale" content="zh_CN">
-  <meta property="og:site_name" content="Sofa Tap">
-  <meta property="og:title" content="Sofa Tap · 用 iPhone，轻松操作客厅电脑">
-  <meta property="og:description" content="坐在沙发上，用 iPhone 当触控板、空中鼠标和键盘，操作接在电视上的电脑。">
-  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v={{STYLES_HASH}}">
-  <script src="main.js?v={{SCRIPT_HASH}}" defer></script>
+  <link rel="alternate" hreflang="{{ALT_LANG}}" href="{{ALT_HREF}}">
+  <link rel="icon" type="image/png" href="{{ROOT}}assets/favicon-64.png">
+  <link rel="apple-touch-icon" href="{{ROOT}}assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="{{ROOT}}styles.css?v={{STYLES_HASH}}">
+  <script src="{{ROOT}}main.js?v={{SCRIPT_HASH}}" defer></script>
 </head>
 <body>
-  <a class="skip-link" href="#main">跳到正文</a>
+  <a class="skip-link" href="#main">{{t:nav.skip}}</a>
 
-  <header class="site-header wrap">
-    <a class="brand" href="./">
-      <img class="brand__mark" src="assets/logo.svg" alt="" width="36" height="36">
-      <span class="brand__name">Sofa Tap</span>
-    </a>
-    <nav class="site-nav" aria-label="页面导航">
-      <ul>
-        <li><a href="#scenes">场景</a></li>
-        <li><a href="#connect">连接</a></li>
-        <li><a href="#platforms">下载</a></li>
-      </ul>
-    </nav>
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="./">
+        <img class="brand__mark" src="{{ROOT}}assets/sofatap-mark-256.webp" alt="" width="40" height="40">
+        <span class="brand__name">Sofatap</span>{{t:brand.nickname}}
+      </a>
+      <nav class="site-nav" aria-label="{{a:nav.label}}">
+        <ul>
+          <li><a href="#how">{{t:nav.how}}</a></li>
+          <li><a href="#download">{{t:nav.download}}</a></li>
+          <li><a href="#faq">{{t:nav.faq}}</a></li>
+        </ul>
+      </nav>
+      <a class="lang-switch" href="{{ALT_HREF}}" hreflang="{{ALT_LANG}}" lang="{{ALT_LANG}}">
+        <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 10h15M10 2.5c2.2 2.3 2.2 12.7 0 15M10 2.5c-2.2 2.3-2.2 12.7 0 15" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+        <span>{{t:lang.switch}}</span>
+      </a>
+    </div>
   </header>
 
   <main id="main" tabindex="-1">
-    <section class="hero wrap" aria-labelledby="hero-title">
+    <section class="hero" aria-labelledby="hero-title">
       <div class="hero__text">
-        <p class="eyebrow">坐下来，电脑在手上</p>
-        <h1 id="hero-title" class="hero__title">
-          <span>用 iPhone，</span>
-          <span>轻松操作<em>客厅电脑</em></span>
-        </h1>
-        <p class="lead">电脑接在电视上，人窝在沙发里。Sofa Tap 让 iPhone 变成触控板、空中鼠标和键盘，不用再起身去够鼠标。</p>
+        <p class="eyebrow">{{t:hero.eyebrow}}</p>
+        <h1 id="hero-title">{{t:hero.title}}</h1>
+        <p class="lead">{{t:hero.lead}}</p>
+        <div class="hero__actions">
 {{MOBILE_ENTRY}}
-        <p class="hero__status">
-          <a href="#platforms">Windows 接收端 alpha 预览版已发布</a>
-          <span aria-hidden="true">·</span> <span class="hero__item">Mac 开发中</span>
-          <span aria-hidden="true">·</span> <span class="hero__item">Linux 规划中</span>
-        </p>
+          <a class="button button--ghost" href="#download">{{t:hero.desktop}}</a>
+        </div>
+        <p class="hero__note">{{t:hero.note}}</p>
       </div>
-
       <figure class="hero__art">
-        <svg class="scene-hero" viewBox="0 0 640 520" role="img" aria-labelledby="hero-art-title hero-art-desc">
-          <title id="hero-art-title">沙发上的人用 iPhone 操作客厅电脑</title>
-          <desc id="hero-art-desc">从沙发背后看过去：手机屏幕上是触控板，拇指一划，电视上的光标就移到了下一部影片上。电视显示的是旁边那台电脑的画面。</desc>
-          <defs>
-            <linearGradient id="h-wall" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#18202A"/>
-              <stop offset="1" stop-color="#10151B"/>
-            </linearGradient>
-            <radialGradient id="h-lamp" cx="0.5" cy="0.5" r="0.5">
-              <stop offset="0" stop-color="#FFE3B8" stop-opacity="0.34"/>
-              <stop offset="1" stop-color="#FFE3B8" stop-opacity="0"/>
-            </radialGradient>
-            <radialGradient id="h-tvglow" cx="0.5" cy="0.5" r="0.5">
-              <stop offset="0" stop-color="#B8F3D0" stop-opacity="0.13"/>
-              <stop offset="1" stop-color="#B8F3D0" stop-opacity="0"/>
-            </radialGradient>
-            <linearGradient id="h-screen" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#1D2E35"/>
-              <stop offset="1" stop-color="#121B22"/>
-            </linearGradient>
-            <clipPath id="h-room"><rect width="640" height="520" rx="28"/></clipPath>
-          </defs>
-          <g clip-path="url(#h-room)">
-            <rect width="640" height="520" fill="url(#h-wall)"/>
-            <rect y="338" width="640" height="182" fill="#0C1015"/>
-            <ellipse cx="380" cy="400" rx="250" ry="34" fill="#F4EBDD" opacity="0.05"/>
-
-            <!-- floor lamp -->
-            <circle cx="80" cy="128" r="190" fill="url(#h-lamp)"/>
-            <path d="M80 140v214" stroke="#3A3530" stroke-width="4" stroke-linecap="round"/>
-            <ellipse cx="80" cy="356" rx="26" ry="6" fill="#2C2824"/>
-            <path d="M46 132h68l-13-44H59z" fill="#F2E3C6"/>
-            <path d="M46 132h68" stroke="#FFF4DF" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
-
-            <!-- TV on the wall -->
-            <ellipse cx="421" cy="164" rx="230" ry="150" fill="url(#h-tvglow)"/>
-            <rect x="262" y="70" width="318" height="184" rx="10" fill="#05070A"/>
-            <rect x="270" y="78" width="302" height="168" rx="5" fill="url(#h-screen)"/>
-            <rect x="284" y="92" width="274" height="70" rx="6" fill="#26393E"/>
-            <path d="M284 146c40-22 70-26 104-8 30 16 58 10 90-8 30-16 60-12 80 4v22a6 6 0 0 1-6 6H290a6 6 0 0 1-6-6z" fill="#F4EBDD" opacity="0.12"/>
-            <circle cx="520" cy="114" r="12" fill="#F2E3C6" opacity="0.75"/>
-            <rect x="298" y="110" width="78" height="8" rx="4" fill="#F4EBDD" opacity="0.75"/>
-            <rect x="298" y="124" width="48" height="6" rx="3" fill="#F4EBDD" opacity="0.35"/>
-            <rect x="284" y="174" width="60" height="54" rx="5" fill="#4A3A30"/>
-            <rect x="352" y="174" width="60" height="54" rx="5" fill="#2E4B44"/>
-            <circle cx="382" cy="196" r="10" fill="#B8F3D0" opacity="0.35"/>
-            <rect x="420" y="174" width="60" height="54" rx="5" fill="#403A52"/>
-            <rect x="488" y="174" width="60" height="54" rx="5" fill="#2D3D4F"/>
-            <rect class="h-pick" x="348.5" y="170.5" width="67" height="61" rx="8" fill="none" stroke="#B8F3D0" stroke-width="3"/>
-            <rect x="270" y="236" width="302" height="10" fill="#0B1014" opacity="0.85"/>
-            <rect x="278" y="239" width="4" height="4" rx="1" fill="#F4EBDD" opacity="0.45"/>
-            <rect x="287" y="239" width="4" height="4" rx="1" fill="#F4EBDD" opacity="0.3"/>
-            <g class="h-cursor">
-              <path d="M388 202v19.5l4.8-4.5 3.8 8.6 3.4-1.5-3.8-8.5h6.6z" fill="#FBF6EE" stroke="#0A0D11" stroke-width="1.6" stroke-linejoin="round"/>
-            </g>
-
-            <!-- console, computer and cable -->
-            <path d="M488 262c0-8 12-8 14-8" stroke="#2A323B" stroke-width="3" fill="none" stroke-linecap="round"/>
-            <rect x="290" y="300" width="270" height="34" rx="6" fill="#2E2621"/>
-            <rect x="290" y="300" width="270" height="4" rx="2" fill="#4A3C31"/>
-            <rect x="302" y="334" width="6" height="10" rx="2" fill="#2E2621"/>
-            <rect x="542" y="334" width="6" height="10" rx="2" fill="#2E2621"/>
-            <rect x="470" y="262" width="38" height="38" rx="6" fill="#1E262E"/>
-            <rect x="470" y="262" width="38" height="38" rx="6" fill="none" stroke="#33404B"/>
-            <circle cx="499" cy="272" r="2.4" fill="#B8F3D0"/>
-            <rect x="477" y="286" width="16" height="3" rx="1.5" fill="#33404B"/>
-
-            <!-- plant -->
-            <path d="M604 300c-14-30-34-36-44-58 22 6 38 22 44 46 2-30 14-52 34-64-4 30-12 50-26 76z" fill="#3F6B55"/>
-            <rect x="590" y="296" width="34" height="44" rx="6" fill="#B9825A"/>
-
-            <!-- home network: phone to computer -->
-            <path class="h-link" d="M300 318c56 30 120 26 166-12" fill="none" stroke="#B8F3D0" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="1 9" opacity="0.8"/>
-
-            <!-- phone held above the sofa back -->
-            <g transform="translate(160 190)">
-              <rect width="136" height="262" rx="24" fill="#11161C" stroke="#2F3944" stroke-width="1.5"/>
-              <rect x="7" y="7" width="122" height="248" rx="18" fill="#0A0D11"/>
-              <rect x="50" y="14" width="36" height="9" rx="4.5" fill="#000"/>
-              <rect x="16" y="34" width="104" height="18" rx="9" fill="#161C23"/>
-              <rect x="18" y="36" width="34" height="14" rx="7" fill="#2E3842"/>
-              <rect x="16" y="62" width="104" height="122" rx="16" fill="#141920" stroke="#B8F3D0" stroke-opacity="0.3"/>
-              <rect x="102" y="70" width="10" height="106" rx="5" fill="#1F2830"/>
-              <rect x="16" y="192" width="32" height="28" rx="9" fill="#1C232A"/>
-              <rect x="52" y="192" width="32" height="28" rx="9" fill="#1C232A"/>
-              <rect x="88" y="192" width="32" height="28" rx="9" fill="#1C232A"/>
-              <g class="h-touch">
-                <circle cx="62" cy="128" r="16" fill="#B8F3D0" opacity="0.16"/>
-                <circle cx="62" cy="128" r="8" fill="#B8F3D0" opacity="0.55"/>
-                <path d="M74 130c12 20 26 52 62 88l-20 34c-34-30-56-66-60-102-1-12 12-28 18-20z" fill="#E7C7A2"/>
-                <path d="M62 120c4-6 14-4 15 3 2 9-2 15-8 15-6 0-10-10-7-18z" fill="#F2DBBE"/>
-              </g>
-            </g>
-
-            <!-- sofa back in the foreground -->
-            <rect x="-20" y="452" width="680" height="90" fill="#B39A73"/>
-            <rect x="-6" y="426" width="222" height="88" rx="32" fill="#D9C4A0"/>
-            <rect x="210" y="430" width="222" height="88" rx="32" fill="#D3BD98"/>
-            <rect x="426" y="426" width="230" height="88" rx="32" fill="#D9C4A0"/>
-            <path d="M24 440c50-10 120-10 170 0M240 444c50-10 120-10 170 0M456 440c50-10 120-10 170 0" stroke="#F1E3C8" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.6"/>
-          </g>
-        </svg>
+        <img src="{{ROOT}}assets/living-room-960.webp" srcset="{{ROOT}}assets/living-room-960.webp 960w, {{ROOT}}assets/living-room-1600.webp 1600w" sizes="(min-width: 60rem) 36rem, 100vw" width="1600" height="900" alt="{{a:hero.alt}}" fetchpriority="high">
+        <figcaption><span class="label">{{t:label.illustration}}</span> {{t:hero.caption}}</figcaption>
       </figure>
     </section>
 
-    <section id="scenes" class="scenes wrap" aria-labelledby="scenes-title">
-      <h2 id="scenes-title" class="section-title">窝在沙发里，就能做这三件事</h2>
-      <ol class="scene-list">
-        <li class="scene">
-          <div class="scene__art" aria-hidden="true">
-            <svg viewBox="0 0 320 220">
-              <rect x="44" y="14" width="232" height="140" rx="10" fill="#05070A"/>
-              <rect x="51" y="21" width="218" height="126" rx="5" fill="#16242B"/>
-              <rect x="63" y="33" width="44" height="46" rx="5" fill="#4A3A30"/>
-              <rect x="113" y="33" width="44" height="46" rx="5" fill="#2E4B44"/>
-              <rect x="163" y="33" width="44" height="46" rx="5" fill="#403A52"/>
-              <rect x="213" y="33" width="44" height="46" rx="5" fill="#2D3D4F"/>
-              <rect x="63" y="87" width="44" height="46" rx="5" fill="#2D3D4F"/>
-              <rect x="113" y="87" width="44" height="46" rx="5" fill="#4A3A30"/>
-              <rect x="163" y="87" width="44" height="46" rx="5" fill="#2E4B44"/>
-              <rect x="213" y="87" width="44" height="46" rx="5" fill="#403A52"/>
-              <circle cx="185" cy="54" r="9" fill="#F2E3C6" opacity="0.7"/>
-              <path d="M163 72l14-12 12 9 10-7 8 6v6a5 5 0 0 1-5 5h-34a5 5 0 0 1-5-5z" fill="#F4EBDD" opacity="0.2"/>
-              <rect class="s-pick" x="159.5" y="29.5" width="51" height="53" rx="7" fill="none" stroke="#B8F3D0" stroke-width="2.5"/>
-              <g class="s1-cursor"><path d="M196 62v15l3.7-3.5 2.9 6.6 2.7-1.2-2.9-6.5h5.1z" fill="#FBF6EE" stroke="#0A0D11" stroke-width="1.3" stroke-linejoin="round"/></g>
-              <rect x="128" y="154" width="64" height="8" rx="3" fill="#2E2621"/>
-              <g transform="translate(18 112)">
-                <rect width="62" height="104" rx="12" fill="#11161C" stroke="#2F3944"/>
-                <rect x="4" y="4" width="54" height="96" rx="9" fill="#0A0D11"/>
-                <rect x="9" y="20" width="44" height="54" rx="8" fill="#141920" stroke="#B8F3D0" stroke-opacity="0.35"/>
-                <path class="s1-swipe" d="M18 58c8-10 18-14 28-14" stroke="#B8F3D0" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/>
-                <circle cx="46" cy="44" r="5" fill="#B8F3D0"/>
-                <rect x="9" y="80" width="13" height="12" rx="4" fill="#1C232A"/>
-                <rect x="25" y="80" width="13" height="12" rx="4" fill="#1C232A"/>
-                <rect x="41" y="80" width="12" height="12" rx="4" fill="#1C232A"/>
-              </g>
-            </svg>
+    <section class="section section--surface" id="how" aria-labelledby="how-title">
+      <canvas class="dot-field" aria-hidden="true"></canvas>
+      <div class="section__inner split">
+        <figure class="phone">
+          <div class="phone__frame">
+            <img src="{{ROOT}}assets/single-screen-360.webp" srcset="{{ROOT}}assets/single-screen-360.webp 360w, {{ROOT}}assets/single-screen-720.webp 720w" sizes="18rem" width="720" height="1566" alt="{{a:how.alt}}" loading="lazy">
           </div>
-          <div class="scene__text">
-            <p class="scene__num">01 <span>选片</span></p>
-            <h3>不起身，也能挑部电影</h3>
-            <p>片单就在电视上。手指在 iPhone 上轻轻一划，光标跟着走；轻点是单击，旁边的滑条用来上下滚动。右键、按住拖动、Esc 和 Enter 也都在手边。</p>
-          </div>
-        </li>
-
-        <li class="scene">
-          <div class="scene__art" aria-hidden="true">
-            <svg viewBox="0 0 320 220">
-              <rect x="150" y="20" width="156" height="98" rx="8" fill="#05070A"/>
-              <rect x="156" y="26" width="144" height="86" rx="4" fill="#16242B"/>
-              <path class="s2-path" d="M176 92c26-40 62-50 96-34" stroke="#B8F3D0" stroke-width="2" stroke-dasharray="2 6" stroke-linecap="round" fill="none"/>
-              <path d="M268 52v15l3.7-3.5 2.9 6.6 2.7-1.2-2.9-6.5h5.1z" fill="#FBF6EE" stroke="#0A0D11" stroke-width="1.3" stroke-linejoin="round"/>
-              <g class="s2-phone">
-                <g transform="translate(50 54) rotate(-12)">
-                  <rect width="74" height="140" rx="14" fill="#11161C" stroke="#2F3944"/>
-                  <rect x="5" y="5" width="64" height="130" rx="10" fill="#0A0D11"/>
-                  <rect x="11" y="28" width="52" height="66" rx="10" fill="#B8F3D0"/>
-                  <path d="M37 50c-7 0-12 5-12 12M37 50c7 0 12 5 12 12" stroke="#0A0D11" stroke-width="2.4" stroke-linecap="round" fill="none"/>
-                  <circle cx="37" cy="66" r="4" fill="#0A0D11"/>
-                  <rect x="11" y="102" width="15" height="14" rx="4" fill="#1C232A"/>
-                  <rect x="30" y="102" width="15" height="14" rx="4" fill="#1C232A"/>
-                  <rect x="49" y="102" width="14" height="14" rx="4" fill="#1C232A"/>
-                </g>
-              </g>
-              <path d="M34 96c-8 18-8 38 0 56" stroke="#F2E3C6" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-              <path d="M28 146l6 8 7-7" stroke="#F2E3C6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-              <path d="M150 128c10 18 10 38 0 56" stroke="#F2E3C6" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-              <path d="M143 132l7-6 6 8" stroke="#F2E3C6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-            </svg>
-          </div>
-          <div class="scene__text">
-            <p class="scene__num">02 <span>移动光标</span></p>
-            <h3>滑一滑，或者按住转一转</h3>
-            <p>习惯触控板，就用手指滑。想更随意，就切到空中鼠标：按住按钮，轻轻转动手机，光标跟着手腕走；松手就停，换个舒服的姿势再按住。灵敏度可以自己调。</p>
-          </div>
-        </li>
-
-        <li class="scene">
-          <div class="scene__art" aria-hidden="true">
-            <svg viewBox="0 0 320 220">
-              <g transform="translate(20 20)">
-                <rect width="96" height="180" rx="16" fill="#11161C" stroke="#2F3944"/>
-                <rect x="5" y="5" width="86" height="170" rx="12" fill="#0A0D11"/>
-                <rect x="12" y="22" width="72" height="68" rx="10" fill="#141920" stroke="#B8F3D0" stroke-opacity="0.35"/>
-                <text x="19" y="44" class="svg-text" font-size="11" fill="#F4EBDD">周末看点</text>
-                <text x="19" y="60" class="svg-text" font-size="11" fill="#F4EBDD">轻松的电影</text>
-                <rect x="19" y="68" width="2" height="12" fill="#B8F3D0"/>
-                <rect x="12" y="98" width="72" height="22" rx="8" fill="#B8F3D0"/>
-                <path d="M43 113l9-8m-6 0h6v6" stroke="#0A0D11" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                <rect x="12" y="130" width="72" height="36" rx="8" fill="#161C23"/>
-                <rect x="43" y="138" width="10" height="15" rx="5" fill="none" stroke="#F2E3C6" stroke-width="1.8"/>
-                <path d="M40 150c0 5 4 8 8 8s8-3 8-8M48 158v4" stroke="#F2E3C6" stroke-width="1.8" stroke-linecap="round" fill="none"/>
-              </g>
-              <path class="s3-flow" d="M124 128c30 0 40-34 70-34" stroke="#B8F3D0" stroke-width="2.5" stroke-dasharray="1 8" stroke-linecap="round" fill="none"/>
-              <rect x="176" y="34" width="132" height="98" rx="8" fill="#05070A"/>
-              <rect x="182" y="40" width="120" height="86" rx="4" fill="#16242B"/>
-              <rect x="188" y="54" width="108" height="22" rx="11" fill="#F4EBDD"/>
-              <circle cx="199" cy="65" r="3.6" fill="none" stroke="#0A0D11" stroke-width="1.5"/>
-              <text x="207" y="68.5" class="svg-text s3-typed" font-size="9" fill="#0A0D11">周末看点轻松的电影</text>
-              <rect x="192" y="86" width="60" height="6" rx="3" fill="#F4EBDD" opacity="0.3"/>
-              <rect x="192" y="98" width="84" height="6" rx="3" fill="#F4EBDD" opacity="0.2"/>
-              <rect x="222" y="132" width="40" height="8" rx="3" fill="#2E2621"/>
-            </svg>
-          </div>
-          <div class="scene__text">
-            <p class="scene__num">03 <span>输入文字</span></p>
-            <h3>在手机上写好，再发到电脑</h3>
-            <p>搜片名、填网址、回一句话：在 iPhone 的文字框里用原生键盘打字，或者用系统听写说出来。改好以后点“发送整段文字”，文字会输入到电脑上当前选中的输入框。</p>
-            <p class="scene__aside">点发送之前，草稿只留在手机上。发送不会替你按回车，需要时再单独点 Enter。</p>
-          </div>
-        </li>
-      </ol>
-    </section>
-
-    <section id="connect" class="connect" aria-labelledby="connect-title">
-      <div class="wrap connect__inner">
-        <div class="connect__text">
-          <h2 id="connect-title" class="section-title">同一个家庭网络，扫码就连上</h2>
-          <ol class="steps">
-            <li><strong>电脑上打开接收端</strong><span>在客厅电脑上运行 Sofa Tap 接收端，屏幕上会出现配对二维码。</span></li>
-            <li><strong>连到同一个家庭网络</strong><span>iPhone 连家里的 Wi‑Fi，电脑连 Wi‑Fi 或插网线都可以。</span></li>
-            <li><strong>用 iPhone 扫一下</strong><span>打开 Sofa Tap App 扫描二维码，配对完成。</span></li>
-          </ol>
-          <p class="note">连接经过加密，手机只连接扫码配对过的那台电脑。二维码里含有连接凭据，只用自己的手机扫，不要拍照分享。访客 Wi‑Fi 可能会阻止设备之间互相连接。</p>
-        </div>
-        <div class="connect__art" aria-hidden="true">
-          <svg viewBox="0 0 300 240">
-            <rect x="20" y="30" width="170" height="112" rx="10" fill="#0A0D11"/>
-            <rect x="27" y="37" width="156" height="98" rx="5" fill="#1A252C"/>
-            <g fill="none" stroke="#B8F3D0" stroke-width="4" stroke-linecap="round">
-              <path d="M78 58h-10v10M132 58h10v10M78 114h-10v-10M132 114h10v-10"/>
-            </g>
-            <g fill="#F4EBDD" opacity="0.85">
-              <rect x="80" y="70" width="12" height="12" rx="2"/>
-              <rect x="118" y="70" width="12" height="12" rx="2"/>
-              <rect x="80" y="90" width="12" height="12" rx="2"/>
-              <rect x="100" y="80" width="8" height="8" rx="2" opacity="0.6"/>
-              <rect x="112" y="94" width="8" height="8" rx="2" opacity="0.6"/>
-            </g>
-            <rect x="92" y="142" width="26" height="14" fill="#0A0D11"/>
-            <rect x="70" y="156" width="70" height="7" rx="3.5" fill="#0A0D11"/>
-            <path d="M196 92c18-14 36-14 54 0M206 102c11-8 23-8 34 0" stroke="#0A0D11" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.55"/>
-            <g transform="translate(208 110)">
-              <rect width="66" height="120" rx="13" fill="#0A0D11"/>
-              <rect x="5" y="5" width="56" height="110" rx="9" fill="#1A252C"/>
-              <path d="M18 34h-6v6M48 34h6v6M18 76h-6v-6M48 76h6v-6" stroke="#B8F3D0" stroke-width="3" stroke-linecap="round" fill="none"/>
-              <rect x="12" y="54" width="42" height="3" rx="1.5" fill="#B8F3D0"/>
-              <rect x="13" y="92" width="40" height="14" rx="7" fill="#B8F3D0"/>
-            </g>
-          </svg>
+          <figcaption><span class="label">{{t:label.preview}}</span> {{t:how.caption}}</figcaption>
+        </figure>
+        <div class="split__text">
+          <p class="eyebrow">{{t:how.eyebrow}}</p>
+          <h2 class="section-title" id="how-title">{{t:how.title}}</h2>
+          <p class="section-lead">{{t:how.lead}}</p>
+          <p class="dev-note"><span class="label label--dev">{{t:label.dev}}</span> {{t:how.dev}}</p>
+          <dl class="gestures">
+            <div class="gesture">
+              <svg class="gesture__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M9 34c8-2 15-9 21-20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 5"/><circle cx="33" cy="12" r="6" fill="currentColor"/></svg>
+              <dt>{{t:gesture.slide}}</dt>
+              <dd>{{t:gesture.slide.result}}</dd>
+            </div>
+            <div class="gesture">
+              <svg class="gesture__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="24" cy="24" r="6" fill="currentColor"/><circle cx="24" cy="24" r="12" fill="none" stroke="currentColor" stroke-width="2" opacity=".6"/></svg>
+              <dt>{{t:gesture.tap}}</dt>
+              <dd>{{t:gesture.tap.result}}</dd>
+            </div>
+            <div class="gesture">
+              <svg class="gesture__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="24" cy="24" r="6" fill="currentColor"/><circle cx="24" cy="24" r="12" fill="none" stroke="currentColor" stroke-width="2" opacity=".6"/><circle cx="24" cy="24" r="18" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"/></svg>
+              <dt>{{t:gesture.double}}</dt>
+              <dd>{{t:gesture.double.result}}</dd>
+            </div>
+            <div class="gesture">
+              <svg class="gesture__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="18" cy="26" r="6" fill="currentColor"/><path d="M18 14a12 12 0 0 1 11.6 9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M30 34h10m-4-4 4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <dt>{{t:gesture.hold}}</dt>
+              <dd>{{t:gesture.hold.result}}</dd>
+            </div>
+            <div class="gesture">
+              <svg class="gesture__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="17" cy="24" r="5.5" fill="currentColor"/><circle cx="31" cy="24" r="5.5" fill="currentColor"/><path d="M24 6v8m-3-5 3-3 3 3M24 42v-8m-3 5 3 3 3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <dt>{{t:gesture.scroll}}</dt>
+              <dd>{{t:gesture.scroll.result}}</dd>
+            </div>
+          </dl>
+          <p class="fineprint">{{t:how.note}}</p>
         </div>
       </div>
     </section>
 
-    <section id="platforms" class="platforms wrap" aria-labelledby="platforms-title">
-      <h2 id="platforms-title" class="section-title">现在能在哪里用</h2>
-      <p class="section-lead">需要两样东西：iPhone 上的 Sofa Tap App，和客厅电脑上的 Sofa Tap 接收端。</p>
-      <ul class="platform-list">
-        <li class="platform" data-status="{{IPHONE_STATE}}">
-          <div class="platform__head">
-            <h3>iPhone</h3>
-            <p class="badge"><span class="badge__icon" aria-hidden="true"></span>{{IPHONE_STATUS}}</p>
-          </div>
-          <p>需要 iOS 17 或更高版本。手机端的安装入口在页面顶部。</p>
-        </li>
-        <li class="platform" data-status="available">
-          <div class="platform__head">
-            <h3>Windows 电脑</h3>
-            <p class="badge"><span class="badge__icon" aria-hidden="true"></span>alpha 预览版</p>
-          </div>
-          <p><a class="text-link" href="https://github.com/chekusu/sofatap/releases/tag/v0.1.1-alpha">下载 Windows 接收端 v0.1.1-alpha</a></p>
-          <p class="platform__note">这是早期 alpha 预览版，可能会遇到问题。{{RECEIVER_NOTE}}</p>
-        </li>
-        <li class="platform" data-status="progress">
-          <div class="platform__head">
-            <h3>Mac 电脑</h3>
-            <p class="badge"><span class="badge__icon" aria-hidden="true"></span>开发中</p>
-          </div>
-          <p>Mac 接收端正在开发，暂时还没有下载。</p>
-        </li>
-        <li class="platform" data-status="planned">
-          <div class="platform__head">
-            <h3>Linux 电脑</h3>
-            <p class="badge"><span class="badge__icon" aria-hidden="true"></span>规划中</p>
-          </div>
-          <p>已在计划里，暂时还没有下载。</p>
-        </li>
-      </ul>
+    <section class="section" id="type" aria-labelledby="type-title">
+      <div class="section__inner">
+        <p class="eyebrow">{{t:type.eyebrow}}</p>
+        <h2 class="section-title" id="type-title">{{t:type.title}}</h2>
+        <p class="section-lead">{{t:type.lead}}</p>
+        <p class="dev-note"><span class="label label--dev">{{t:label.dev}}</span> {{t:type.dev}}</p>
+        <ol class="steps">
+          <li class="step">
+            <span class="step__icon" aria-hidden="true"><svg viewBox="0 0 32 32" focusable="false"><rect x="12" y="5" width="8" height="14" rx="4" fill="currentColor"/><path d="M8 15a8 8 0 0 0 16 0M16 23v4m-4 0h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+            <h3>{{t:type.step1.title}}</h3>
+            <p>{{t:type.step1.body}}</p>
+          </li>
+          <li class="step">
+            <span class="step__icon" aria-hidden="true"><svg viewBox="0 0 32 32" focusable="false"><rect x="4" y="8" width="24" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 16h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M22 12v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+            <h3>{{t:type.step2.title}}</h3>
+            <p>{{t:type.step2.body}}</p>
+          </li>
+          <li class="step">
+            <span class="step__icon" aria-hidden="true"><svg viewBox="0 0 32 32" focusable="false"><path d="M5 15.5 27 6l-8 21-4.2-8.6L5 15.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m14.8 18.4 5.4-5.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+            <h3>{{t:type.step3.title}}</h3>
+            <p>{{t:type.step3.body}}</p>
+          </li>
+        </ol>
+        <p class="callout">{{t:type.keyboard}}</p>
+      </div>
     </section>
 
-    <section id="open-source" class="open-source wrap" aria-labelledby="open-source-title">
-      <h2 id="open-source-title" class="section-title">开源，代码都看得见</h2>
-      <p>Sofa Tap 由 chekusu 开发。iPhone App 和电脑接收端的源码都在 GitHub 公开，采用 MIT 许可。</p>
-      <p><a class="text-link" href="https://github.com/chekusu/sofatap">在 GitHub 查看源码</a></p>
+    <section class="section section--surface" id="setup" aria-labelledby="setup-title">
+      <div class="section__inner split split--even">
+        <div>
+          <p class="eyebrow">{{t:setup.eyebrow}}</p>
+          <h2 class="section-title" id="setup-title">{{t:setup.title}}</h2>
+          <ol class="setup">
+            <li><h3>{{t:setup.step1.title}}</h3><p>{{t:setup.step1.body}}</p></li>
+            <li><h3>{{t:setup.step2.title}}</h3><p>{{t:setup.step2.body}}</p></li>
+            <li><h3>{{t:setup.step3.title}}</h3><p>{{t:setup.step3.body}}</p></li>
+          </ol>
+        </div>
+        <div class="privacy" aria-labelledby="privacy-title" role="group">
+          <h3 id="privacy-title">{{t:privacy.title}}</h3>
+          <ul>
+            <li>{{t:privacy.network}}</li>
+            <li>{{t:privacy.mic}}</li>
+            <li>{{t:privacy.send}}</li>
+            <li>{{t:privacy.code}}</li>
+          </ul>
+        </div>
+      </div>
     </section>
 
-    <section id="faq" class="faq wrap" aria-labelledby="faq-title">
-      <h2 id="faq-title" class="section-title">常见问题</h2>
-      <div class="faq__list">
-        <details>
-          <summary>手机上会显示电视画面吗？</summary>
-          <p>不会。电视显示的是电脑本身的画面，Sofa Tap 只把你在手机上的操作、以及你确认发送的文字传给电脑。</p>
-        </details>
-        <details>
-          <summary>需要蓝牙或者注册账号吗？</summary>
-          <p>都不需要。手机和电脑在同一个家庭网络里直接连接，扫码配对即可。目前还不能通过蓝牙连接。</p>
-        </details>
-        <details>
-          <summary>可以用语音输入吗？</summary>
-          <p>手机上的文字框是 iPhone 标准输入框，可以用 iOS 系统听写。如果你装了 Typeless 等第三方键盘，也可以试着在这里切换使用，但它们是否都能正常工作还没有经过验证。无论用哪种方式，文字都先出现在手机上，你点发送才会输入到电脑。</p>
-        </details>
-        <details>
-          <summary>我的输入会被录下来吗？</summary>
-          <p>Sofa Tap 不录制麦克风声音，只发送控制操作和你明确发送的文字。系统听写和第三方键盘有各自的数据处理方式，请以它们的说明为准。</p>
-        </details>
-        <details>
-          <summary>有哪些情况可能用不了？</summary>
-          <p>电脑需要登录到桌面。锁屏界面、系统权限确认窗口、部分游戏和阻止模拟输入的软件可能无法操作。手机显示“已发送”表示电脑收到了输入，不代表软件已经保存或提交。</p>
-        </details>
+    <section class="section" id="download" aria-labelledby="download-title">
+      <div class="section__inner">
+        <p class="eyebrow">{{t:download.eyebrow}}</p>
+        <h2 class="section-title" id="download-title">{{t:download.title}}</h2>
+        <p class="section-lead">{{t:download.lead}}</p>
+        <div class="platforms">
+          <article class="platform platform--iphone" id="platform-iphone" data-state="{{IPHONE_STATE}}" aria-labelledby="platform-iphone-title">
+            <div class="platform__head">
+              <h3 id="platform-iphone-title">iPhone</h3>
+              <span class="tag tag--status">{{IPHONE_STATUS}}</span>
+            </div>
+            <p class="platform__req">{{t:platform.iphone.req}}</p>
+            <p class="platform__note">{{IPHONE_NOTE}}</p>
+            <p class="platform__links"><a href="https://github.com/chekusu/sofatap/blob/main/ios/README.md">{{t:platform.iphone.source}}</a></p>
+          </article>
+{{DESKTOP_DOWNLOADS}}
+        </div>
+        <p class="callout callout--quiet">{{t:download.preview}}</p>
+      </div>
+    </section>
+
+    <section class="section section--surface" id="faq" aria-labelledby="faq-title">
+      <div class="section__inner faq">
+        <h2 class="section-title" id="faq-title">{{t:faq.title}}</h2>
+        <details><summary>{{t:faq.screen.q}}</summary><p>{{t:faq.screen.a}}</p></details>
+        <details><summary>{{t:faq.network.q}}</summary><p>{{t:faq.network.a}}</p></details>
+        <details><summary>{{t:faq.enter.q}}</summary><p>{{t:faq.enter.a}}</p></details>
+        <details><summary>{{t:faq.keyboard.q}}</summary><p>{{t:faq.keyboard.a}}</p></details>
+        <details><summary>{{t:faq.ready.q}}</summary><p>{{t:faq.ready.a}}</p></details>
+      </div>
+    </section>
+
+    <section class="section open-source" aria-labelledby="oss-title">
+      <div class="section__inner open-source__inner">
+        <img src="{{ROOT}}assets/sofatap-mark-256.webp" alt="" width="72" height="72" loading="lazy">
+        <div>
+          <h2 class="section-title" id="oss-title">{{t:oss.title}}</h2>
+          <p>{{t:oss.body}}</p>
+        </div>
+        <a class="button button--ghost" href="https://github.com/chekusu/sofatap">{{t:oss.link}}</a>
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <div class="wrap site-footer__inner">
-      <p class="site-footer__brand"><img src="assets/logo.svg" alt="" width="28" height="28"> Sofa Tap · chekusu</p>
+    <div class="site-footer__inner">
+      <p class="site-footer__brand"><img src="{{ROOT}}assets/sofatap-mark-256.webp" alt="" width="28" height="28" loading="lazy"> Sofatap{{t:footer.nickname}}</p>
       <ul class="site-footer__links">
-        <li><a href="https://github.com/chekusu/sofatap">GitHub 源码</a></li>
-        <li><a href="https://github.com/chekusu/sofatap/releases/tag/v0.1.1-alpha">Windows 接收端</a></li>
+        <li><a href="https://github.com/chekusu/sofatap">GitHub</a></li>
+        <li><a href="https://github.com/chekusu/sofatap/releases">{{t:footer.releases}}</a></li>
+        <li><a href="https://github.com/chekusu/sofatap/issues">{{t:footer.issues}}</a></li>
+        <li><a href="https://github.com/chekusu/sofatap/blob/main/LICENSE">{{t:footer.license}}</a></li>
       </ul>
-      <p class="site-footer__legal">iPhone、TestFlight 和 App Store 是 Apple Inc. 的商标；Windows 是 Microsoft Corporation 的商标。</p>
+      <p class="site-footer__legal">{{t:footer.legal}}</p>
     </div>
   </footer>
 </body>
