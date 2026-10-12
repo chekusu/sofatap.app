@@ -4,7 +4,7 @@
 // shared download files, and confirms every copied file is byte-identical to its source.
 // Usage: node scripts/prepare-deploy.mjs [--dist dist]
 import { createHash } from 'node:crypto';
-import { copyFile, lstat, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, lstat, mkdir, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PAGES, mediaPosterFor, mediaVideoFor, mediaVttFor } from './build.mjs';
@@ -33,6 +33,16 @@ async function listFiles(dir, base = dir) {
 
 const sha256 = async (file) => createHash('sha256').update(await readFile(file)).digest('hex');
 
+/** Every public file of a release build: the pages, scripts and styles, source assets, media and exports. */
+export async function publicFiles() {
+  const list = PAGES.map((p) => `${p.dir ? `${p.dir}/` : ''}index.html`);
+  list.push('demo-core.js', 'main.js', 'styles.css');
+  for (const name of await listFiles(path.join(ROOT, 'src', 'assets'))) list.push(`assets/${name}`);
+  for (const p of PAGES) list.push(`media/${mediaVideoFor(p.lang)}`, `media/${mediaPosterFor(p.lang)}`, `media/${mediaVttFor(p.lang)}`);
+  for (const name of EXPORTS) list.push(`exports/${name}`);
+  return new Set(list);
+}
+
 /** Checks that a build is the complete, media-inclusive site; returns its public files. */
 export async function checkBuild(dist) {
   let info;
@@ -40,6 +50,7 @@ export async function checkBuild(dist) {
   if (!info.isDirectory()) throw new Error(`${dist} 不是目录`);
   const files = (await listFiles(dist)).filter((f) => !EXCLUDE.has(f));
   const have = new Set(files);
+  const expected = await publicFiles();
   const cues = (await loadCues()).cues.length;
   const problems = [];
   const need = async (rel, check) => {
@@ -68,17 +79,37 @@ export async function checkBuild(dist) {
     }
   }
   for (const name of EXPORTS) await need(`exports/${name}`, mp4);
-  if (have.has('_headers')) problems.push('构建里已有 _headers；生产规则由本脚本写入');
+  // Only the site's own public files are published: anything else (a private note, .env,
+  // _redirects or _headers) stops the release instead of being uploaded.
+  for (const rel of files) if (!expected.has(rel)) problems.push(`不应发布的文件：${rel}`);
   if (problems.length) throw new Error(`构建不完整，拒绝准备发布（不会自动重新构建）：\n- ${problems.join('\n- ')}`);
   return files;
 }
 
 /** Copies the checked build into `out` unchanged, adds _headers, and verifies the copy. */
-export async function prepareDeploy({ dist = path.join(ROOT, 'dist'), out = DEPLOY_DIR } = {}) {
+// The output is deleted and rewritten: it must sit inside `base` with no symbolic link on the
+// way down (a linked .wrangler could otherwise point the delete elsewhere).
+async function checkOutput(out, base) {
+  const inside = (a, b) => a.startsWith(b + path.sep);
+  if (!inside(out, base)) throw new Error(`发布目录必须在 ${base} 之内`);
+  for (let p = out; p !== base; p = path.dirname(p)) {
+    let info = null;
+    try { info = await lstat(p); } catch { /* not created yet */ }
+    if (info?.isSymbolicLink()) throw new Error(`拒绝经过符号链接的发布目录：${p}`);
+    if (info && !info.isDirectory()) throw new Error(`${p} 不是目录`);
+  }
+}
+
+export async function prepareDeploy({ dist = path.join(ROOT, 'dist'), out = DEPLOY_DIR, base = ROOT } = {}) {
   dist = path.resolve(dist);
   out = path.resolve(out);
+  base = path.resolve(base);
+  await checkOutput(out, base);
+  // Overlap is judged on real paths, so links cannot hide it.
+  const real = async (p) => { for (let q = p, rest = ''; ; rest = path.join(path.basename(q), rest), q = path.dirname(q)) { try { return path.join(await realpath(q), rest); } catch { if (q === path.dirname(q)) return p; } } };
+  const [rd, ro] = await Promise.all([real(dist), real(out)]);
   const inside = (a, b) => a === b || a.startsWith(b + path.sep);
-  if (inside(out, dist) || inside(dist, out)) throw new Error('发布目录不能与构建目录重叠');
+  if (inside(ro, rd) || inside(rd, ro)) throw new Error('发布目录不能与构建目录重叠');
   const files = await checkBuild(dist);
   await rm(out, { recursive: true, force: true });
   let bytes = 0;
