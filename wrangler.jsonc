@@ -1,0 +1,16 @@
+// Production: Cloudflare Workers Static Assets only (no Worker code). Deploy a reviewed,
+// media-inclusive build with `npm run deploy:prepare` and then `wrangler deploy` (see README).
+{
+  "name": "sofatap-website",
+  "compatibility_date": "2026-10-12",
+  "assets": {
+    "directory": "./.wrangler/production-assets",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none"
+  },
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "sofatap.app", "custom_domain": true }
+  ]
+}

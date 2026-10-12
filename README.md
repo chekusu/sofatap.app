@@ -137,6 +137,27 @@ node scripts/check.mjs --media <网站用视频目录>
 - 模拟演示只在有动作时绘制，空闲时不占用动画帧；减少动态效果时没有自动播放和连续动画，但所有操作仍然有效。
 - 系统开启「减少动态效果」，或浏览器无法创建画布时，点阵保持为静态 CSS 图案。画布不可用不会影响演示的操作。
 
+## 发布到 sofatap.app
+
+生产环境是 Cloudflare Workers Static Assets（只有静态文件，没有 Worker 代码），配置在 `wrangler.jsonc`：Worker 名 `sofatap-website`，自定义域名 `sofatap.app`，不开 workers.dev 和预览地址，HTML 自动处理末尾斜杠，没有单页应用回退。
+
+发布的是已经审核过、含视频的构建，不要为发布重新运行不带 `--media` 的 `npm run build`（那样的构建没有视频区）：
+
+```sh
+# 1. 含媒体的构建（已审核的 dist/ 就是这样得到的）
+node scripts/build.mjs --out dist --media <网站用视频目录>
+#    并把两个分享用的宣传视频放进 dist/exports/（sofatap-promo-en.mp4、sofatap-promo-zh-cn.mp4）
+
+# 2. 检查并原样复制到 .wrangler/production-assets/（已在 .gitignore 中）
+npm run deploy:prepare            # 或 node scripts/prepare-deploy.mjs --dist <构建目录>
+
+# 3. 发布（需要有权限的 Cloudflare 登录）
+wrangler deploy --dry-run         # 只检查配置和文件，不上传
+wrangler deploy
+```
+
+`deploy:prepare` 不会构建：12 种语言的视频、封面和 18 条字幕的 WebVTT、两个宣传视频缺一不可，否则直接失败。它不复制构建记录 `.sofatap-build`，逐字节核对复制结果，并只加一份 `_headers`：`/exports/` 下的两个宣传视频以附件方式下载；网站 `/media/` 里的视频照常在页面内播放。MIME、分段请求和缓存使用平台默认。
+
 ## 文件
 
 | 路径 | 内容 |
@@ -148,7 +169,8 @@ node scripts/check.mjs --media <网站用视频目录>
 | `src/releases.json` | 电脑端发行包 |
 | `src/styles.css`、`src/main.js` | 样式；语言菜单、模拟演示和点阵（均为渐进增强） |
 | `src/assets/` | 标志和产品图片 |
-| `scripts/` | 语言清单、构建、配置与发行包校验、字幕、静态检查、预览服务器 |
+| `scripts/` | 语言清单、构建、配置与发行包校验、字幕、静态检查、预览服务器、发布准备 |
+| `wrangler.jsonc` | 生产发布配置（Cloudflare Workers Static Assets） |
 | `tools/film/` | 演示视频的录制、配音稿、旁白合成与字幕烧录 |
 | `tools/brand/` | 文字标志生成脚本 |
 | `tests/` | `node:test` 单元测试 |
