@@ -41,6 +41,9 @@ before(async () => {
   await mkdir(path.join(dist, 'assets'), { recursive: true });
   await writeFile(path.join(dist, 'index.html'), '<title>fixture</title>');
   await writeFile(path.join(dist, 'assets', 'a.svg'), '<svg/>');
+  await mkdir(path.join(dist, 'media'));
+  await writeFile(path.join(dist, 'media', 'v.mp4'), Buffer.from('0123456789'));
+  await writeFile(path.join(dist, 'media', 'c.vtt'), 'WEBVTT\n');
   await mkdir(path.join(dist, 'zh'));
   await writeFile(path.join(dist, 'zh', 'index.html'), '<title>zh fixture</title>');
   await mkdir(path.join(tmp, 'dist-private'));
@@ -104,4 +107,20 @@ test('directories redirect to a trailing slash, never to another host', async ()
   } finally {
     proc.kill();
   }
+});
+
+test('videos and subtitles have their MIME types and byte ranges', async () => {
+  const whole = await fetch(new URL('/media/v.mp4', origin));
+  assert.equal(whole.headers.get('content-type'), 'video/mp4');
+  assert.equal(whole.headers.get('accept-ranges'), 'bytes');
+  assert.equal((await fetch(new URL('/media/c.vtt', origin))).headers.get('content-type'), 'text/vtt; charset=utf-8');
+  const part = await fetch(new URL('/media/v.mp4', origin), { headers: { Range: 'bytes=2-5' } });
+  assert.equal(part.status, 206);
+  assert.equal(part.headers.get('content-range'), 'bytes 2-5/10');
+  assert.equal(await part.text(), '2345');
+  const tail = await fetch(new URL('/media/v.mp4', origin), { headers: { Range: 'bytes=-3' } });
+  assert.equal(await tail.text(), '789');
+  const bad = await fetch(new URL('/media/v.mp4', origin), { headers: { Range: 'bytes=20-30' } });
+  assert.equal(bad.status, 416);
+  assert.equal(bad.headers.get('content-range'), 'bytes */10');
 });

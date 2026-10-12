@@ -1,0 +1,14 @@
+{
+  "duration": 25,
+  "label": { "key": "video.label", "start": 0, "end": 25 },
+  "cues": [
+    { "key": "video.cue.intro", "start": 0.3, "end": 3.2 },
+    { "key": "video.cue.setup", "start": 3.4, "end": 6.4 },
+    { "key": "video.cue.slide", "start": 6.5, "end": 9.4 },
+    { "key": "video.cue.tap", "start": 9.5, "end": 11.4 },
+    { "key": "video.cue.double", "start": 11.5, "end": 14.4 },
+    { "key": "video.cue.play", "start": 14.5, "end": 17.2 },
+    { "key": "video.cue.sofa", "start": 17.3, "end": 20.6 },
+    { "key": "video.cue.end", "start": 20.8, "end": 24.8 }
+  ]
+}

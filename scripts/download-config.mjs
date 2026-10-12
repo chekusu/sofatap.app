@@ -98,44 +98,96 @@ export function validateDownloadConfig(config) {
   return { kind, url: parsed.href };
 }
 
-export const LANGS = ['en', 'zh-CN'];
+// Languages come from the shared locale registry; every one needs all three states below.
+export { LANGS } from './locales.mjs';
 
-const COPY = {
+const state = (action, status, note) => ({ action, status, note });
+
+// The iPhone entry copy for each language. The unavailable state must never mention
+// TestFlight or the App Store; static checks enforce that on every built page.
+export const COPY = {
   en: {
-    unavailable: {
-      action: 'iPhone beta not open yet',
-      status: 'Beta not open yet',
-      note: 'There’s no confirmed public install link yet. Developers can build and install it from source with Xcode.',
-    },
-    testflight: {
-      action: 'Join the iPhone beta on TestFlight',
-      status: 'TestFlight beta',
-      note: 'The iPhone app is in beta testing through TestFlight.',
-    },
-    appstore: {
-      action: 'View on the App Store',
-      status: 'On the App Store',
-      note: 'Install the iPhone app from the App Store.',
-    },
+    unavailable: state('iPhone beta not open yet', 'Beta not open yet',
+      'There’s no confirmed public install link yet. Developers can build and install it from source with Xcode.'),
+    testflight: state('Join the iPhone beta on TestFlight', 'TestFlight beta', 'The iPhone app is in beta testing through TestFlight.'),
+    appstore: state('View on the App Store', 'On the App Store', 'Install the iPhone app from the App Store.'),
     meta: 'iPhone app · iOS 17 or later',
   },
   'zh-CN': {
-    unavailable: {
-      action: 'iPhone 测试版尚未开放',
-      status: '测试版尚未开放',
-      note: '暂无已确认的公开安装入口。开发者可以用 Xcode 从源码构建并安装。',
-    },
-    testflight: {
-      action: '通过 TestFlight 加入 iPhone 测试',
-      status: 'TestFlight 测试中',
-      note: 'iPhone App 正在通过 TestFlight 测试。',
-    },
-    appstore: {
-      action: '前往 App Store',
-      status: '可在 App Store 获取',
-      note: '从 App Store 安装 iPhone App。',
-    },
+    unavailable: state('iPhone 测试版尚未开放', '测试版尚未开放', '暂无已确认的公开安装入口。开发者可以用 Xcode 从源码构建并安装。'),
+    testflight: state('通过 TestFlight 加入 iPhone 测试', 'TestFlight 测试中', 'iPhone App 正在通过 TestFlight 测试。'),
+    appstore: state('前往 App Store', '可在 App Store 获取', '从 App Store 安装 iPhone App。'),
     meta: 'iPhone App · 需要 iOS 17 或更高版本',
+  },
+  es: {
+    unavailable: state('La beta para iPhone aún no está abierta', 'Beta aún no abierta',
+      'Todavía no hay un enlace público de instalación confirmado. Los desarrolladores pueden compilarla e instalarla desde el código fuente con Xcode.'),
+    testflight: state('Únete a la beta para iPhone en TestFlight', 'Beta en TestFlight', 'La app para iPhone está en pruebas beta a través de TestFlight.'),
+    appstore: state('Ver en la App Store', 'En la App Store', 'Instala la app para iPhone desde la App Store.'),
+    meta: 'App para iPhone · iOS 17 o posterior',
+  },
+  fr: {
+    unavailable: state('La bêta iPhone n’est pas encore ouverte', 'Bêta pas encore ouverte',
+      'Aucun lien d’installation public n’est encore confirmé. Les développeurs peuvent la compiler et l’installer depuis le code source avec Xcode.'),
+    testflight: state('Rejoindre la bêta iPhone sur TestFlight', 'Bêta TestFlight', 'L’app iPhone est en test bêta via TestFlight.'),
+    appstore: state('Voir sur l’App Store', 'Sur l’App Store', 'Installez l’app iPhone depuis l’App Store.'),
+    meta: 'App iPhone · iOS 17 ou version ultérieure',
+  },
+  de: {
+    unavailable: state('iPhone-Beta noch nicht geöffnet', 'Beta noch nicht geöffnet',
+      'Es gibt noch keinen bestätigten öffentlichen Installationslink. Entwickler können die App mit Xcode aus dem Quellcode bauen und installieren.'),
+    testflight: state('Bei der iPhone-Beta über TestFlight mitmachen', 'TestFlight-Beta', 'Die iPhone-App wird über TestFlight als Beta getestet.'),
+    appstore: state('Im App Store ansehen', 'Im App Store', 'Installiere die iPhone-App aus dem App Store.'),
+    meta: 'iPhone-App · iOS 17 oder neuer',
+  },
+  'pt-BR': {
+    unavailable: state('Beta para iPhone ainda não aberto', 'Beta ainda não aberto',
+      'Ainda não há um link público de instalação confirmado. Desenvolvedores podem compilar e instalar o app a partir do código-fonte com o Xcode.'),
+    testflight: state('Participe do beta para iPhone no TestFlight', 'Beta no TestFlight', 'O app para iPhone está em teste beta pelo TestFlight.'),
+    appstore: state('Ver na App Store', 'Na App Store', 'Instale o app para iPhone pela App Store.'),
+    meta: 'App para iPhone · iOS 17 ou posterior',
+  },
+  ja: {
+    unavailable: state('iPhone ベータ版はまだ公開されていません', 'ベータ版は未公開',
+      '確認済みの公開インストールリンクはまだありません。開発者は Xcode でソースコードからビルドしてインストールできます。'),
+    testflight: state('TestFlight で iPhone ベータ版に参加', 'TestFlight ベータ版', 'iPhone アプリは TestFlight でベータテスト中です。'),
+    appstore: state('App Store で見る', 'App Store で配信中', 'App Store から iPhone アプリをインストールしてください。'),
+    meta: 'iPhone アプリ · iOS 17 以降',
+  },
+  ko: {
+    unavailable: state('iPhone 베타는 아직 열리지 않았습니다', '베타 미공개',
+      '확인된 공개 설치 링크가 아직 없습니다. 개발자는 Xcode로 소스 코드에서 빌드해 설치할 수 있습니다.'),
+    testflight: state('TestFlight에서 iPhone 베타 참여하기', 'TestFlight 베타', 'iPhone 앱은 TestFlight를 통해 베타 테스트 중입니다.'),
+    appstore: state('App Store에서 보기', 'App Store에서 제공', 'App Store에서 iPhone 앱을 설치하세요.'),
+    meta: 'iPhone 앱 · iOS 17 이상',
+  },
+  ar: {
+    unavailable: state('النسخة التجريبية لتطبيق iPhone غير متاحة بعد', 'النسخة التجريبية غير متاحة بعد',
+      'لا يوجد بعد رابط تثبيت عام مؤكد. يمكن للمطورين بناء التطبيق وتثبيته من الشيفرة المصدرية باستخدام Xcode.'),
+    testflight: state('انضم إلى النسخة التجريبية لتطبيق iPhone عبر TestFlight', 'نسخة تجريبية عبر TestFlight', 'تطبيق iPhone قيد الاختبار التجريبي عبر TestFlight.'),
+    appstore: state('عرض في App Store', 'متوفر في App Store', 'ثبّت تطبيق iPhone من App Store.'),
+    meta: 'تطبيق iPhone · iOS 17 أو أحدث',
+  },
+  hi: {
+    unavailable: state('iPhone बीटा अभी शुरू नहीं हुआ है', 'बीटा अभी शुरू नहीं हुआ',
+      'अभी तक कोई पुष्ट सार्वजनिक इंस्टॉल लिंक नहीं है। डेवलपर Xcode से सोर्स कोड बिल्ड करके इसे इंस्टॉल कर सकते हैं।'),
+    testflight: state('TestFlight पर iPhone बीटा से जुड़ें', 'TestFlight बीटा', 'iPhone ऐप की TestFlight के ज़रिए बीटा टेस्टिंग चल रही है।'),
+    appstore: state('App Store पर देखें', 'App Store पर उपलब्ध', 'App Store से iPhone ऐप इंस्टॉल करें।'),
+    meta: 'iPhone ऐप · iOS 17 या उसके बाद का वर्शन',
+  },
+  ru: {
+    unavailable: state('Бета для iPhone ещё не открыта', 'Бета ещё не открыта',
+      'Подтверждённой публичной ссылки для установки пока нет. Разработчики могут собрать и установить приложение из исходного кода в Xcode.'),
+    testflight: state('Присоединиться к бете для iPhone в TestFlight', 'Бета в TestFlight', 'Приложение для iPhone проходит бета-тестирование в TestFlight.'),
+    appstore: state('Открыть в App Store', 'В App Store', 'Установите приложение для iPhone из App Store.'),
+    meta: 'Приложение для iPhone · iOS 17 или новее',
+  },
+  id: {
+    unavailable: state('Beta iPhone belum dibuka', 'Beta belum dibuka',
+      'Belum ada tautan instalasi publik yang terkonfirmasi. Pengembang dapat membangun dan memasangnya dari kode sumber dengan Xcode.'),
+    testflight: state('Ikut beta iPhone di TestFlight', 'Beta TestFlight', 'Aplikasi iPhone sedang diuji beta melalui TestFlight.'),
+    appstore: state('Lihat di App Store', 'Ada di App Store', 'Pasang aplikasi iPhone dari App Store.'),
+    meta: 'Aplikasi iPhone · iOS 17 atau lebih baru',
   },
 };
 

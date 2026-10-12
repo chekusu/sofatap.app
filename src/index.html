@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="{{LANG}}" class="no-js">
+<html lang="{{LANG}}" dir="{{DIR}}" class="no-js">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,10 +7,11 @@
   <meta name="description" content="{{a:meta.description}}">
   <meta name="theme-color" content="#11191B">
   <meta name="color-scheme" content="dark">
-  <link rel="alternate" hreflang="{{ALT_LANG}}" href="{{ALT_HREF}}">
+{{ALTERNATES}}
   <link rel="icon" type="image/png" href="{{ROOT}}assets/favicon-64.png">
   <link rel="apple-touch-icon" href="{{ROOT}}assets/apple-touch-icon.png">
   <link rel="stylesheet" href="{{ROOT}}styles.css?v={{STYLES_HASH}}">
+  <script src="{{ROOT}}demo-core.js?v={{CORE_HASH}}" defer></script>
   <script src="{{ROOT}}main.js?v={{SCRIPT_HASH}}" defer></script>
 </head>
 <body>
@@ -29,10 +30,16 @@
           <li><a href="#faq">{{t:nav.faq}}</a></li>
         </ul>
       </nav>
-      <a class="lang-switch" href="{{ALT_HREF}}" hreflang="{{ALT_LANG}}" lang="{{ALT_LANG}}">
-        <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 10h15M10 2.5c2.2 2.3 2.2 12.7 0 15M10 2.5c-2.2 2.3-2.2 12.7 0 15" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
-        <span>{{t:lang.switch}}</span>
-      </a>
+      <details class="lang-menu">
+        <summary class="lang-menu__toggle">
+          <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 10h15M10 2.5c2.2 2.3 2.2 12.7 0 15M10 2.5c-2.2 2.3-2.2 12.7 0 15" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span class="visually-hidden">{{t:lang.label}}: </span><span class="lang-menu__name">{{LANG_SHORT}}</span>
+          <svg class="lang-menu__chevron" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m6 8 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </summary>
+        <ul class="lang-menu__list">
+{{LANG_LINKS}}
+        </ul>
+      </details>
     </div>
   </header>
 
@@ -56,50 +63,117 @@
 
     <section class="section section--surface" id="how" aria-labelledby="how-title">
       <canvas class="dot-field" aria-hidden="true"></canvas>
-      <div class="section__inner split">
-        <figure class="phone">
-          <div class="phone__frame">
-            <img src="{{ROOT}}assets/single-screen-360.webp" srcset="{{ROOT}}assets/single-screen-360.webp 360w, {{ROOT}}assets/single-screen-720.webp 720w" sizes="18rem" width="720" height="1566" alt="{{a:how.alt}}" loading="lazy">
-          </div>
-          <figcaption><span class="label">{{t:label.preview}}</span> {{t:how.caption}}</figcaption>
-        </figure>
-        <div class="split__text">
+      <div class="section__inner">
+        <div class="how__intro">
           <p class="eyebrow">{{t:how.eyebrow}}</p>
           <h2 class="section-title" id="how-title">{{t:how.title}}</h2>
           <p class="section-lead">{{t:how.lead}}</p>
           <p class="dev-note"><span class="label label--dev">{{t:label.dev}}</span> {{t:how.dev}}</p>
-          <dl class="gestures">
-            <div class="gesture">
-              <svg class="gesture__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M9 34c8-2 15-9 21-20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 5"/><circle cx="33" cy="12" r="6" fill="currentColor"/></svg>
-              <dt>{{t:gesture.slide}}</dt>
-              <dd>{{t:gesture.slide.result}}</dd>
-            </div>
-            <div class="gesture">
-              <svg class="gesture__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="24" cy="24" r="6" fill="currentColor"/><circle cx="24" cy="24" r="12" fill="none" stroke="currentColor" stroke-width="2" opacity=".6"/></svg>
-              <dt>{{t:gesture.tap}}</dt>
-              <dd>{{t:gesture.tap.result}}</dd>
-            </div>
-            <div class="gesture">
-              <svg class="gesture__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="24" cy="24" r="6" fill="currentColor"/><circle cx="24" cy="24" r="12" fill="none" stroke="currentColor" stroke-width="2" opacity=".6"/><circle cx="24" cy="24" r="18" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"/></svg>
-              <dt>{{t:gesture.double}}</dt>
-              <dd>{{t:gesture.double.result}}</dd>
-            </div>
-            <div class="gesture">
-              <svg class="gesture__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="18" cy="26" r="6" fill="currentColor"/><path d="M18 14a12 12 0 0 1 11.6 9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M30 34h10m-4-4 4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <dt>{{t:gesture.hold}}</dt>
-              <dd>{{t:gesture.hold.result}}</dd>
-            </div>
-            <div class="gesture">
-              <svg class="gesture__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="17" cy="24" r="5.5" fill="currentColor"/><circle cx="31" cy="24" r="5.5" fill="currentColor"/><path d="M24 6v8m-3-5 3-3 3 3M24 42v-8m-3 5 3 3 3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <dt>{{t:gesture.scroll}}</dt>
-              <dd>{{t:gesture.scroll.result}}</dd>
-            </div>
-          </dl>
-          <p class="fineprint">{{t:how.note}}</p>
         </div>
+
+        <figure class="demo" id="demo" aria-labelledby="demo-title">
+          <div class="demo__bar">
+            <p class="demo__title" id="demo-title"><span class="label label--sim">{{t:label.simulation}}</span> {{t:demo.title}}</p>
+            <button class="demo__play" type="button" hidden>
+              <svg class="demo__play-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M7 5.5v9l7.5-4.5z" fill="currentColor"/></svg>
+              <svg class="demo__stop-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="6" y="6" width="8" height="8" rx="1.5" fill="currentColor"/></svg>
+              <span class="demo__play-text">{{t:demo.play}}</span>
+            </button>
+          </div>
+          <div class="demo__stage">
+            <div class="tv-set">
+              <div class="tv" aria-hidden="true">
+                <div class="tv__screen">
+                  <div class="app">
+                    <div class="app__bar">
+                      <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="3" y="4.5" width="14" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 8v4l3.5-2z" fill="currentColor"/></svg>
+                      <span class="app__title">{{t:demo.library}}</span>
+                      <span class="app__dots"><i></i><i></i><i></i></span>
+                    </div>
+                    <div class="app__view">
+                      <ul class="app__grid">
+{{DEMO_TILES}}
+                      </ul>
+                    </div>
+                    <div class="player" hidden>
+                      <div class="player__art"></div>
+                      <div class="player__top">
+                        <span class="player__back" data-hit="back"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m12 5-5 5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>{{t:demo.player.back}}</span></span>
+                        <span class="player__label">{{t:demo.player.label}}</span>
+                      </div>
+                      <span class="player__toggle" data-hit="toggle"><svg class="player__pause" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M7 5v10M13 5v10" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><svg class="player__resume" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M7 5v10l8-5z" fill="currentColor"/></svg></span>
+                      <div class="player__foot">
+                        <p class="player__title"></p>
+                        <div class="player__bar"><span></span></div>
+                      </div>
+                    </div>
+                    <div class="menu" hidden>
+                      <span class="menu__item" data-hit="menu"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6.5 4.5v11l9-5.5z" fill="currentColor"/></svg><span class="menu__text"></span></span>
+                      <span class="menu__item" data-hit="menu"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M5.5 3.5h9v13l-4.5-3.2-4.5 3.2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span class="menu__text"></span></span>
+                      <span class="menu__item" data-hit="menu"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m4.5 10.5 3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu__text"></span></span>
+                    </div>
+                  </div>
+                  <svg class="cursor" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 2.5v17.2l4.6-4.5 3 6.6 3.1-1.4-3-6.5h6.4z" fill="#fff" stroke="#11191B" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+              <div class="tv-set__base" aria-hidden="true">
+                <span class="tv-set__stand"></span>
+                <span class="pc"><svg viewBox="0 0 64 28" aria-hidden="true" focusable="false"><path d="M2 20c10 0 14-8 22-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="24" y="5" width="38" height="18" rx="4" fill="#1E2A2C" stroke="currentColor" stroke-width="1.6"/><circle cx="54" cy="14" r="2" fill="#98E9C4"/><path d="M30 11h12M30 16h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".6"/></svg><span class="pc__label">{{t:demo.computer}}</span></span>
+              </div>
+            </div>
+            <div class="demo__phone">
+              <div class="phone__frame">
+                <div class="phone__screen">
+                <img src="{{ROOT}}assets/single-screen-360.webp" srcset="{{ROOT}}assets/single-screen-360.webp 360w, {{ROOT}}assets/single-screen-720.webp 720w" sizes="(min-width: 52rem) 15rem, 11rem" width="720" height="1566" alt="{{a:how.alt}}" loading="lazy">
+                <div class="pad" aria-label="{{a:demo.pad}}" aria-describedby="demo-keys demo-desc">
+                  <canvas class="pad__fx" aria-hidden="true"></canvas>
+                  <span class="pad__finger" aria-hidden="true"></span>
+                </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="demo__help">
+            <p class="demo__hint">{{t:demo.hint}}</p>
+            <p class="demo__keys" id="demo-keys">{{t:demo.keys}}</p>
+            <p class="visually-hidden" id="demo-desc">{{t:demo.tv}}</p>
+            <p class="demo__status" role="status">{{t:demo.s.ready}}</p>
+          </div>
+          <figcaption><span class="label label--sim">{{t:label.simulation}}</span> {{t:demo.caption}} <span class="label">{{t:label.preview}}</span> {{t:how.caption}}</figcaption>
+          <script type="application/json" id="demo-copy">{{DEMO_COPY}}</script>
+        </figure>
+
+        <dl class="gestures">
+          <div class="gesture" data-gesture="slide">
+            <svg class="gesture__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M9 34c8-2 15-9 21-20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 5"/><circle cx="33" cy="12" r="6" fill="currentColor"/></svg>
+            <dt>{{t:gesture.slide}}</dt>
+            <dd>{{t:gesture.slide.result}}</dd>
+          </div>
+          <div class="gesture" data-gesture="tap">
+            <svg class="gesture__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="24" cy="24" r="6" fill="currentColor"/><circle cx="24" cy="24" r="12" fill="none" stroke="currentColor" stroke-width="2" opacity=".6"/></svg>
+            <dt>{{t:gesture.tap}}</dt>
+            <dd>{{t:gesture.tap.result}}</dd>
+          </div>
+          <div class="gesture" data-gesture="double">
+            <svg class="gesture__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="24" cy="24" r="6" fill="currentColor"/><circle cx="24" cy="24" r="12" fill="none" stroke="currentColor" stroke-width="2" opacity=".6"/><circle cx="24" cy="24" r="18" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"/></svg>
+            <dt>{{t:gesture.double}}</dt>
+            <dd>{{t:gesture.double.result}}</dd>
+          </div>
+          <div class="gesture" data-gesture="hold">
+            <svg class="gesture__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="18" cy="26" r="6" fill="currentColor"/><path d="M18 14a12 12 0 0 1 11.6 9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M30 34h10m-4-4 4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <dt>{{t:gesture.hold}}</dt>
+            <dd>{{t:gesture.hold.result}}</dd>
+          </div>
+          <div class="gesture" data-gesture="scroll">
+            <svg class="gesture__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="17" cy="24" r="5.5" fill="currentColor"/><circle cx="31" cy="24" r="5.5" fill="currentColor"/><path d="M24 6v8m-3-5 3-3 3 3M24 42v-8m-3 5 3 3 3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <dt>{{t:gesture.scroll}}</dt>
+            <dd>{{t:gesture.scroll.result}}</dd>
+          </div>
+        </dl>
+        <p class="fineprint">{{t:how.note}}</p>
       </div>
     </section>
-
+{{VIDEO_SECTION}}
     <section class="section" id="type" aria-labelledby="type-title">
       <div class="section__inner">
         <p class="eyebrow">{{t:type.eyebrow}}</p>

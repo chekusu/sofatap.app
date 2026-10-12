@@ -5,8 +5,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { build, renderPage, resolveSafeOutDir, validateStrings } from '../scripts/build.mjs';
+import { MEDIA_BASE, MEDIA_POSTER, build, mediaVideoFor, renderPage, resolveSafeOutDir, validateStrings } from '../scripts/build.mjs';
 import { checkSite } from '../scripts/check.mjs';
+import { downloadCopy } from '../scripts/download-config.mjs';
+import { LANGS, LOCALES, hrefBetween } from '../scripts/locales.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'sofatap-test-'));
@@ -83,15 +85,40 @@ test('desktop downloads link the real release assets with architecture and alpha
   assert.match(html, /In development[\s\S]*In development[\s\S]*aren’t included yet/);
 });
 
-test('language pages: English default, Chinese in zh/, linked both ways', async () => {
-  const { html, zh } = await buildWith('langs', { mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' });
-  assert.match(html, /<html lang="en"/);
-  assert.match(zh, /<html lang="zh-CN"/);
-  assert.match(html, /<a class="lang-switch" href="zh\/" hreflang="zh-CN" lang="zh-CN">/);
-  assert.match(zh, /<a class="lang-switch" href="\.\.\/" hreflang="en" lang="en">/);
+test('language pages: twelve locales, English default, Chinese still in zh/, each linking to all others', async () => {
+  const { out, html, zh } = await buildWith('langs', { mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' });
+  assert.match(html, /<html lang="en" dir="ltr"/);
+  assert.match(zh, /<html lang="zh-CN" dir="ltr"/);
   assert.match(zh, /href="\.\.\/styles\.css\?v=/);
   assert.match(zh, /沙发瘫/);
   assert.doesNotMatch(html, /沙发瘫/);
+  for (const l of LOCALES) {
+    const page = await readFile(path.join(out, l.dir, 'index.html'), 'utf8');
+    assert.match(page, new RegExp(`<html lang="${l.lang}" dir="${l.rtl ? 'rtl' : 'ltr'}"`), l.lang);
+    for (const other of LOCALES) {
+      const href = hrefBetween(l.lang, other.lang);
+      assert.ok(page.includes(`<a href="${href}" hreflang="${other.lang}" lang="${other.lang}"`), `${l.lang} → ${other.lang}`);
+      assert.ok(page.includes(`<link rel="alternate" hreflang="${other.lang}" href="${href}">`), `${l.lang} alternate ${other.lang}`);
+    }
+    assert.equal(page.split('aria-current="page"').length - 1, 1, l.lang);
+    assert.ok(page.includes(`<span class="lang-menu__name">${l.short}</span>`), l.lang);
+  }
+  assert.equal(hrefBetween('en', 'zh-CN'), 'zh/');
+  assert.equal(hrefBetween('pt-BR', 'en'), '../');
+  assert.equal(hrefBetween('ar', 'ja'), '../ja/');
+  assert.equal(hrefBetween('fr', 'fr'), './');
+});
+
+test('every locale gets its own iPhone status in all three download states', async () => {
+  for (const lang of LANGS) {
+    for (const kind of ['unavailable', 'testflight', 'appstore']) {
+      const copy = downloadCopy(kind, lang);
+      for (const key of ['action', 'status', 'note', 'meta']) assert.ok(copy[key]?.trim(), `${lang} ${kind} ${key}`);
+      if (kind === 'unavailable') assert.doesNotMatch(`${copy.action} ${copy.status} ${copy.note}`, /TestFlight|App Store/, lang);
+      if (lang !== 'en') assert.notEqual(copy.action, downloadCopy(kind, 'en').action, `${lang} ${kind} falls back to English`);
+    }
+  }
+  assert.throws(() => downloadCopy('unavailable', 'xx'), /未知语言/);
 });
 
 test('string tables must match key for key and stay free of script', () => {
@@ -161,4 +188,60 @@ test('allows dist/, fresh temp directories and previous build output', async () 
   const { out, configPath } = await buildWith('rebuild', { mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' });
   await build({ config: configPath, out });
   assert.ok(existsSync(path.join(out, 'index.html')));
+});
+
+// A fake export: tiny files with the right signatures stand in for the real videos.
+async function fakeMedia(dir) {
+  await mkdir(dir, { recursive: true });
+  const mp4 = Buffer.concat([Buffer.from([0, 0, 0, 24]), Buffer.from('ftypisom'), Buffer.alloc(2000)]);
+  const jpg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(2000)]);
+  await writeFile(path.join(dir, MEDIA_POSTER), jpg);
+  for (const name of [MEDIA_BASE, ...LANGS.map(mediaVideoFor)]) await writeFile(path.join(dir, name), mp4);
+}
+
+test('with --media: video section, twelve subtitle tracks, page language on by default, real download links', async () => {
+  const media = path.join(tmp, 'media-src');
+  await fakeMedia(media);
+  const configPath = path.join(tmp, 'media.json');
+  await writeFile(configPath, JSON.stringify({ mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' }));
+  const out = path.join(tmp, 'with-media');
+  await build({ config: configPath, out, media });
+  for (const l of LOCALES) {
+    const page = await readFile(path.join(out, l.dir, 'index.html'), 'utf8');
+    const tracks = [...page.matchAll(/<track kind="subtitles" srclang="([^"]+)"[^>]*>/g)];
+    assert.equal(tracks.length, 12, l.lang);
+    assert.deepEqual(tracks.filter((t) => t[0].includes(' default')).map((t) => t[1]), [l.lang]);
+    assert.ok(page.includes(`href="${l.dir ? '../' : ''}media/${mediaVideoFor(l.lang)}" download`), l.lang);
+  }
+  const vtt = await readFile(path.join(out, 'media', 'sofatap-demo.ja.vtt'), 'utf8');
+  assert.match(vtt, /^WEBVTT/);
+  assert.match(vtt, /シミュレーション/);
+  assert.deepEqual((await checkSite(out)).problems, []);
+  // Without --media there is no video section and nothing links to media/.
+  const plain = await buildWith('no-media', { mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' });
+  assert.doesNotMatch(plain.html, /<video|media\//);
+});
+
+test('refuses a media directory inside (or containing) the output, without deleting anything', async () => {
+  const configPath = path.join(tmp, 'overlap.json');
+  await writeFile(configPath, JSON.stringify({ mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' }));
+  const out = path.join(tmp, 'overlap-out');
+  await build({ config: configPath, out });
+  const inside = path.join(out, 'media-export');
+  await fakeMedia(inside);
+  await assert.rejects(build({ config: configPath, out, media: inside }), /重叠/);
+  assert.ok(existsSync(path.join(inside, MEDIA_BASE)), 'source video kept');
+  assert.ok(existsSync(path.join(out, 'index.html')), 'previous output kept');
+  // The same directory through a symlinked alias, and an output inside the media directory.
+  await symlink(out, path.join(tmp, 'overlap-alias'));
+  await assert.rejects(build({ config: configPath, out, media: path.join(tmp, 'overlap-alias', 'media-export') }), /重叠/);
+  await assert.rejects(build({ config: configPath, out: path.join(inside, 'site'), media: inside }), /重叠/);
+  assert.ok(existsSync(path.join(inside, MEDIA_BASE)));
+  // Missing or malformed exports fail before any output is written.
+  const broken = path.join(tmp, 'broken-media');
+  await fakeMedia(broken);
+  await writeFile(path.join(broken, MEDIA_BASE), 'not a video'.repeat(200));
+  const fresh = path.join(tmp, 'broken-out');
+  await assert.rejects(build({ config: configPath, out: fresh, media: broken }), /格式不正确/);
+  assert.equal(existsSync(fresh), false);
 });

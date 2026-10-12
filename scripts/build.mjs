@@ -1,22 +1,29 @@
 // Builds the static site into dist/ (or --out <dir>) from src/ and site.config.json:
-// English at index.html and Chinese at zh/index.html, from one template and src/i18n/*.json.
-// Usage: node scripts/build.mjs [--config <file>] [--out <dir>]
+// one page per language in scripts/locales.mjs (English at index.html, the others in
+// their own directories), from one template and src/i18n/*.json.
+// Usage: node scripts/build.mjs [--config <file>] [--out <dir>] [--media <dir>]
+//   --media  a directory with the exported demo video (see tools/film/README.md). When given,
+//            the videos are copied into media/ with one WebVTT subtitle file per language and
+//            the pages get the video section. Without it the site has no video section.
 import { createHash } from 'node:crypto';
 import { cp, lstat, mkdir, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DownloadConfigError, LANGS, downloadCopy, validateDownloadConfig } from './download-config.mjs';
+import { DownloadConfigError, downloadCopy, validateDownloadConfig } from './download-config.mjs';
+import { LANGS, LOCALES, hrefBetween, locale, mediaTag } from './locales.mjs';
 import { ReleaseDataError, validateReleases } from './releases.mjs';
+import { loadCues, toVtt } from './captions.mjs';
+import { renderDemoTiles } from './demo-art.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'src');
 
 function parseArgs(argv) {
-  const args = { config: path.join(ROOT, 'site.config.json'), out: DEFAULT_OUT };
+  const args = { config: path.join(ROOT, 'site.config.json'), out: DEFAULT_OUT, media: null };
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i];
     const value = argv[i + 1];
-    if ((flag === '--config' || flag === '--out') && value) {
+    if ((flag === '--config' || flag === '--out' || flag === '--media') && value) {
       args[flag.slice(2)] = path.resolve(value);
       i += 1;
     } else {
@@ -36,13 +43,109 @@ const ARROW = '<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><pa
 const CLOCK = '<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 6v4.4l2.8 1.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
 const DOWNLOAD = '<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 3v9m-4-4 4 4 4-4M4 16h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-/** The pages that are built: English at the root, Chinese in zh/. */
-export const PAGES = [
-  { lang: 'en', dir: '', root: '', alt: { lang: 'zh-CN', href: 'zh/' } },
-  { lang: 'zh-CN', dir: 'zh', root: '../', alt: { lang: 'en', href: '../' } },
-];
+/**
+ * The pages that are built, one per language: English at the root, the others in their
+ * directories. `links` maps every language (including this one) to its relative URL.
+ */
+export const PAGES = LOCALES.map((l) => ({
+  lang: l.lang,
+  dir: l.dir,
+  root: l.dir ? '../' : '',
+  rtl: Boolean(l.rtl),
+  links: Object.fromEntries(LOCALES.map((o) => [o.lang, hrefBetween(l.lang, o.lang)])),
+}));
 // Keys that may be empty in one language (for example the Chinese nickname).
 const OPTIONAL_KEYS = new Set(['brand.nickname', 'footer.nickname']);
+
+/** <link rel="alternate"> for every language, plus x-default (English). */
+export function renderAlternates(page) {
+  const lines = LOCALES.map((l) => `  <link rel="alternate" hreflang="${l.lang}" href="${page.links[l.lang]}">`);
+  lines.push(`  <link rel="alternate" hreflang="x-default" href="${page.links.en}">`);
+  return lines.join('\n');
+}
+
+/** The language menu: real links with native names, the current page marked. */
+export function renderLangLinks(page) {
+  return LOCALES.map((l) => {
+    const current = l.lang === page.lang ? ' aria-current="page"' : '';
+    const dir = l.rtl ? ' dir="rtl"' : '';
+    return `          <li><a href="${page.links[l.lang]}" hreflang="${l.lang}" lang="${l.lang}"${dir}${current}>${l.name}</a></li>`;
+  }).join('\n');
+}
+
+// Strings the demo script needs at run time; the build embeds them as JSON.
+const DEMO_COPY_KEYS = (strings) => Object.keys(strings).filter((k) => k.startsWith('demo.'));
+export function renderDemoCopy(strings) {
+  const copy = Object.fromEntries(DEMO_COPY_KEYS(strings).map((k) => [k, strings[k].replace(/<[^>]+>/g, '')]));
+  // Safe inside <script type="application/json">: no '<' can close the element.
+  return JSON.stringify(copy).replace(/</g, '\\u003c');
+}
+
+// Media files the --media directory must provide, all copied to media/.
+export const MEDIA_BASE = 'sofatap-demo.mp4';
+export const MEDIA_POSTER = 'sofatap-demo-poster.jpg';
+export const mediaVideoFor = (lang) => `sofatap-demo-${mediaTag(lang)}.mp4`;
+export const mediaVttFor = (lang) => `sofatap-demo.${mediaTag(lang)}.vtt`;
+const MEDIA_MAX_BYTES = 64 * 1024 * 1024;
+
+const VIDEO_ICON = '<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 3v9m-4-4 4 4 4-4M4 16h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+/** Checks the exported media files and returns their sizes, or throws before anything is written. */
+export async function validateMedia(dir) {
+  const files = [MEDIA_BASE, MEDIA_POSTER, ...LANGS.map(mediaVideoFor)];
+  const sizes = {};
+  for (const name of files) {
+    const file = path.join(dir, name);
+    let info;
+    try { info = await lstat(file); } catch { throw new Error(`媒体目录缺少 ${name}`); }
+    if (!info.isFile()) throw new Error(`媒体文件 ${name} 必须是普通文件（不能是符号链接或目录）`);
+    if (info.size < 1000 || info.size > MEDIA_MAX_BYTES) throw new Error(`媒体文件 ${name} 大小不合理：${info.size}`);
+    const head = (await readFile(file)).subarray(0, 12);
+    const ok = name.endsWith('.jpg') ? head[0] === 0xff && head[1] === 0xd8 : head.subarray(4, 8).toString('latin1') === 'ftyp';
+    if (!ok) throw new Error(`媒体文件 ${name} 的格式不正确`);
+    sizes[name] = info.size;
+  }
+  return sizes;
+}
+
+const megabytes = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`;
+
+/** The video section: one silent video, subtitles in every language, this page's language on by default. */
+export function renderVideoSection(page, strings, sizes) {
+  const m = (name) => `${page.root}media/${name}`;
+  const tracks = LOCALES.map((l) => `              <track kind="subtitles" srclang="${l.lang}" label="${l.name}" src="${m(mediaVttFor(l.lang))}"${l.lang === page.lang ? ' default' : ''}>`);
+  const own = locale(page.lang);
+  const others = LOCALES.map((l) => {
+    const current = l.lang === page.lang ? ' aria-current="true"' : '';
+    return `              <li lang="${l.lang}"${l.rtl ? ' dir="rtl"' : ''}${current}><span class="video__lang">${l.name}</span> <a href="${m(mediaVideoFor(l.lang))}" download>MP4<span class="visually-hidden"> (${l.name})</span></a> <a href="${m(mediaVttFor(l.lang))}" download>WebVTT<span class="visually-hidden"> (${l.name})</span></a></li>`;
+  });
+  return [
+    '',
+    '    <section class="section video" id="video" aria-labelledby="video-title">',
+    '      <div class="section__inner">',
+    `        <h2 class="section-title" id="video-title">${strings['video.title']}</h2>`,
+    `        <p class="section-lead">${strings['video.lead']}</p>`,
+    '        <figure class="video__figure">',
+    `          <video class="video__player" controls preload="metadata" playsinline width="1920" height="1080" poster="${m(MEDIA_POSTER)}">`,
+    `            <source src="${m(MEDIA_BASE)}" type="video/mp4">`,
+    ...tracks,
+    `            <p>${strings['video.fallback']}</p>`,
+    '          </video>',
+    `          <figcaption><span class="label label--sim">${strings['label.simulation']}</span> ${strings['video.caption']}</figcaption>`,
+    '        </figure>',
+    '        <div class="video__downloads">',
+    `          <a class="button button--ghost" href="${m(mediaVideoFor(page.lang))}" download>${VIDEO_ICON}<span>${fill(strings['video.download'], { language: own.name })}</span> <span class="video__size">MP4 · ${megabytes(sizes[mediaVideoFor(page.lang)])}</span></a>`,
+    '          <details class="video__more">',
+    `            <summary>${strings['video.more']}</summary>`,
+    '            <ul>',
+    ...others,
+    '            </ul>',
+    '          </details>',
+    '        </div>',
+    '      </div>',
+    '    </section>',
+  ].join('\n');
+}
 
 export function renderMobileEntry({ kind, url }, lang = 'en') {
   const copy = downloadCopy(kind, lang);
@@ -162,6 +265,17 @@ export async function resolveSafeOutDir(out, configPath) {
   return lexical;
 }
 
+/**
+ * The output directory is deleted before writing, so the media source must never be
+ * inside it (or contain it). Compared on real paths, so symlinked aliases are caught too.
+ */
+export async function refuseMediaOverlap(media, out) {
+  const [m, o] = await Promise.all([realPathLoose(path.resolve(media)), realPathLoose(path.resolve(out))]);
+  if (isWithin(m, o) || isWithin(o, m)) {
+    throw new Error(`拒绝使用媒体目录 ${path.resolve(media)}：它与输出目录 ${path.resolve(out)} 重叠，构建会先清空输出目录。请把导出的视频放在输出目录之外。`);
+  }
+}
+
 async function readJson(file, ErrorType = Error) {
   try {
     return JSON.parse(await readFile(file, 'utf8'));
@@ -170,9 +284,11 @@ async function readJson(file, ErrorType = Error) {
   }
 }
 
-export async function build({ config: configPath, out }) {
+export async function build({ config: configPath, out, media = null }) {
   // Validate everything before touching the output directory.
   out = await resolveSafeOutDir(out, configPath);
+  if (media) await refuseMediaOverlap(media, out);
+  const mediaSizes = media ? await validateMedia(path.resolve(media)) : null;
   const download = validateDownloadConfig(await readJson(configPath, DownloadConfigError));
   const platforms = validateReleases(await readJson(path.join(SRC, 'releases.json'), ReleaseDataError));
   const tables = Object.fromEntries(await Promise.all(
@@ -180,20 +296,28 @@ export async function build({ config: configPath, out }) {
   ));
   validateStrings(tables);
 
-  const [template, styles, script] = await Promise.all([
+  const [template, styles, script, core, cues] = await Promise.all([
     readFile(path.join(SRC, 'index.html'), 'utf8'),
     readFile(path.join(SRC, 'styles.css'), 'utf8'),
     readFile(path.join(SRC, 'main.js'), 'utf8'),
+    readFile(path.join(SRC, 'demo-core.js'), 'utf8'),
+    loadCues(),
   ]);
+  const vtts = LANGS.map((lang) => ({ file: mediaVttFor(lang), text: toVtt(tables[lang], cues) }));
 
   const pages = PAGES.map((page) => {
     const strings = tables[page.lang];
     const copy = downloadCopy(download.kind, page.lang);
     const html = renderPage(template, strings, {
       LANG: page.lang,
+      DIR: page.rtl ? 'rtl' : 'ltr',
       ROOT: page.root,
-      ALT_LANG: page.alt.lang,
-      ALT_HREF: page.alt.href,
+      ALTERNATES: renderAlternates(page),
+      LANG_SHORT: locale(page.lang).short,
+      LANG_LINKS: renderLangLinks(page),
+      DEMO_TILES: renderDemoTiles(strings),
+      DEMO_COPY: renderDemoCopy(strings),
+      VIDEO_SECTION: mediaSizes ? renderVideoSection(page, strings, mediaSizes) : '',
       MOBILE_ENTRY: renderMobileEntry(download, page.lang),
       IPHONE_STATUS: copy.status,
       IPHONE_NOTE: copy.note,
@@ -201,6 +325,7 @@ export async function build({ config: configPath, out }) {
       DESKTOP_DOWNLOADS: renderDesktopDownloads(platforms, strings),
       STYLES_HASH: shortHash(styles),
       SCRIPT_HASH: shortHash(script),
+      CORE_HASH: shortHash(core),
     });
     return { file: path.join(page.dir, 'index.html'), html };
   });
@@ -213,16 +338,24 @@ export async function build({ config: configPath, out }) {
     ...pages.map((p) => writeFile(path.join(out, p.file), p.html)),
     writeFile(path.join(out, 'styles.css'), styles),
     writeFile(path.join(out, 'main.js'), script),
+    writeFile(path.join(out, 'demo-core.js'), core),
     cp(path.join(SRC, 'assets'), path.join(out, 'assets'), { recursive: true }),
   ]);
-  return { out, download, pages: pages.map((p) => p.file) };
+  if (mediaSizes) {
+    await mkdir(path.join(out, 'media'));
+    await Promise.all([
+      ...Object.keys(mediaSizes).map((name) => cp(path.join(path.resolve(media), name), path.join(out, 'media', name))),
+      ...vtts.map((v) => writeFile(path.join(out, 'media', v.file), v.text)),
+    ]);
+  }
+  return { out, download, media: Boolean(mediaSizes), pages: pages.map((p) => p.file) };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
     const result = await build(parseArgs(process.argv.slice(2)));
     const rel = path.relative(process.cwd(), result.out) || '.';
-    console.log(`已构建 ${rel}/（手机下载入口：${result.download.kind}${result.download.url ? ` → ${result.download.url}` : ''}）`);
+    console.log(`已构建 ${rel}/（${result.pages.length} 种语言；手机下载入口：${result.download.kind}${result.download.url ? ` → ${result.download.url}` : ''}；演示视频：${result.media ? '已包含' : '未包含'}）`);
   } catch (error) {
     console.error(`构建失败：${error.message}`);
     process.exitCode = 1;

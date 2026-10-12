@@ -1,0 +1,106 @@
+// Subtitles for the demo video, generated from the language files and src/video/cues.json.
+// The same cues produce the WebVTT tracks on the website and the ASS files that
+// tools/film/burn.mjs renders into the downloadable per-language videos.
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+export const CUES_FILE = path.join(ROOT, 'src', 'video', 'cues.json');
+
+/** Reads and checks the cue timing: in order, non-overlapping, inside the video. */
+export async function loadCues(file = CUES_FILE) {
+  const data = JSON.parse(await readFile(file, 'utf8'));
+  validateCues(data);
+  return data;
+}
+
+export function validateCues(data) {
+  const fail = (msg) => { throw new Error(`字幕时间轴不正确：${msg}`); };
+  const num = (v) => typeof v === 'number' && Number.isFinite(v);
+  if (!data || !num(data.duration) || data.duration <= 0 || !Array.isArray(data.cues) || data.cues.length === 0) fail('缺少 duration 或 cues');
+  const all = [data.label, ...data.cues];
+  for (const cue of all) {
+    if (!cue || typeof cue.key !== 'string' || !/^video\.[\w.]+$/.test(cue.key)) fail(`键名无效：${JSON.stringify(cue?.key)}`);
+    if (!num(cue.start) || !num(cue.end) || !(cue.start >= 0 && cue.end > cue.start && cue.end <= data.duration)) fail(`${cue.key} 的时间无效`);
+  }
+  data.cues.forEach((cue, i) => {
+    if (i > 0 && cue.start < data.cues[i - 1].end) fail(`${cue.key} 与上一条重叠`);
+  });
+  return data;
+}
+
+/** Keys every language file must provide for the video. */
+export const cueKeys = (data) => [data.label.key, ...data.cues.map((c) => c.key)];
+
+const stamp = (seconds) => {
+  const ms = Math.round(seconds * 1000);
+  const h = String(Math.floor(ms / 3600000)).padStart(2, '0');
+  const m = String(Math.floor(ms / 60000) % 60).padStart(2, '0');
+  const s = String(Math.floor(ms / 1000) % 60).padStart(2, '0');
+  return `${h}:${m}:${s}.${String(ms % 1000).padStart(3, '0')}`;
+};
+
+const plain = (value, key) => {
+  if (typeof value !== 'string' || !value.trim()) throw new Error(`缺少字幕文案：${key}`);
+  if (/[<>]|-->/.test(value)) throw new Error(`字幕文案 ${key} 不能包含 <、> 或 -->`);
+  // A blank line would end a WebVTT cue early; keep each cue on one paragraph.
+  if (/\n\s*\n|\r/.test(value)) throw new Error(`字幕文案 ${key} 不能包含空行或回车`);
+  // Leading or trailing line breaks would render as empty caption lines.
+  return value.trim().replace(/&/g, '&amp;');
+};
+
+/**
+ * WebVTT for one language. The simulation label stays at the top for the whole video;
+ * the narration cues sit at the bottom.
+ */
+export function toVtt(strings, data) {
+  const lines = ['WEBVTT', ''];
+  lines.push('label', `${stamp(data.label.start)} --> ${stamp(data.label.end)} line:4% position:50% align:center`, plain(strings[data.label.key], data.label.key), '');
+  data.cues.forEach((cue, i) => {
+    lines.push(String(i + 1), `${stamp(cue.start)} --> ${stamp(cue.end)} line:88% position:50% align:center`, plain(strings[cue.key], cue.key), '');
+  });
+  return lines.join('\n');
+}
+
+const assTime = (seconds) => {
+  const cs = Math.round(seconds * 100);
+  return `${Math.floor(cs / 360000)}:${String(Math.floor(cs / 6000) % 60).padStart(2, '0')}:${String(Math.floor(cs / 100) % 60).padStart(2, '0')}.${String(cs % 100).padStart(2, '0')}`;
+};
+const assText = (value, key) => plain(value, key).replace(/&amp;/g, '&').replace(/[{}]/g, '').replace(/\n/g, '\\N');
+
+/**
+ * An ASS subtitle script for burning one language into the 1920x1080 video:
+ * a boxed caption at the bottom and the simulation label at the top-left corner.
+ */
+export function toAss(strings, data, { font = 'sans-serif', rtl = false, width = 1920, height = 1080 } = {}) {
+  const scale = height / 1080;
+  const size = Math.round(50 * scale);
+  const labelSize = Math.round(30 * scale);
+  // Colours are &HAABBGGRR. Text #F0F5F3, box #11191B at ~15% transparency, label mint #98E9C4.
+  const styles = [
+    `Style: Caption,${font},${size},&H00F3F5F0,&H00F3F5F0,&H2611191B,&H2611191B,0,0,0,0,100,100,0,0,3,${Math.round(18 * scale)},0,2,${Math.round(160 * scale)},${Math.round(160 * scale)},${Math.round(64 * scale)},1`,
+    `Style: Label,${font},${labelSize},&H00C4E998,&H00C4E998,&H0011191B,&H1A11191B,1,0,0,0,100,100,0,0,3,${Math.round(10 * scale)},0,${rtl ? 9 : 7},${Math.round(56 * scale)},${Math.round(56 * scale)},${Math.round(44 * scale)},1`,
+  ];
+  const events = [
+    `Dialogue: 0,${assTime(data.label.start)},${assTime(data.label.end)},Label,,0,0,0,,${assText(strings[data.label.key], data.label.key)}`,
+    ...data.cues.map((cue) => `Dialogue: 0,${assTime(cue.start)},${assTime(cue.end)},Caption,,0,0,0,,${assText(strings[cue.key], cue.key)}`),
+  ];
+  return [
+    '[Script Info]',
+    'ScriptType: v4.00+',
+    `PlayResX: ${width}`,
+    `PlayResY: ${height}`,
+    'WrapStyle: 0',
+    'ScaledBorderAndShadow: yes',
+    '',
+    '[V4+ Styles]',
+    'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
+    ...styles,
+    '',
+    '[Events]',
+    'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
+    ...events,
+    '',
+  ].join('\n');
+}
