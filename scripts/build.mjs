@@ -134,7 +134,7 @@ export function renderVideoSection(page, strings, sizes) {
     `          <figcaption><span class="label label--sim">${strings['label.simulation']}</span> ${strings['video.caption']}</figcaption>`,
     '        </figure>',
     '        <div class="video__downloads">',
-    `          <a class="button button--ghost" href="${m(mediaVideoFor(page.lang))}" download>${VIDEO_ICON}<span>${fill(strings['video.download'], { language: own.name })}</span> <span class="video__size">MP4 · ${megabytes(sizes[mediaVideoFor(page.lang)])}</span></a>`,
+    `          <a class="button button--ghost" href="${m(mediaVideoFor(page.lang))}" download>${VIDEO_ICON}<span>${fill(strings['video.download'], { language: own.name })}</span> <span class="video__size" dir="ltr">MP4 · ${megabytes(sizes[mediaVideoFor(page.lang)])}</span></a>`,
     '          <details class="video__more">',
     `            <summary>${strings['video.more']}</summary>`,
     '            <ul>',
@@ -161,14 +161,14 @@ export function renderDesktopDownloads(platforms, strings) {
     const name = strings[`platform.${p.id}.name`];
     const packages = p.packages.map((pkg) => [
       '              <li>',
-      `                <a class="pkg" href="${escapeHtml(pkg.url)}">${DOWNLOAD}<span class="pkg__label"><span class="visually-hidden">${fill(strings['dl.for'], { platform: name })}: </span>${escapeHtml(pkg.label)}</span><span class="pkg__meta">${pkg.size} · ${pkg.ext}</span></a>`,
+      `                <a class="pkg" href="${escapeHtml(pkg.url)}">${DOWNLOAD}<span class="pkg__label"><span class="visually-hidden">${fill(strings['dl.for'], { platform: name })}: </span><bdi>${escapeHtml(pkg.label)}</bdi></span><span class="pkg__meta" dir="ltr">${pkg.size} · ${pkg.ext}</span></a>`,
       '              </li>',
     ].join('\n')).join('\n');
     return [
       `          <article class="platform" id="platform-${p.id}" aria-labelledby="platform-${p.id}-title">`,
       '            <div class="platform__head">',
       `              <h3 id="platform-${p.id}-title">${name}</h3>`,
-      `              <span class="tag">${escapeHtml(p.tag)}</span>`,
+      `              <span class="tag" dir="ltr">${escapeHtml(p.tag)}</span>`,
       '            </div>',
       `            <p class="platform__req">${strings[`platform.${p.id}.req`]}</p>`,
       '            <ul class="pkgs">',

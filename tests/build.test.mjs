@@ -77,8 +77,8 @@ test('desktop downloads link the real release assets with architecture and alpha
       'v0.3.0-alpha/SofaTap-macOS-x64-notarized.zip', 'v0.4.0-alpha/SofaTap-Linux-x64.tar.gz', 'v0.4.0-alpha/SofaTap-Linux-arm64.tar.gz']) {
       assert.equal(page.split(`href="${base}${file}"`).length - 1, 1, file);
     }
-    assert.match(page, /<span class="tag">v0\.3\.0-alpha<\/span>[\s\S]*<span class="tag">v0\.4\.0-alpha<\/span>/);
-    assert.match(page, />Apple Silicon<\/span>[\s\S]*>Intel<\/span>[\s\S]*>x64<\/span>[\s\S]*>ARM64<\/span>/);
+    assert.match(page, /<span class="tag" dir="ltr">v0\.3\.0-alpha<\/span>[\s\S]*<span class="tag" dir="ltr">v0\.4\.0-alpha<\/span>/);
+    assert.match(page, />Apple Silicon<\/bdi>[\s\S]*>Intel<\/bdi>[\s\S]*>x64<\/bdi>[\s\S]*>ARM64<\/bdi>/);
     // The old air-mouse claims and the provisional logo are gone.
     assert.doesNotMatch(page, /logo\.svg|tilt|倾斜|v0\.1\.1-alpha/i);
   }
