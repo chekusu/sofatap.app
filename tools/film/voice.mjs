@@ -208,6 +208,12 @@ export async function voice(args) {
   await mkdir(promo, { recursive: true });
   const tmp = await mkdtemp(path.join(os.tmpdir(), 'sofatap-voice-'));
   const report = { languages: {} };
+  try { Object.assign(report.languages, JSON.parse(await readFile(path.join(args.out, 'report.json'), 'utf8')).languages); } catch { /* first run */ }
+  // Written after every language, so an interrupted run keeps what it finished.
+  const save = async () => {
+    await writeFile(path.join(site, 'timing.json'), `${JSON.stringify(timing, null, 2)}\n`);
+    await writeFile(path.join(args.out, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
+  };
   let timing = {};
   try { timing = JSON.parse(await readFile(path.join(site, 'timing.json'), 'utf8')); } catch { /* first run */ }
 
@@ -276,6 +282,7 @@ export async function voice(args) {
       cues: plan.segments.map((sg, i) => ({ key: entry.cues[i].key, speechAt: +sg.speechAt.toFixed(3), speechLength: +sg.speechLength.toFixed(3),
         heldFor: +Math.max(0, (sg.filmTo - sg.filmFrom) - (sg.sceneTo - sg.sceneFrom)).toFixed(3) })),
     };
+    await save();
     console.log(`${lang}: ${plan.duration.toFixed(2)} s, peak ${peak} dB${warnings.length ? `, ${warnings.join('; ')}` : ''}`);
   }
 
@@ -289,8 +296,7 @@ export async function voice(args) {
   } finally {
     await rm(tmp, { recursive: true, force: true });
   }
-  await writeFile(path.join(site, 'timing.json'), `${JSON.stringify(timing, null, 2)}\n`);
-  await writeFile(path.join(args.out, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
+  await save();
   return report;
 }
 
