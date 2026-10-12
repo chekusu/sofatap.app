@@ -498,7 +498,7 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
   padding: 2cqw 2.4cqw;
   background: linear-gradient(rgb(0 0 0 / 0.55), transparent);
 }
-\.player__back {
+.player__back {
   display: inline-flex;
   align-items: center;
   gap: 0.8cqw;

@@ -6,6 +6,7 @@
 // Usage:
 //   node tools/film/record.mjs --out <dir> --playwright <path to the playwright package>
 //        [--browser <chromium executable>] [--ffmpeg ffmpeg] [--lang en] [--fps 30] [--duration 30]
+//        [--stills 1.5,8,12.5] (only PNGs of those scene moments, no video)
 // Paths can also come from SOFATAP_PLAYWRIGHT, SOFATAP_BROWSER and SOFATAP_FFMPEG.
 // Writes <out>/sofatap-demo.mp4 (H.264, yuv420p, faststart, no audio) and sofatap-demo-poster.jpg.
 import { spawn, spawnSync } from 'node:child_process';
@@ -32,12 +33,12 @@ const FADE = 0.5;
 export function parseArgs(argv, env = process.env) {
   const args = {
     out: null, playwright: env.SOFATAP_PLAYWRIGHT ?? null, browser: env.SOFATAP_BROWSER ?? null,
-    ffmpeg: env.SOFATAP_FFMPEG ?? 'ffmpeg', lang: 'en', fps: 30, duration: null,
+    ffmpeg: env.SOFATAP_FFMPEG ?? 'ffmpeg', lang: 'en', fps: 30, duration: null, stills: null,
   };
   for (let i = 0; i < argv.length; i += 2) {
     const key = argv[i]?.replace(/^--/, '');
     if (!(key in args) || argv[i + 1] === undefined) throw new Error(`Unknown or incomplete option: ${argv[i]}`);
-    args[key] = key === 'fps' || key === 'duration' ? Number(argv[i + 1]) : argv[i + 1];
+    args[key] = key === 'fps' || key === 'duration' ? Number(argv[i + 1]) : key === 'stills' ? argv[i + 1].split(',').map(Number) : argv[i + 1];
   }
   if (!args.out) throw new Error('--out <dir> is required');
   if (!args.playwright) throw new Error('--playwright <path> or SOFATAP_PLAYWRIGHT is required');
@@ -119,6 +120,18 @@ export async function record(args) {
       await Promise.all([...document.images].map((i) => (i.complete ? null : new Promise((r) => { i.onload = i.onerror = r; }))));
     });
 
+    // --stills: PNGs of chosen scene moments through the same film setup, for a quick check.
+    if (args.stills) {
+      const shots = [];
+      for (const t of args.stills.slice().sort((a, b) => a - b)) {
+        await page.evaluate((time) => window.__filmSeek(time), t);
+        const file = path.join(args.out, `still-${t.toFixed(2)}.png`);
+        await page.screenshot({ path: file, animations: 'disabled', caret: 'hide' });
+        shots.push(file);
+      }
+      if (errors.length) throw new Error(`page errors: ${errors.join('; ')}`);
+      return { stills: shots };
+    }
     ffmpeg = spawn(args.ffmpeg, [
       '-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(args.fps), '-i', '-',
       '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-tune', 'animation', '-profile:v', 'high',
@@ -180,6 +193,7 @@ export async function record(args) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
     const result = await record(parseArgs(process.argv.slice(2)));
+    if (result.stills) { console.log(`Wrote ${result.stills.length} stills`); process.exit(0); }
     console.log(`Wrote ${result.output} and ${result.poster}`);
     console.log(`Scripted steps: ${result.marks.map((m) => `${m.step}@${m.time}s`).join(', ')}`);
   } catch (error) {
