@@ -26,7 +26,7 @@ test('every language has every caption, as valid WebVTT and ASS', async () => {
     assert.ok(vtt.includes(strings['video.label']), l.lang);
     // A blank line inside a cue would end it early.
     for (const block of vtt.trimEnd().split('\n\n').slice(1)) assert.ok(block.split('\n').every((line) => line.trim()), `${l.lang}: ${block}`);
-    const ass = toAss(strings, cues, { rtl: l.rtl });
+    const ass = toAss(strings, cues);
     assert.equal(ass.match(/^Dialogue:/gm).length, 9);
     assert.match(ass, /PlayResX: 1920\nPlayResY: 1080/);
   }

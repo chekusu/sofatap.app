@@ -71,20 +71,25 @@ const assText = (value, key) => plain(value, key).replace(/&amp;/g, '&').replace
 
 /**
  * An ASS subtitle script for burning one language into the 1920x1080 video:
- * a boxed caption at the bottom and the simulation label at the top-left corner.
+ * a boxed caption at the bottom and the simulation label at the top-left corner for every
+ * language (the film keeps its brand mark at the top right).
  */
 export function toAss(strings, data, { font = 'sans-serif', rtl = false, width = 1920, height = 1080 } = {}) {
+  // A right-to-left mark gives each line a right-to-left base direction (punctuation on the left).
+  const line = (text) => (rtl ? `\u200F${text}` : text);
+  // Encoding -1 tells libass to take each line's base direction from its first strong character.
+  const encoding = rtl ? -1 : 1;
   const scale = height / 1080;
   const size = Math.round(50 * scale);
   const labelSize = Math.round(30 * scale);
   // Colours are &HAABBGGRR. Text #F0F5F3, box #11191B at ~15% transparency, label mint #98E9C4.
   const styles = [
-    `Style: Caption,${font},${size},&H00F3F5F0,&H00F3F5F0,&H2611191B,&H2611191B,0,0,0,0,100,100,0,0,3,${Math.round(18 * scale)},0,2,${Math.round(160 * scale)},${Math.round(160 * scale)},${Math.round(64 * scale)},1`,
-    `Style: Label,${font},${labelSize},&H00C4E998,&H00C4E998,&H0011191B,&H1A11191B,1,0,0,0,100,100,0,0,3,${Math.round(10 * scale)},0,${rtl ? 9 : 7},${Math.round(56 * scale)},${Math.round(56 * scale)},${Math.round(44 * scale)},1`,
+    `Style: Caption,${font},${size},&H00F3F5F0,&H00F3F5F0,&H2611191B,&H2611191B,0,0,0,0,100,100,0,0,3,${Math.round(18 * scale)},0,2,${Math.round(160 * scale)},${Math.round(160 * scale)},${Math.round(64 * scale)},${encoding}`,
+    `Style: Label,${font},${labelSize},&H00C4E998,&H00C4E998,&H0011191B,&H1A11191B,1,0,0,0,100,100,0,0,3,${Math.round(10 * scale)},0,7,${Math.round(56 * scale)},${Math.round(56 * scale)},${Math.round(44 * scale)},${encoding}`,
   ];
   const events = [
-    `Dialogue: 0,${assTime(data.label.start)},${assTime(data.label.end)},Label,,0,0,0,,${assText(strings[data.label.key], data.label.key)}`,
-    ...data.cues.map((cue) => `Dialogue: 0,${assTime(cue.start)},${assTime(cue.end)},Caption,,0,0,0,,${assText(strings[cue.key], cue.key)}`),
+    `Dialogue: 0,${assTime(data.label.start)},${assTime(data.label.end)},Label,,0,0,0,,${line(assText(strings[data.label.key], data.label.key))}`,
+    ...data.cues.map((cue) => `Dialogue: 0,${assTime(cue.start)},${assTime(cue.end)},Caption,,0,0,0,,${line(assText(strings[cue.key], cue.key))}`),
   ];
   return [
     '[Script Info]',

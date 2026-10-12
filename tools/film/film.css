@@ -1,0 +1,78 @@
+/* Film composition for tools/film/record.mjs: the website's own demo, framed at 1920x1080.
+   No narrative text is drawn here; captions in every language are added afterwards. */
+html, body { margin: 0; background: #11191B; overflow: hidden; }
+body.is-filming > :not(.film) { display: none !important; }
+.film, .film * { transition: none !important; animation: none !important; }
+.film {
+  position: fixed;
+  inset: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background:
+    radial-gradient(60rem 40rem at 30% 40%, rgb(152 233 196 / 0.07), transparent 70%),
+    radial-gradient(circle, rgb(152 233 196 / 0.10) 1.2px, transparent 1.8px) 0 0 / 36px 36px,
+    #11191B;
+  font-size: 16px;
+}
+.film .demo {
+  position: absolute;
+  left: 120px;
+  right: 120px;
+  top: 92px;
+  bottom: 196px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  isolation: isolate; /* keep the scene's layers below the title and end cards */
+  z-index: 0;
+}
+.film .demo__bar, .film .demo__help, .film .demo figcaption { display: none; }
+.film .demo__stage { height: 100%; grid-template-columns: minmax(0, 1fr) 372px; gap: 110px; align-items: center; }
+.film .demo__phone { width: 372px; }
+.film .phone__frame { border-radius: 58px; padding: 11px; }
+.film .phone__screen img { border-radius: 48px; }
+.film .tv { border-radius: 22px; padding: 14px; }
+.film .tv-set__base { height: 64px; }
+.film .pc { font-size: 1.1rem; }
+.film .pc svg { width: 5rem; }
+.film .pad__finger { width: 3.4rem; height: 3.4rem; margin: -1.7rem 0 0 -1.7rem; border-width: 3px; }
+
+/* Neutral base: no words inside the scene, so each language's captions stand alone. */
+.film .is-neutral .tile__title, .film .is-neutral .app__title, .film .is-neutral .pc__label,
+.film .is-neutral .player__label, .film .is-neutral .player__back span, .film .is-neutral .player__title,
+.film .is-neutral .menu__text { display: none; }
+.film .is-neutral .menu { min-width: 0; padding: 1cqw; }
+.film .is-neutral .menu__item { padding: 1.5cqw 2.2cqw; }
+.film .is-neutral .menu__item svg { width: 3.6cqw; height: 3.6cqw; }
+
+.film__brand {
+  position: absolute;
+  z-index: 1;
+  top: 34px;
+  right: 56px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #F0F5F3;
+  font: 700 34px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+}
+.film__brand img { width: 52px; height: 52px; border-radius: 13px; }
+.film__card {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 28px;
+  background: radial-gradient(70rem 40rem at 50% 45%, #1E2A2C, #11191B 70%);
+  color: #F0F5F3;
+  opacity: 0;
+}
+.film__card img { width: 236px; height: 236px; border-radius: 54px; box-shadow: 0 30px 80px rgb(0 0 0 / 0.5); }
+.film__name { margin: 0; font: 800 136px/1 ui-rounded, "SF Pro Rounded", system-ui, sans-serif; letter-spacing: -2px; }
+.film__rule { width: 120px; height: 6px; border-radius: 3px; background: #98E9C4; }
+.film__url { margin: 0; color: #98E9C4; font: 600 40px/1.2 system-ui, sans-serif; }
