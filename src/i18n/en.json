@@ -141,7 +141,7 @@
   "video.lead": "A short tour, narrated in your language. Subtitles follow this page’s language.",
   "video.fallback": "Your browser can’t play this video.",
   "video.cue.intro": "Sofatap. Your iPhone, your living-room remote.",
-  "video.cue.setup": "Your iPhone becomes the touchpad for the computer on your TV.",
+  "video.cue.setup": "Your iPhone controls the computer connected to your TV.",
   "video.cue.slide": "Slide, and the pointer follows.",
   "video.cue.tap": "Tap to click.",
   "video.cue.double": "Double-tap for a right click.",

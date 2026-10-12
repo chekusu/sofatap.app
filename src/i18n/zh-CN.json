@@ -141,7 +141,7 @@
   "video.lead": "一段简短演示，配有你所用语言的旁白；字幕跟随本页语言。",
   "video.fallback": "你的浏览器无法播放此视频。",
   "video.cue.intro": "Sofatap：用 iPhone，轻松操作客厅电脑。",
-  "video.cue.setup": "iPhone 就是电视上那台电脑的触控板。",
+  "video.cue.setup": "iPhone 就是连接电视的电脑触控板。",
   "video.cue.slide": "滑动手指，指针随之移动。",
   "video.cue.tap": "轻点一下，就是单击。",
   "video.cue.double": "连点两下，就是右键。",

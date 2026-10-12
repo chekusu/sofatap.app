@@ -34,7 +34,7 @@ export async function narrationManifest() {
     languages[l.lang] = { file: `narration-${l.lang.toLowerCase()}`, rtl: Boolean(l.rtl), text, cues: lines };
   }
   return {
-    version: 1,
+    version: 2,
     cues: cues.cues.length,
     timeline: { duration: cues.duration, note: 'Windows are the planned on-screen moments; final cue times come from the measured audio.' },
     voice: { model: 'elevenlabs/tts/eleven-v4', voice: 'Brian', stability: 0.7, similarity_boost: 0.75, output_format: 'mp3_44100_192', timestamps: true },
