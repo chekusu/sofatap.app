@@ -150,6 +150,11 @@
   // The scripted demo. Times are seconds from the start of the script. A slide names
   // the TV target the pointer should reach; the finger path on the phone is worked out
   // from the pointer gain, so the same script lands correctly at any page size.
+  // Three acts: pointer gestures; typing a search on the phone and sending it to the
+  // computer's search box; dictating a second search. Text only reaches the computer when
+  // Send is tapped, it goes into the field the pointer clicked, and Send never presses Enter,
+  // so the pointer clicks the computer's own Search button (and its clear button before the
+  // second search, because a second send would add to the text already there).
   var SCRIPT = {
     pointer: { x: 0.2, y: 0.8 }, // where the TV pointer starts (fractions of the screen)
     finger: { x: 0.34, y: 0.68 }, // where the finger rests on the phone (fractions of the touch area)
@@ -157,15 +162,35 @@
       { at: 0.2, slide: 'tile:4', duration: 1.9, gesture: 'slide' },
       { at: 3.2, tap: true, gesture: 'tap' },
       { at: 5.2, doubleTap: true, gesture: 'double' },
-      { at: 8.2, slide: 'menu:0', duration: 0.8, gesture: 'slide' },
-      { at: 9.3, tap: true, gesture: 'tap' },
-      { at: 14.3, end: true },
+      { at: 7.4, slide: 'menu:1', duration: 0.8, gesture: 'slide' },
+      { at: 8.4, tap: true, gesture: 'tap' },
+      { at: 10.5, slide: 'search:field', duration: 1.3, gesture: 'slide' },
+      { at: 11.9, tap: true, gesture: 'tap' },
+      { at: 13.4, press: 'keyboard', gesture: 'keyboard' },
+      { at: 14.4, type: 'demo.search.typed', duration: 1.4, gesture: 'type' },
+      { at: 18.5, press: 'send', gesture: 'send' },
+      { at: 19.6, slide: 'search:go', duration: 1.0, gesture: 'slide' },
+      { at: 20.8, tap: true, gesture: 'tap' },
+      { at: 22.7, slide: 'search:clear', duration: 0.9, gesture: 'slide' },
+      { at: 23.7, tap: true, gesture: 'tap' },
+      { at: 25.0, press: 'mic', gesture: 'mic' },
+      { at: 26.4, dictate: 'demo.search.spoken', duration: 1.8, gesture: 'dictate' },
+      { at: 28.6, press: 'mic', gesture: 'mic' },
+      { at: 30.4, press: 'send', gesture: 'send' },
+      { at: 31.6, slide: 'search:go', duration: 0.9, gesture: 'slide' },
+      { at: 32.7, tap: true, gesture: 'tap' },
+      { at: 35.4, slide: 'tile:8', duration: 1.0, gesture: 'slide' },
+      { at: 36.7, doubleTap: true, gesture: 'double' },
+      { at: 38.0, slide: 'menu:0', duration: 0.7, gesture: 'slide' },
+      { at: 39.0, tap: true, gesture: 'tap' },
+      { at: 48, end: true },
     ],
   };
   var TAP_LENGTH = 0.08;
   var DOUBLE_SECOND = 0.2;
   var EDGE = 0.12; // keep the scripted finger this far inside the touch area
   var SLOP_TIME = 0.08; // a scripted slide passes the touch tolerance this quickly
+  var GLIDE = 0.4; // the lifted finger moves to a phone button this long before pressing it
 
   function ease(u) { return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; }
   function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
@@ -179,6 +204,9 @@
    *   target(name): { x, y } | null  centre of a TV target in px
    *   contact(kind, point, time)     kind: 'begin' | 'move' | 'end'
    *   finger(point | null, touching) show the scripted finger
+   *   control(name): { x, y } | null centre of a phone button (keyboard, mic, send) in touch-area px
+   *   press(name, down)              a phone button is pressed (down) and released (up: it acts)
+   *   progress(kind, key, k)         typing or dictation of the text `key`: k from 0 to 1
    *   step(step)                     a step started (for captions and the gesture legend)
    *   done()
    * }
@@ -205,7 +233,21 @@
       if (this.finished) return;
     }
     if (this.slide && t >= this.slide.t0) this.slideTo(Math.min(t, this.slide.t1));
-    io.finger(this.finger, Boolean(this.slide) || Boolean(this.touching));
+    if (this.glide && t >= this.glide.t0) {
+      var g = this.glide;
+      var u = ease(clamp((t - g.t0) / (g.t1 - g.t0), 0, 1));
+      this.finger = { x: g.from.x + (g.to.x - g.from.x) * u, y: g.from.y + (g.to.y - g.from.y) * u };
+      if (t >= g.t1) this.glide = null;
+    }
+    if (this.progress) {
+      var p = this.progress;
+      var k = clamp((t - p.t0) / (p.t1 - p.t0), 0, 1);
+      io.progress(p.kind, p.key, k);
+      if (k >= 1) this.progress = null;
+    }
+    // While typing, both thumbs are on the phone keyboard: the single scripted finger is hidden.
+    if (this.typing && !this.progress) this.typing = false;
+    io.finger(this.typing ? null : this.finger, Boolean(this.slide) || Boolean(this.touching));
   };
 
   // The earliest pending moment: a queued contact event or the next step.
@@ -213,6 +255,9 @@
     var times = [];
     if (this.events.length) times.push(this.events[0].time);
     if (this.slide && this.slide.done === false && this.slide.ending) times.push(this.slide.t1);
+    // Typing or dictation finishes at its own time, before any later step (a skipped frame
+    // must never send half a draft).
+    if (this.progress) times.push(this.progress.t1);
     var step = this.script.steps[this.index];
     if (step) times.push(step.at);
     return times.length ? Math.min.apply(null, times) : null;
@@ -220,10 +265,23 @@
 
   ScriptPlayer.prototype.fire = function (time) {
     var io = this.io;
+    if (this.progress && this.progress.t1 <= time) {
+      io.progress(this.progress.kind, this.progress.key, 1);
+      this.progress = null;
+      return;
+    }
     if (this.events.length && this.events[0].time <= time) {
       var e = this.events.shift();
       if (e.kind === 'begin') this.touching = true;
       if (e.kind === 'end') this.touching = false;
+      if (e.press) {
+        this.glide = null;
+        if (e.kind === 'begin' && e.target) this.finger = e.target;
+        io.press(e.press, e.kind === 'begin');
+        // After the button, the finger drifts back to its resting place on the touch area.
+        if (e.kind === 'end') this.glide = { t0: e.time + 0.15, t1: e.time + 0.15 + GLIDE, from: this.finger, to: this.rest() };
+        return;
+      }
       io.contact(e.kind, { x: this.finger.x, y: this.finger.y }, e.time);
       return;
     }
@@ -245,7 +303,21 @@
         { kind: 'begin', time: step.at + DOUBLE_SECOND }, { kind: 'end', time: step.at + DOUBLE_SECOND + TAP_LENGTH });
     } else if (step.slide) {
       this.startSlide(step);
+    } else if (step.press) {
+      var to = io.control(step.press) || this.finger;
+      this.glide = { t0: step.at, t1: step.at + GLIDE, from: this.finger, to: to };
+      this.events.push({ kind: 'begin', time: step.at + GLIDE, press: step.press, target: to },
+        { kind: 'end', time: step.at + GLIDE + TAP_LENGTH, press: step.press });
+    } else if (step.type || step.dictate) {
+      this.progress = { kind: step.type ? 'type' : 'dictate', key: step.type || step.dictate, t0: step.at, t1: step.at + step.duration };
+      this.typing = Boolean(step.type);
+      io.progress(this.progress.kind, this.progress.key, 0);
     }
+  };
+
+  ScriptPlayer.prototype.rest = function () {
+    var size = this.io.padSize();
+    return { x: this.script.finger.x * size.w, y: this.script.finger.y * size.h };
   };
 
   ScriptPlayer.prototype.startSlide = function (step) {
@@ -254,6 +326,7 @@
     var gain = io.gain();
     var from = io.pointer();
     var to = io.target(step.slide) || from;
+    this.glide = null;
     var dx = (to.x - from.x) / gain;
     var dy = (to.y - from.y) / gain;
     // The pointer is already (almost) there: no touch at all, so no hold can start.

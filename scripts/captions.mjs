@@ -26,6 +26,8 @@ export function validateCues(data) {
     if (!num(cue.start) || !num(cue.end) || !(cue.start >= 0 && cue.end > cue.start && cue.end <= data.duration)) fail(`${cue.key} 的时间无效`);
     // The scene moment a cue belongs to (tools/film/timeline.mjs); speech starts at or after it.
     if ('anchor' in cue && (!num(cue.anchor) || cue.anchor < 0 || cue.anchor > cue.start)) fail(`${cue.key} 的 anchor 无效`);
+    // Optional: the scene moment the film waits on while this cue is spoken (before its action).
+    if ('hold' in cue && (!num(cue.hold) || !('anchor' in cue) || cue.hold < cue.anchor)) fail(`${cue.key} 的 hold 无效`);
   }
   data.cues.forEach((cue, i) => {
     if (i > 0 && cue.start < data.cues[i - 1].end) fail(`${cue.key} 与上一条重叠`);

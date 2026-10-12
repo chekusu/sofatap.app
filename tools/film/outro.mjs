@@ -25,7 +25,6 @@ import { mediaDuration } from './voice.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const FPS = 30;
-const SCENE_END = 30;
 
 export function parseArgs(argv, env = process.env) {
   const args = { from: null, out: null, playwright: env.SOFATAP_PLAYWRIGHT ?? null, browser: env.SOFATAP_BROWSER ?? null,
@@ -80,7 +79,6 @@ export async function revise(args) {
   const promo = path.join(args.out, 'promo');
   await mkdir(site, { recursive: true });
   await mkdir(promo, { recursive: true });
-  await copyFile(path.join(args.from, 'site', 'sofatap-demo-poster.jpg'), path.join(site, 'sofatap-demo-poster.jpg'));
   // The measured narration report travels with the videos, so this output can be revised again.
   await copyFile(path.join(args.from, 'report.json'), path.join(args.out, 'report.json'));
   const tmp = await mkdtemp(path.join(os.tmpdir(), 'sofatap-outro-'));
@@ -103,13 +101,15 @@ export async function revise(args) {
       duration: frames / FPS,
       segments: [
         { sceneFrom: 0, sceneTo: end.sceneFrom, filmFrom: 0, filmTo: end.filmFrom },
-        { sceneFrom: end.sceneFrom, sceneTo: SCENE_END, filmFrom: end.filmFrom, filmTo: frames / FPS },
+        { sceneFrom: end.sceneFrom, sceneTo: cues.duration, filmFrom: end.filmFrom, filmTo: frames / FPS },
       ],
     };
     const work = path.join(tmp, tag);
     await mkdir(work, { recursive: true });
     await record({ out: work, name: 'tail.mp4', plan, tail: { firstFrame: end.firstFrame }, playwright: args.playwright,
-      browser: args.browser, ffmpeg: args.ffmpeg, lang: 'en', fps: FPS, quiet: true });
+      browser: args.browser, ffmpeg: args.ffmpeg, lang, fps: FPS, quiet: true });
+    // The poster comes from the unchanged part of the film.
+    await copyFile(path.join(args.from, 'site', `sofatap-demo-poster-${tag}.jpg`), path.join(site, `sofatap-demo-poster-${tag}.jpg`));
 
     // Existing footage up to the end card, then the new tail; the narration track is copied.
     const output = path.join(site, `sofatap-demo-${tag}.mp4`);

@@ -82,17 +82,17 @@ export function renderDemoCopy(strings) {
 }
 
 // Media files the --media directory must provide, all copied to media/: one narrated video
-// per language (the page plays its own language) and a poster. Optional timing.json holds the
+// and one poster per language (the page plays its own language; the scene shows its text). Optional timing.json holds the
 // measured caption times per language ({ "<lang>": [{ start, end }, …] }) from tools/film/voice.mjs.
-export const MEDIA_POSTER = 'sofatap-demo-poster.jpg';
 export const MEDIA_TIMING = 'timing.json';
 export const mediaVideoFor = (lang) => `sofatap-demo-${mediaTag(lang)}.mp4`;
+export const mediaPosterFor = (lang) => `sofatap-demo-poster-${mediaTag(lang)}.jpg`;
 export const mediaVttFor = (lang) => `sofatap-demo.${mediaTag(lang)}.vtt`;
 const MEDIA_MAX_BYTES = 64 * 1024 * 1024;
 
 /** Checks the exported media files and returns their sizes, or throws before anything is written. */
 export async function validateMedia(dir) {
-  const files = [MEDIA_POSTER, ...LANGS.map(mediaVideoFor)];
+  const files = [...LANGS.map(mediaPosterFor), ...LANGS.map(mediaVideoFor)];
   const sizes = {};
   for (const name of files) {
     const file = path.join(dir, name);
@@ -128,7 +128,7 @@ export function renderVideoSection(page, strings) {
     '      <div class="section__inner">',
     `        <h2 class="section-title" id="video-title">${strings['video.title']}</h2>`,
     `        <p class="section-lead">${strings['video.lead']}</p>`,
-    `        <video class="video__player" controls controlslist="nodownload" preload="metadata" playsinline width="1920" height="1080" poster="${m(MEDIA_POSTER)}">`,
+    `        <video class="video__player" controls controlslist="nodownload" preload="metadata" playsinline width="1920" height="1080" poster="${m(mediaPosterFor(page.lang))}">`,
     `          <source src="${m(mediaVideoFor(page.lang))}" type="video/mp4">`,
     ...tracks,
     `          <p>${strings['video.fallback']}</p>`,

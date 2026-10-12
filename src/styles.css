@@ -405,8 +405,41 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
   border-bottom: 1px solid rgb(51 67 70 / 0.7);
 }
 .app__bar svg { width: 3cqw; height: 3cqw; min-width: 12px; min-height: 12px; color: var(--mint); }
-.app__dots { margin-inline-start: auto; display: flex; gap: 0.9cqw; }
-.app__dots i { width: 1.1cqw; height: 1.1cqw; border-radius: 50%; background: #3A4C4F; }
+/* The film app's search box: a computer text field the phone can type into. */
+.search { margin-inline-start: auto; display: flex; align-items: center; gap: 1cqw; min-width: 0; flex: 0 1 46cqw; }
+.search__field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.9cqw;
+  flex: 1;
+  min-width: 0;
+  height: 4.6cqw;
+  padding: 0 1.3cqw;
+  border-radius: 999px;
+  background: #0B1213;
+  border: 1px solid #334346;
+  outline: 0.35cqw solid transparent;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.app__bar .search__icon { width: 2.4cqw; height: 2.4cqw; min-width: 10px; min-height: 10px; color: var(--muted); flex: none; }
+.search__text { overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.search__placeholder { color: #7D8F92; overflow: hidden; text-overflow: ellipsis; }
+.search__caret { display: none; width: 0.25cqw; min-width: 1px; height: 2.8cqw; background: var(--mint); flex: none; }
+.search.has-text .search__placeholder { display: none; }
+.search.is-focused .search__field { border-color: var(--mint); }
+.search.is-focused .search__caret { display: block; }
+.search.is-focused.has-blink .search__caret { visibility: hidden; }
+.search__clear, .search__go { display: grid; place-items: center; flex: none; outline: 0.35cqw solid transparent; }
+.search__clear { width: 4cqw; height: 4cqw; border-radius: 50%; color: var(--muted); visibility: hidden; }
+.app__bar .search__clear svg { width: 2.4cqw; height: 2.4cqw; min-width: 10px; min-height: 10px; color: currentColor; }
+.search.has-text .search__clear { visibility: visible; }
+.search__go { height: 4.6cqw; padding: 0 1.8cqw; border-radius: 999px; background: #233335; color: var(--text); white-space: nowrap; }
+.search__field.is-hover, .search__clear.is-hover, .search__go.is-hover { outline-color: rgb(240 245 243 / 0.5); }
+.search__go.is-hover { background: var(--mint); color: var(--on-mint); }
+.tile[hidden] { display: none; }
 .app__view { position: relative; flex: 1; min-height: 0; overflow: hidden; padding: 2.2cqw 2.4cqw; }
 .app__grid {
   list-style: none;
@@ -614,6 +647,114 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
 .pad__finger.is-shown { opacity: 0.5; }
 .pad__finger.is-touching { opacity: 1; border-color: var(--mint); background: radial-gradient(circle, rgb(163 255 209 / 0.6), rgb(163 255 209 / 0.15) 65%, transparent 72%); }
 
+/* Text on the phone, laid out like the app (RemoteView): the keyboard button and microphone
+   sit at the bottom of the touch surface; the draft composer opens below the surface, and the
+   phone keyboard below that. Positions are fractions of the screenshot (720 × 1566). */
+.phone__screen { container-type: inline-size; }
+.demo__phone { direction: ltr; }
+.phone__ui { position: absolute; inset: 0; display: none; border-radius: clamp(1.4rem, 3.4vw, 2.1rem); background: linear-gradient(transparent 8.24%, #090C0F 8.24%); }
+.is-composing .phone__ui { display: block; }
+.phone__surface {
+  position: absolute;
+  left: 3.06%;
+  right: 3.06%;
+  top: 8.24%;
+  bottom: 29%;
+  border-radius: 10cqw;
+  border: 1px solid rgb(152 233 196 / 0.16);
+  background:
+    radial-gradient(circle, rgb(152 233 196 / 0.32) 0.28cqw, transparent 0.4cqw) 0 0 / 3.5cqw 3.5cqw,
+    linear-gradient(160deg, #10181A, #080C0F);
+}
+.is-keyboard .phone__surface { bottom: 55%; }
+.phone__screen .phone__logo { position: absolute; left: 5%; top: 2.4cqw; width: 13cqw; height: 13cqw; border-radius: 3.4cqw; }
+.phone__qr { position: absolute; right: 7%; top: 5.6cqw; width: 6.4cqw; height: 6.4cqw; color: var(--mint); opacity: 0.75; }
+.is-composing .pad { bottom: 29%; }
+.is-keyboard .pad { bottom: 55%; }
+.phone__bar { position: absolute; left: 3.06%; right: 3.06%; bottom: 6.55%; height: 0; z-index: 2; }
+.is-composing .phone__bar { bottom: 30.45%; }
+.is-keyboard .phone__bar { bottom: 56.45%; }
+.phone__key, .phone__mic {
+  position: absolute;
+  top: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.phone__key { left: 11.55%; width: max(32px, 13cqw); height: max(32px, 13cqw); background: none; color: rgb(152 233 196 / 0.65); }
+.phone__key svg { width: 6.6cqw; height: auto; }
+.phone__key[aria-pressed="true"] { color: var(--mint); }
+.phone__mic { left: 50%; width: max(32px, 16.3cqw); height: max(32px, 16.3cqw); background: var(--mint); color: #0B1213; box-shadow: 0 0 0 1.5cqw rgb(152 233 196 / 0.07), 0 0 0 1.75cqw rgb(152 233 196 / 0.18); }
+.phone__mic svg { width: 7cqw; height: 7cqw; }
+.phone__stop-icon, .is-listening .phone__mic-icon { display: none; }
+.is-listening .phone__stop-icon { display: block; width: 5.2cqw; height: 5.2cqw; }
+.is-listening .phone__mic { background: #FCA378; }
+/* On the resting screen the screenshot already shows both controls; the buttons sit on top of them. */
+.demo:not(.is-composing) .phone__key svg, .demo:not(.is-composing) .phone__mic svg { visibility: hidden; }
+.demo:not(.is-composing) .phone__key, .demo:not(.is-composing) .phone__mic { background: none; box-shadow: none; }
+.phone__key:focus-visible, .phone__mic:focus-visible, .composer button:focus-visible, .composer__draft:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.phone__key.is-pressed, .phone__mic.is-pressed { filter: brightness(1.35); }
+.demo:not(.is-composing) .phone__key.is-pressed, .demo:not(.is-composing) .phone__mic.is-pressed { background: rgb(152 233 196 / 0.25); }
+
+.composer { position: absolute; left: 4.5%; right: 4.5%; top: 72.5%; bottom: 5.1%; display: flex; flex-direction: column; gap: 2cqw; }
+.composer[hidden] { display: none; }
+.is-keyboard .composer { top: 46.5%; bottom: 31.6%; }
+.composer__box { position: relative; flex: 1; min-height: max(28px, 8cqw); border-radius: 4.6cqw; background: #182224; }
+.composer__draft {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: max(5px, 2.6cqw) max(7px, 3.4cqw);
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  color: var(--text);
+  font: 500 max(12.5px, 5.4cqw)/1.3 var(--font);
+  resize: none;
+  overflow: hidden;
+}
+.composer__draft::placeholder { color: #7D8F92; }
+.composer__listening { position: absolute; left: 3.4cqw; right: 3.4cqw; top: 2.6cqw; display: none; color: #FCA378; font-size: max(12.5px, 5.4cqw); line-height: 1.3; pointer-events: none; }
+.is-listening .composer__box.is-empty .composer__listening { display: block; }
+.composer__row { display: flex; align-items: center; justify-content: space-between; gap: 2cqw; }
+.composer__close { display: grid; place-items: center; width: max(28px, 10cqw); height: max(28px, 10cqw); padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
+.composer__close svg { width: 5.4cqw; height: 5.4cqw; }
+.composer__send {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.4cqw;
+  height: max(28px, 10cqw);
+  min-width: max(56px, 20cqw);
+  justify-content: center;
+  padding: 0 4cqw;
+  border: 0;
+  border-radius: 999px;
+  background: var(--mint);
+  color: #0B1213;
+  font: 650 max(12px, 4.4cqw)/1 var(--font);
+  cursor: pointer;
+}
+.composer__send svg { width: max(11px, 4cqw); height: max(11px, 4cqw); }
+.composer__send:disabled { opacity: 0.45; cursor: default; }
+.composer__check, .is-sent .composer__arrow { display: none; }
+.is-sent .composer__check { display: block; }
+.is-sent .composer__send:disabled { opacity: 1; }
+.composer__send.is-pressed { filter: brightness(1.15); transform: scale(0.96); }
+
+.keys { position: absolute; left: 0; right: 0; top: 69.5%; bottom: 0; display: none; flex-direction: column; justify-content: flex-start; gap: 2.4cqw; padding: 2.6cqw 1cqw 0; border-radius: 0 0 clamp(1.4rem, 3.4vw, 2.1rem) clamp(1.4rem, 3.4vw, 2.1rem); background: #1A2123; }
+.is-keyboard .keys { display: flex; }
+.keys__row { display: flex; justify-content: center; gap: 1.5cqw; }
+.keys__row i { width: 8.4cqw; height: 10.4cqw; border-radius: 1.4cqw; background: #3A4648; box-shadow: 0 0.3cqw 0 rgb(0 0 0 / 0.35); }
+.keys__row .keys__wide { width: 12cqw; background: #2A3436; }
+.keys__row .keys__space { width: 46cqw; }
+.keys__row i.is-pressed { background: var(--mint); }
+
 .demo__help { display: grid; gap: 0.4rem; margin-top: 1.25rem; }
 .demo__hint { margin: 0; font-weight: 500; }
 .demo__keys { margin: 0; color: var(--muted); font-size: 0.9rem; }
@@ -629,7 +770,7 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
 .no-js .demo__hint, .no-js .demo__keys, .no-js .demo__status { display: none; }
 .demo figcaption { margin-top: 1rem; }
 @media (max-width: 40rem) {
-  .demo__phone { width: min(11rem, 60%); }
+  .demo__phone { width: min(12.5rem, 62%); }
 }
 
 /* Gestures */

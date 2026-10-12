@@ -166,9 +166,10 @@ function checkPage(html, page, pageDir, releaseUrls, fail) {
   // The interactive demo: present, labelled as a simulation, with its strings.
   const demo = html.match(/<figure class="demo"[\s\S]*?<\/figure>/)?.[0] ?? '';
   if (!demo || !demo.includes('class="pad"') || !demo.includes('class="tv"') || !demo.includes('role="status"')) fail('缺少交互演示');
+  if (demo && !/class="search__field"[\s\S]*class="composer__draft"[\s\S]*class="phone__key"[\s\S]*class="phone__mic"/.test(demo)) fail('演示缺少搜索框、草稿、键盘按钮或麦克风');
   try {
     const copy = JSON.parse(demo.match(/<script type="application\/json" id="demo-copy">([\s\S]*?)<\/script>/)?.[1] ?? '');
-    for (const key of ['demo.s.select', 'demo.s.menu', 'demo.menu.play', 'demo.play', 'demo.stop']) if (!copy[key]) fail(`演示文案缺少 ${key}`);
+    for (const key of ['demo.s.select', 'demo.s.menu', 'demo.menu.play', 'demo.play', 'demo.stop', 'demo.search', 'demo.search.typed', 'demo.search.spoken', 'demo.compose.send', 'demo.s.sent', 'demo.s.noField']) if (!copy[key]) fail(`演示文案缺少 ${key}`);
   } catch { fail('演示文案 JSON 无法解析'); }
 
   // Only one primary mobile download entry, and never a fake one.

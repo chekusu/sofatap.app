@@ -5,10 +5,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { MEDIA_POSTER, MEDIA_TIMING, build, mediaVideoFor, renderPage, resolveSafeOutDir, validateStrings } from '../scripts/build.mjs';
+import { MEDIA_TIMING, build, mediaPosterFor, mediaVideoFor, renderPage, resolveSafeOutDir, validateStrings } from '../scripts/build.mjs';
 import { checkSite } from '../scripts/check.mjs';
 import { downloadCopy } from '../scripts/download-config.mjs';
 import { LANGS, LOCALES, hrefBetween } from '../scripts/locales.mjs';
+import { loadCues } from '../scripts/captions.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'sofatap-test-'));
@@ -197,7 +198,7 @@ async function fakeMedia(dir) {
   await mkdir(dir, { recursive: true });
   const mp4 = Buffer.concat([Buffer.from([0, 0, 0, 24]), Buffer.from('ftypisom'), Buffer.alloc(2000)]);
   const jpg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(2000)]);
-  await writeFile(path.join(dir, MEDIA_POSTER), jpg);
+  for (const name of LANGS.map(mediaPosterFor)) await writeFile(path.join(dir, name), jpg);
   for (const name of LANGS.map(mediaVideoFor)) await writeFile(path.join(dir, name), mp4);
 }
 
@@ -205,7 +206,8 @@ test('with --media: each page plays its own narrated video with its own captions
   const media = path.join(tmp, 'media-src');
   await fakeMedia(media);
   // Measured caption times for one language replace the plan in its WebVTT file.
-  const measured = Array.from({ length: 8 }, (_, i) => ({ start: 1 + i * 3, end: 3 + i * 3 }));
+  const count = (await loadCues()).cues.length;
+  const measured = Array.from({ length: count }, (_, i) => ({ start: 1 + i * 3, end: 3 + i * 3 }));
   await writeFile(path.join(media, MEDIA_TIMING), JSON.stringify({ ja: measured }));
   const configPath = path.join(tmp, 'media.json');
   await writeFile(configPath, JSON.stringify({ mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' }));
@@ -217,13 +219,14 @@ test('with --media: each page plays its own narrated video with its own captions
     // Only the page's own captions: they are timed to this language's video.
     assert.deepEqual(tracks.map((t) => [t[1], t[0].includes(' default')]), [[l.lang, true]], l.lang);
     assert.ok(page.includes(`<source src="${l.dir ? '../' : ''}media/${mediaVideoFor(l.lang)}" type="video/mp4">`), l.lang);
+    assert.ok(page.includes(`poster="${l.dir ? '../' : ''}media/${mediaPosterFor(l.lang)}"`), l.lang);
     assert.match(page, /controlslist="nodownload"/);
     assert.doesNotMatch(page, /<a\b[^>]*href="(?:\.\.\/)?media\/|\sdownload[\s>]/, l.lang);
   }
   const vtt = await readFile(path.join(out, 'media', 'sofatap-demo.ja.vtt'), 'utf8');
   assert.match(vtt, /^WEBVTT/);
   assert.match(vtt, /00:00:01\.000 --> 00:00:03\.000 line:-2\nSofatap。/);
-  assert.equal((await readFile(path.join(out, 'media', 'sofatap-demo.en.vtt'), 'utf8')).match(/ --> /g).length, 8);
+  assert.equal((await readFile(path.join(out, 'media', 'sofatap-demo.en.vtt'), 'utf8')).match(/ --> /g).length, count);
   assert.deepEqual((await checkSite(out)).problems, []);
   // Without --media there is no video section and nothing refers to media/.
   const plain = await buildWith('no-media', { mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' });

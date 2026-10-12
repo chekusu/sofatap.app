@@ -6,14 +6,14 @@
 //   A) one continuous narration   narration-<lang>.<mp3|wav|m4a|aac> + narration-<lang>.json
 //      (character timestamps: ElevenLabs "alignment" { characters, character_start_times_seconds,
 //      character_end_times_seconds }, or a list of { text, start, end } tokens), or
-//   B) eight separate cue clips    narration-<lang>-1.<ext> … narration-<lang>-8.<ext>
-// cuts the eight cues out of A using the timestamps (B needs no cutting), records the scene to
+//   B) one clip per cue           narration-<lang>-1.<ext> … narration-<lang>-<cues>.<ext>
+// cuts the cues out of A using the timestamps (B needs no cutting), records the scene to
 // fit them (tools/film/record.mjs, same page and fixed clock), mixes the cues in at their
 // segments, normalises loudness, and writes
 //   <out>/site/sofatap-demo-<lang>.mp4      narrated, no burned captions (the website plays these)
 //   <out>/site/sofatap-demo.<lang>.vtt      captions at the measured times
 //   <out>/site/timing.json                  measured caption times for scripts/build.mjs --media
-//   <out>/site/sofatap-demo-poster.jpg      a frame with the right-click menu open (from the first language)
+//   <out>/site/sofatap-demo-poster-<lang>.jpg   a frame after the first search, in that language
 //   <out>/promo/sofatap-demo-<lang>-subtitled.mp4   narrated with captions burned in (for sharing)
 //   <out>/report.json                        cue placement, lengths, loudness and warnings
 //
@@ -29,12 +29,11 @@ import { fileURLToPath } from 'node:url';
 import { loadCues, toAss, toVtt } from '../../scripts/captions.mjs';
 import { LOCALES, mediaTag } from '../../scripts/locales.mjs';
 import { narrationManifest } from './narration.mjs';
-import { record } from './record.mjs';
+import { posterScene, record } from './record.mjs';
 import { planFilm } from './timeline.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const AUDIO_EXT = ['.mp3', '.wav', '.m4a', '.aac', '.flac'];
-const SCENE_END = 30; // scene seconds available after the last anchor runs out
 
 export function parseArgs(argv, env = process.env) {
   const args = { audio: null, out: null, playwright: env.SOFATAP_PLAYWRIGHT ?? null, browser: env.SOFATAP_BROWSER ?? null, langs: LOCALES.map((l) => l.lang).join(','), jobs: 3, ffmpeg: env.SOFATAP_FFMPEG ?? 'ffmpeg', font: 'sans-serif' };
@@ -183,7 +182,7 @@ export function mediaDuration(ffmpeg, file) {
   return Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]);
 }
 
-async function findAudio(dir, tag, lang) {
+async function findAudio(dir, tag, lang, count) {
   const names = await readdir(dir);
   const pick = (base) => names.find((n) => AUDIO_EXT.includes(path.extname(n).toLowerCase()) && path.basename(n, path.extname(n)) === base);
   // narration-<tag>.<ext> + .json, or simply <lang>.<ext> + <lang>.json.
@@ -194,9 +193,9 @@ async function findAudio(dir, tag, lang) {
     if (!json) throw new Error(`${full} needs ${base}.json with character timestamps`);
     return { kind: 'full', file: path.join(dir, full), timestamps: path.join(dir, json) };
   }
-  const clips = Array.from({ length: 8 }, (_, i) => pick(`narration-${tag}-${i + 1}`));
+  const clips = Array.from({ length: count }, (_, i) => pick(`narration-${tag}-${i + 1}`));
   if (clips.every(Boolean)) return { kind: 'clips', files: clips.map((n) => path.join(dir, n)) };
-  throw new Error(`No narration for ${tag}: expected narration-${tag}.<audio> + .json, or narration-${tag}-1…8.<audio>`);
+  throw new Error(`No narration for ${tag}: expected narration-${tag}.<audio> + .json, or narration-${tag}-1…${count}.<audio>`);
 }
 
 export async function voice(args) {
@@ -217,11 +216,11 @@ export async function voice(args) {
   let timing = {};
   try { timing = JSON.parse(await readFile(path.join(site, 'timing.json'), 'utf8')); } catch { /* first run */ }
 
-  async function one(lang, first) {
+  async function one(lang) {
     const tag = mediaTag(lang);
     const l = LOCALES.find((x) => x.lang === lang);
     const entry = manifest.languages[lang];
-    const source = await findAudio(args.audio, tag, lang);
+    const source = await findAudio(args.audio, tag, lang, cues.cues.length);
     // Where each cue sits in its audio input.
     let spans;
     let inputs;
@@ -235,15 +234,16 @@ export async function voice(args) {
       inputs = source.files;
       spans = source.files.map((f) => ({ from: 0, to: mediaDuration(args.ffmpeg, f) }));
     }
-    const plan = planFilm(cues, spans.map((sp) => sp.to - sp.from), { sceneEnd: SCENE_END });
+    const plan = planFilm(cues, spans.map((sp) => sp.to - sp.from), { sceneEnd: cues.duration });
 
     // The scene, recorded to this language's plan (silent, H.264).
     const work = path.join(tmp, tag);
     await mkdir(work, { recursive: true });
-    const double = plan.segments[4];
+    // The page is this language's own, so the scene's text (titles, search, Send) is in it too.
+    const posterSegment = plan.segments.find((s) => s.sceneFrom <= posterScene(cues) && posterScene(cues) < s.sceneTo);
     await record({ out: work, name: 'silent.mp4', plan, playwright: args.playwright, browser: args.browser, ffmpeg: args.ffmpeg,
-      lang: 'en', fps: 30, quiet: true, posterAt: double.filmFrom + 0.9 });
-    if (first) await copyFile(path.join(work, 'sofatap-demo-poster.jpg'), path.join(site, 'sofatap-demo-poster.jpg'));
+      lang, fps: 30, quiet: true, posterAt: posterSegment.filmFrom + (posterScene(cues) - posterSegment.sceneFrom) });
+    await copyFile(path.join(work, 'sofatap-demo-poster.jpg'), path.join(site, `sofatap-demo-poster-${tag}.jpg`));
 
     // One audio track: every cue trimmed, delayed to its segment, mixed, normalised, padded.
     const files = [...new Set(inputs)];
@@ -275,7 +275,7 @@ export async function voice(args) {
     const mean = Number(/mean_volume: (-?[\d.]+) dB/.exec(stats)?.[1]);
     const warnings = [];
     if (!(peak <= -0.5)) warnings.push(`peak ${peak} dB is close to clipping`);
-    if (plan.duration > 30) warnings.push(`video is ${plan.duration.toFixed(2)} s, over 30 s`);
+    if (plan.duration > 75) warnings.push(`video is ${plan.duration.toFixed(2)} s, over 75 s`);
     timing[lang] = plan.captions;
     report.languages[lang] = {
       duration: plan.duration, peakDb: peak, meanDb: mean, warnings,
@@ -288,9 +288,8 @@ export async function voice(args) {
 
   try {
     const queue = args.langs.slice();
-    const firstLang = queue[0];
     const workers = Array.from({ length: Math.min(args.jobs, queue.length) }, async () => {
-      for (let lang = queue.shift(); lang; lang = queue.shift()) await one(lang, lang === firstLang);
+      for (let lang = queue.shift(); lang; lang = queue.shift()) await one(lang);
     });
     await Promise.all(workers);
   } finally {

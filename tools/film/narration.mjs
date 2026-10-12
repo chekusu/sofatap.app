@@ -1,7 +1,7 @@
-// Narration script for the demo video: the eight caption cues of every language, with the
-// text a voice should speak. Captions show "Sofatap"; speech says "Sofa tap" so the brand
+// Narration script for the demo video: the caption cues of every language (src/video/cues.json),
+// with the text a voice should speak. Captions show "Sofatap"; speech says "Sofa tap" so the brand
 // is pronounced as two familiar words. One continuous passage per language (cues on separate
-// lines) reads more naturally than eight separate clips; character offsets let the returned
+// lines) reads more naturally than separate clips; character offsets let the returned
 // character timestamps be split back into cues.
 // Usage: node tools/film/narration.mjs --out <file.json>
 import { readFile, writeFile } from 'node:fs/promises';
@@ -34,7 +34,7 @@ export async function narrationManifest() {
     languages[l.lang] = { file: `narration-${l.lang.toLowerCase()}`, rtl: Boolean(l.rtl), text, cues: lines };
   }
   return {
-    version: 2,
+    version: 3,
     cues: cues.cues.length,
     timeline: { duration: cues.duration, note: 'Windows are the planned on-screen moments; final cue times come from the measured audio.' },
     voice: { model: 'elevenlabs/tts/eleven-v4', voice: 'Brian', stability: 0.7, similarity_boost: 0.75, output_format: 'mp3_44100_192', timestamps: true },

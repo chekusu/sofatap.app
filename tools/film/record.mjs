@@ -5,7 +5,7 @@
 //
 // Usage:
 //   node tools/film/record.mjs --out <dir> --playwright <path to the playwright package>
-//        [--browser <chromium executable>] [--ffmpeg ffmpeg] [--lang en] [--fps 30] [--duration 30]
+//        [--browser <chromium executable>] [--ffmpeg ffmpeg] [--lang en] [--fps 30] [--duration 55]
 //        [--stills 1.5,8,12.5] (only PNGs of those scene moments, no video)
 // Paths can also come from SOFATAP_PLAYWRIGHT, SOFATAP_BROWSER and SOFATAP_FFMPEG.
 // Writes <out>/sofatap-demo.mp4 (H.264, yuv420p, faststart, no audio) and sofatap-demo-poster.jpg.
@@ -24,11 +24,15 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..');
 const WIDTH = 1920;
 const HEIGHT = 1080;
-// Film timeline in seconds (captions in src/video/cues.json follow the same moments).
-const INTRO_END = 3.2; // the title card fades out here
+// Film timeline in seconds. The title card fades out as the second cue begins and the end card
+// fades in at the last cue's moment (src/video/cues.json); the scripted demo starts in between.
 const SCRIPT_START = 6.3; // the scripted demo starts (finger appears)
-const OUTRO_START = 20.6; // the end card fades in here
 const FADE = 0.5;
+// The poster: just after the first search, with the sent text in the search box and the
+// draft composer on the phone.
+const POSTER_CUE = 'video.cue.search';
+const POSTER_AFTER = 2.0;
+export const posterScene = (cues) => cues.cues.find((c) => c.key === POSTER_CUE).anchor + POSTER_AFTER;
 
 export function parseArgs(argv, env = process.env) {
   const args = {
@@ -44,7 +48,7 @@ export function parseArgs(argv, env = process.env) {
   if (!args.playwright) throw new Error('--playwright <path> or SOFATAP_PLAYWRIGHT is required');
   if (!LOCALES.some((l) => l.lang === args.lang)) throw new Error(`Unknown --lang ${args.lang}`);
   if (!Number.isInteger(args.fps) || args.fps < 24 || args.fps > 60) throw new Error('--fps must be 24–60');
-  if (args.duration !== null && !(args.duration >= 20 && args.duration <= 40)) throw new Error('--duration must be 20–40 seconds');
+  if (args.duration !== null && !(args.duration >= 20 && args.duration <= 90)) throw new Error('--duration must be 20–90 seconds');
   // A path to the playwright package is taken relative to where the command runs;
   // a bare package name (for example "playwright") is resolved like an import.
   const playwright = /^[./]|^[A-Za-z]:[\\/]/.test(args.playwright) ? path.resolve(args.playwright) : args.playwright;
@@ -76,7 +80,7 @@ function setUpFilm({ intro, script, outro, fade }) {
   film.insertBefore(demo, film.firstChild);
   document.body.appendChild(film);
   document.body.classList.add('is-filming');
-  window.SofatapDemo.film.begin({ neutral: true });
+  window.SofatapDemo.film.begin();
   const introCard = film.querySelector('.film__card--intro');
   const outroCard = film.querySelector('.film__card--outro');
   const clamp = (v) => Math.min(1, Math.max(0, v));
@@ -114,7 +118,13 @@ export async function record(args) {
     const locale = LOCALES.find((l) => l.lang === args.lang);
     await page.goto(new URL(locale.dir ? `${locale.dir}/` : './', server.url).href, { waitUntil: 'load' });
     await page.addStyleTag({ content: await readFile(path.join(HERE, 'film.css'), 'utf8') });
-    await page.evaluate(setUpFilm, { intro: INTRO_END, script: SCRIPT_START, outro: OUTRO_START, fade: FADE });
+    await page.evaluate(setUpFilm, { intro: cues.cues[1].anchor, script: SCRIPT_START, outro: cues.cues.at(-1).anchor, fade: FADE });
+    // Frames come straight from Chromium as lossless PNG (about twice as fast as page.screenshot,
+    // pixel-identical). film.css already stops transitions and animations; carets are hidden here.
+    await page.addStyleTag({ content: '*, *::before, *::after { caret-color: transparent !important; }' });
+    const cdp = await page.context().newCDPSession(page);
+    const shot = async () => Buffer.from((await cdp.send('Page.captureScreenshot',
+      { format: 'png', optimizeForSpeed: true, captureBeyondViewport: false })).data, 'base64');
     await page.evaluate(async () => {
       await document.fonts.ready;
       await Promise.all([...document.images].map((i) => (i.complete ? null : new Promise((r) => { i.onload = i.onerror = r; }))));
@@ -126,7 +136,7 @@ export async function record(args) {
       for (const t of args.stills.slice().sort((a, b) => a - b)) {
         await page.evaluate((time) => window.__filmSeek(time), t);
         const file = path.join(args.out, `still-${t.toFixed(2)}.png`);
-        await page.screenshot({ path: file, animations: 'disabled', caret: 'hide' });
+        await writeFile(file, await shot());
         shots.push(file);
       }
       if (errors.length) throw new Error(`page errors: ${errors.join('; ')}`);
@@ -171,11 +181,18 @@ export async function record(args) {
         await page.evaluate((time) => window.__filmSeek(time), k / args.fps);
       }
     }
+    // While the narration holds a segment, every frame shows the same scene moment: the page
+    // is seeked once and its picture reused (the fixed clock makes it identical).
+    let last = { scene: null, png: null };
     for (let i = firstFrame; i < frames; i += 1) {
       const t = i / args.fps;
-      const state = await page.evaluate((time) => window.__filmSeek(time), sceneAt(t));
-      if (state.step && state.step !== marks.at(-1)?.step) marks.push({ step: state.step, time: +t.toFixed(3) });
-      await write(await page.screenshot({ type: 'png', animations: 'disabled', caret: 'hide' }));
+      const scene = sceneAt(t);
+      if (scene !== last.scene) {
+        const state = await page.evaluate((time) => window.__filmSeek(time), scene);
+        if (state.step && state.step !== marks.at(-1)?.step) marks.push({ step: state.step, time: +t.toFixed(3) });
+        last = { scene, png: await shot() };
+      }
+      await write(last.png);
       if (i % (args.fps * 5) === 0 && !args.quiet) console.log(`frame ${i}/${frames}`);
     }
     ffmpeg.stdin.end();
@@ -183,9 +200,8 @@ export async function record(args) {
     ffmpeg = null;
     if (errors.length) throw new Error(`page errors: ${errors.join('; ')}`);
     if (args.tail) return { output, marks };
-    // Poster: the moment the right-click menu is open.
     const poster = path.join(args.out, 'sofatap-demo-poster.jpg');
-    const p = spawnSync(args.ffmpeg, ['-y', '-loglevel', 'error', '-ss', String(args.posterAt ?? 13.4), '-i', output, '-frames:v', '1', '-q:v', '3', poster], { stdio: 'inherit' });
+    const p = spawnSync(args.ffmpeg, ['-y', '-loglevel', 'error', '-ss', String(args.posterAt ?? posterScene(cues)), '-i', output, '-frames:v', '1', '-q:v', '3', poster], { stdio: 'inherit' });
     if (p.status !== 0) throw new Error('poster extraction failed');
     await writeFile(path.join(args.out, 'timeline.json'), `${JSON.stringify({ duration, fps: args.fps, scriptStart: SCRIPT_START, steps: marks }, null, 2)}\n`);
     return { output, poster, marks };

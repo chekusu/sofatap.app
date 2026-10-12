@@ -1,13 +1,23 @@
 {
-  "duration": 25,
+  "duration": 55,
   "cues": [
-    { "key": "video.cue.intro", "anchor": 0, "start": 0.3, "end": 3.2 },
+    { "key": "video.cue.intro", "anchor": 0, "start": 0.3, "end": 3.1 },
     { "key": "video.cue.setup", "anchor": 3.2, "start": 3.4, "end": 6.4 },
     { "key": "video.cue.slide", "anchor": 6.5, "start": 6.5, "end": 9.4 },
     { "key": "video.cue.tap", "anchor": 9.5, "start": 9.5, "end": 11.4 },
-    { "key": "video.cue.double", "anchor": 11.5, "start": 11.5, "end": 14.4 },
-    { "key": "video.cue.play", "anchor": 14.5, "start": 14.5, "end": 15.8 },
-    { "key": "video.cue.sofa", "anchor": 15.9, "start": 16.0, "end": 20.6 },
-    { "key": "video.cue.end", "anchor": 20.6, "start": 20.8, "end": 24.8 }
+    { "key": "video.cue.double", "anchor": 11.5, "start": 11.5, "end": 13.6 },
+    { "key": "video.cue.menu", "anchor": 13.7, "start": 13.7, "end": 16.6 },
+    { "key": "video.cue.field", "anchor": 16.7, "hold": 16.7, "start": 16.8, "end": 19.6 },
+    { "key": "video.cue.keyboard", "anchor": 19.7, "start": 19.8, "end": 23 },
+    { "key": "video.cue.send", "anchor": 23.1, "hold": 24.8, "start": 23.2, "end": 25.8 },
+    { "key": "video.cue.search", "anchor": 25.9, "start": 25.9, "end": 28.8 },
+    { "key": "video.cue.clear", "anchor": 28.9, "hold": 28.9, "start": 28.9, "end": 31.2 },
+    { "key": "video.cue.mic", "anchor": 31.3, "start": 31.3, "end": 32.6 },
+    { "key": "video.cue.say", "anchor": 32.7, "start": 32.8, "end": 34.8 },
+    { "key": "video.cue.review", "anchor": 34.9, "hold": 36.7, "start": 34.9, "end": 37.8 },
+    { "key": "video.cue.found", "anchor": 37.9, "start": 37.9, "end": 41.6 },
+    { "key": "video.cue.play", "anchor": 41.7, "start": 41.7, "end": 45.5 },
+    { "key": "video.cue.sofa", "anchor": 45.6, "start": 45.7, "end": 50.2 },
+    { "key": "video.cue.end", "anchor": 50.3, "start": 50.5, "end": 54.7 }
   ]
 }

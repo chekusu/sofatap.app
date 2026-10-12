@@ -1,5 +1,6 @@
 /* Film composition for tools/film/record.mjs: the website's own demo, framed at 1920x1080.
-   No narrative text is drawn here; captions in every language are added afterwards. */
+   Each language is recorded from its own page, so the scene's own text (film titles, the
+   search box, Send) is in that language; narration captions are added afterwards. */
 html, body { margin: 0; background: #11191B; overflow: hidden; }
 body.is-filming > :not(.film) { display: none !important; }
 .film, .film * { transition: none !important; animation: none !important; }
@@ -38,15 +39,12 @@ body.is-filming > :not(.film) { display: none !important; }
 .film .tv-set__base { height: 64px; }
 .film .pc { font-size: 1.1rem; }
 .film .pc svg { width: 5rem; }
+.film .phone__screen .phone__logo { border-radius: 12px; }
+/* The phone's draft and Send stay readable at film size. */
+.film .composer__draft, .film .composer__listening { font-size: 6.6cqw; }
+.film .composer__send { height: 12cqw; padding: 0 5cqw; font-size: 5.4cqw; }
+.film .composer__send svg { width: 5.2cqw; height: 5.2cqw; }
 .film .pad__finger { width: 3.4rem; height: 3.4rem; margin: -1.7rem 0 0 -1.7rem; border-width: 3px; }
-
-/* Neutral base: no words inside the scene, so each language's captions stand alone. */
-.film .is-neutral .tile__title, .film .is-neutral .app__title, .film .is-neutral .pc__label,
-.film .is-neutral .player__label, .film .is-neutral .player__back span, .film .is-neutral .player__title,
-.film .is-neutral .menu__text { display: none; }
-.film .is-neutral .menu { min-width: 0; padding: 1cqw; }
-.film .is-neutral .menu__item { padding: 1.5cqw 2.2cqw; }
-.film .is-neutral .menu__item svg { width: 3.6cqw; height: 3.6cqw; }
 
 .film__brand {
   position: absolute;

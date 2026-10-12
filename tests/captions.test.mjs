@@ -9,10 +9,14 @@ import { LOCALES } from '../scripts/locales.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const cues = await loadCues();
 
-test('the cue timeline fits a 20–30 second video with eight narration cues and no label', () => {
-  assert.ok(cues.duration >= 20 && cues.duration <= 30);
-  assert.equal(cues.cues.length, 8);
+test('the cue timeline: a one-minute, three-act story with every cue on its own scene moment and no label', () => {
+  assert.ok(cues.duration >= 45 && cues.duration <= 70);
   assert.equal('label' in cues, false);
+  const keys = cueKeys(cues).map((k) => k.replace('video.cue.', ''));
+  // Pointer, then keyboard (draft → Send → Search), then voice (clear → mic → spoken title → review → Search), then the brand.
+  assert.deepEqual(keys, ['intro', 'setup', 'slide', 'tap', 'double', 'menu', 'field', 'keyboard', 'send', 'search',
+    'clear', 'mic', 'say', 'review', 'found', 'play', 'sofa', 'end']);
+  cues.cues.forEach((c, i) => { if (i) assert.ok(c.anchor > cues.cues[i - 1].anchor, c.key); });
 });
 
 test('every language has every caption, as valid WebVTT and ASS', async () => {
@@ -21,15 +25,15 @@ test('every language has every caption, as valid WebVTT and ASS', async () => {
     for (const key of cueKeys(cues)) assert.ok(strings[key]?.trim(), `${l.lang}:${key}`);
     const vtt = toVtt(strings, cues);
     assert.match(vtt, /^WEBVTT\n/);
-    assert.equal(vtt.match(/ --> /g).length, 8, l.lang);
+    assert.equal(vtt.match(/ --> /g).length, cues.cues.length, l.lang);
     // Every cue sits one snapped line above the default, never at a percentage that controls could cover.
-    assert.equal(vtt.match(/ line:-2\n/g).length, 8, l.lang);
+    assert.equal(vtt.match(/ line:-2\n/g).length, cues.cues.length, l.lang);
     assert.doesNotMatch(vtt, /line:\d+%/, l.lang);
-    assert.match(vtt, /--> 00:00:24\.800 line:-2\n/);
+    assert.match(vtt, /--> 00:00:54\.700 line:-2\n/);
     // A blank line inside a cue would end it early.
     for (const block of vtt.trimEnd().split('\n\n').slice(1)) assert.ok(block.split('\n').every((line) => line.trim()), `${l.lang}: ${block}`);
     const ass = toAss(strings, cues);
-    assert.equal(ass.match(/^Dialogue:/gm).length, 8);
+    assert.equal(ass.match(/^Dialogue:/gm).length, cues.cues.length);
     assert.doesNotMatch(ass, /Style: Label/);
     assert.match(ass, /^Style: Caption,.*,112,(?:1|-1)$/m);
     assert.match(ass, /PlayResX: 1920\nPlayResY: 1080/);

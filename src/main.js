@@ -62,6 +62,21 @@
     var fx = q('.pad__fx');
     var fxContext = fx && fx.getContext ? fx.getContext('2d') : null; // optional decoration
     var legend = [].slice.call(document.querySelectorAll('.gesture[data-gesture]'));
+    // The computer's search box on the TV, and the phone's draft composer (text input).
+    var search = q('.search');
+    var searchField = q('.search__field');
+    var searchText = q('.search__text');
+    var searchClear = q('.search__clear');
+    var searchGo = q('.search__go');
+    var keyButton = q('.phone__key');
+    var micButton = q('.phone__mic');
+    var composer = q('.composer');
+    var composerBox = q('.composer__box');
+    var draftField = q('.composer__draft');
+    var sendButton = q('.composer__send');
+    var closeButton = q('.composer__close');
+    var keyCaps = [].slice.call(demo.querySelectorAll('.keys i:not(.keys__wide)'));
+    var buttons = { keyboard: keyButton, mic: micButton, send: sendButton };
     var ring = document.createElement('span');
     ring.className = 'tv__ring';
     ring.setAttribute('aria-hidden', 'true');
@@ -70,6 +85,8 @@
     pad.setAttribute('tabindex', '0');
     pad.setAttribute('role', 'application');
     playButton.hidden = false;
+    keyButton.hidden = false;
+    micButton.hidden = false;
     demo.classList.add('is-live');
 
     var filmTime = null; // set while the video is being recorded
@@ -94,6 +111,9 @@
         pointer: { x: core.SCRIPT.pointer.x, y: core.SCRIPT.pointer.y },
         hover: null, selected: -1, menu: null, playing: null, dragging: false,
         list: {}, seen: {}, ripples: [], ring: null, legend: {},
+        search: { text: '', focused: false, query: '' },
+        compose: { open: false, keyboard: false, listening: false, draft: '', sent: false, sentText: '' },
+        pressed: {}, key: null,
       };
     }
     resetState();
@@ -131,7 +151,12 @@
     function targets() {
       if (state.menu) return menuItems.filter(function (m) { return !m.hidden; }).map(function (el, i) { return { kind: 'menu', index: i, el: el }; });
       if (state.playing) return [{ kind: 'back', el: player.querySelector('.player__back') }, { kind: 'toggle', el: player.querySelector('.player__toggle') }];
-      return tiles.filter(visibleInView).map(function (el) { return { kind: 'tile', index: Number(el.dataset.index), el: el }; });
+      return searchTargets().concat(tiles.filter(function (el) { return !el.hidden && visibleInView(el); }).map(function (el) { return { kind: 'tile', index: Number(el.dataset.index), el: el }; }));
+    }
+    function searchTargets() {
+      var list = [{ kind: 'field', el: searchField }, { kind: 'go', el: searchGo }];
+      if (state.search.text) list.splice(1, 0, { kind: 'clear', el: searchClear });
+      return list;
     }
     function hitTest() {
       var p = pointerPx();
@@ -144,12 +169,14 @@
 
     function targetPoint(name) {
       var parts = name.split(':');
-      var el = parts[0] === 'tile' ? tiles[Number(parts[1])] : parts[0] === 'menu' ? menuItems[Number(parts[1])] : null;
+      var el = parts[0] === 'tile' ? tiles[Number(parts[1])] : parts[0] === 'menu' ? menuItems[Number(parts[1])]
+        : parts[0] === 'search' ? { field: searchField, clear: searchClear, go: searchGo }[parts[1]] : null;
       if (!el) return null;
       var c = centre(el);
       var r = local(el);
-      // Aim a little inside the start of a menu entry, like a person would.
+      // Aim a little inside the start of a menu entry or the search box, like a person would.
       if (parts[0] === 'menu') c.x = r.left + Math.min((r.right - r.left) * 0.35, 90);
+      if (name === 'search:field') c.x = (r.left + r.right) / 2 - (r.right - r.left) * 0.15 * (root.dir === 'rtl' ? -1 : 1);
       return c;
     }
 
@@ -171,6 +198,7 @@
       updateHover();
     }
 
+    // state.hover = undefined (after the scene changes) makes the next call redraw even when nothing is hit.
     function updateHover() {
       var hit = hitTest();
       var key = hit ? hit.kind + ':' + (hit.index === undefined ? '' : hit.index) : null;
@@ -179,6 +207,7 @@
       tiles.forEach(function (t) { t.classList.toggle('is-hover', Boolean(hit && hit.kind === 'tile' && hit.el === t)); });
       menuItems.forEach(function (m) { m.classList.toggle('is-hover', Boolean(hit && hit.kind === 'menu' && hit.el === m)); });
       player.querySelectorAll('[data-hit]').forEach(function (el) { el.classList.toggle('is-hover', Boolean(hit && hit.el === el)); });
+      search.querySelectorAll('[data-hit]').forEach(function (el) { el.classList.toggle('is-hover', Boolean(hit && hit.el === el)); });
       if (state.dragging) tiles.forEach(function (t) { t.classList.toggle('is-held', Boolean(hit && hit.el === t)); });
     }
 
@@ -202,8 +231,134 @@
         else togglePause();
         return;
       }
+      if (hit && (hit.kind === 'field' || hit.kind === 'clear' || hit.kind === 'go')) { clickSearch(hit.kind); return; }
+      setFocus(false);
       if (hit && hit.kind === 'tile') { select(hit.index); say(tr('demo.s.select', { item: titles[hit.index] })); }
       else { select(-1); say(tr('demo.s.clear')); }
+    }
+
+    // --- the computer's search box --------------------------------------------
+    function setFocus(on) { state.search.focused = on; renderSearch(); }
+    function clickSearch(kind) {
+      if (kind === 'field') { setFocus(true); say(tr('demo.s.field')); return; }
+      if (kind === 'clear') {
+        // The box's own clear button: empties the computer's text and keeps it focused.
+        state.search.text = '';
+        setFocus(true);
+        filter('');
+        say(tr('demo.s.cleared'));
+        return;
+      }
+      setFocus(false);
+      filter(state.search.text);
+      var found = tiles.filter(function (t) { return !t.hidden; }).map(function (t) { return titles[Number(t.dataset.index)]; });
+      say(found.length ? tr('demo.s.results', { text: state.search.text.trim(), items: found.join(', ') }) : tr('demo.s.noResults', { text: state.search.text.trim() }));
+    }
+    var fold = function (text) { return String(text).normalize('NFKC').toLocaleLowerCase(); };
+    function filter(query) {
+      state.search.query = query.trim();
+      var wanted = fold(state.search.query);
+      tiles.forEach(function (t, i) { t.hidden = Boolean(wanted) && fold(titles[i]).indexOf(wanted) < 0; });
+      if (state.selected >= 0 && tiles[state.selected].hidden) select(-1);
+      view.scrollTop = 0;
+      state.hover = undefined;
+      updateHover();
+    }
+    function renderSearch() {
+      searchText.textContent = state.search.text;
+      search.classList.toggle('has-text', Boolean(state.search.text));
+      search.classList.toggle('is-focused', state.search.focused);
+    }
+
+    // --- the phone's draft composer (RemoteView in the app) -------------------
+    // The draft stays on the phone until Send; Send types it into the computer's focused
+    // field (adding to what is there) and never presses Enter.
+    function prepareComposition() {
+      var c = state.compose;
+      if (c.sent) { c.draft = ''; c.sent = false; c.sentText = ''; }
+    }
+    function toggleKeyboard() {
+      var c = state.compose;
+      c.listening = false;
+      if (c.keyboard) { c.keyboard = false; c.open = false; }
+      else { prepareComposition(); c.open = true; c.keyboard = true; say(tr('demo.s.compose')); }
+      renderPhone();
+    }
+    function toggleDictation() {
+      var c = state.compose;
+      if (c.listening) {
+        c.listening = false;
+        renderPhone();
+        if (c.draft.trim()) say(tr('demo.s.heard', { text: c.draft.trim() }));
+        return;
+      }
+      prepareComposition();
+      c.open = true;
+      c.keyboard = false;
+      c.listening = true;
+      renderPhone();
+      say(tr('demo.s.listening'));
+    }
+    function sendDraft() {
+      var c = state.compose;
+      if (!c.draft.trim() || c.sent || c.listening) return;
+      if (!state.search.focused) { say(tr('demo.s.noField')); return; }
+      state.search.text += c.draft;
+      c.sent = true;
+      c.sentText = c.draft;
+      c.keyboard = false;
+      renderSearch();
+      renderPhone();
+      if (document.activeElement === draftField) sendButton.focus();
+      say(tr('demo.s.sent', { text: c.draft }));
+    }
+    function closeComposer() {
+      var c = state.compose;
+      c.open = false; c.keyboard = false; c.listening = false;
+      renderPhone();
+    }
+    function renderPhone() {
+      var c = state.compose;
+      demo.classList.toggle('is-composing', c.open);
+      demo.classList.toggle('is-keyboard', c.open && c.keyboard);
+      demo.classList.toggle('is-listening', c.listening);
+      demo.classList.toggle('is-sent', c.sent);
+      composer.hidden = !c.open;
+      if (draftField.value !== c.draft) draftField.value = c.draft;
+      draftField.readOnly = c.sent || c.listening;
+      composerBox.classList.toggle('is-empty', !c.draft);
+      sendButton.disabled = !c.draft.trim() || c.sent || c.listening;
+      keyButton.setAttribute('aria-pressed', String(c.open && c.keyboard));
+      micButton.setAttribute('aria-pressed', String(c.listening));
+      // The touch area changes size with the composer.
+      state.hover = undefined;
+      updateHover();
+    }
+    function pressButton(name) { state.pressed[name] = now(); }
+    function act(name) {
+      if (name === 'keyboard') toggleKeyboard();
+      else if (name === 'mic') toggleDictation();
+      else if (name === 'send') sendDraft();
+    }
+    // Text arriving on the phone: typed on the phone keyboard, or dictated.
+    function showProgress(kind, key, k) {
+      var c = state.compose;
+      var text = tr(key);
+      var chars = Array.from ? Array.from(text) : text.split('');
+      var count;
+      if (kind === 'type') count = Math.ceil(chars.length * k);
+      else {
+        // Dictation arrives a word at a time (a character at a time without spaces).
+        var words = text.match(/\S+\s*/g) || [text];
+        if (words.length === 1) count = Math.ceil(chars.length * k);
+        else count = (Array.from ? Array.from(words.slice(0, Math.ceil(words.length * k)).join('')) : words.slice(0, Math.ceil(words.length * k)).join('')).length;
+      }
+      var next = chars.slice(0, count).join('');
+      if (kind === 'type' && next.length > c.draft.length && keyCaps.length) {
+        var code = next.codePointAt(next.length - 1) || 0;
+        state.key = { index: (code * 7) % keyCaps.length, at: now() };
+      }
+      if (next !== c.draft) { c.draft = next; renderPhone(); }
     }
 
     function rightClick() {
@@ -246,7 +401,7 @@
       if (y + h > box.height - 4) y = p.y - h - 4;
       menu.style.left = Math.max(4, x) + 'px';
       menu.style.top = Math.max(4, y) + 'px';
-      state.hover = null;
+      state.hover = undefined;
       updateHover();
       var labels = actions.map(function (a) { return tr('demo.menu.' + a); }).join(', ');
       say(kind === 'player' ? tr('demo.s.menuPlayer', { items: labels }) : tr('demo.s.menu', { item: titles[index], items: labels }));
@@ -256,7 +411,7 @@
       state.menu = null;
       menu.hidden = true;
       menuItems.forEach(function (m) { m.classList.remove('is-hover'); });
-      state.hover = null;
+      state.hover = undefined;
       updateHover();
     }
 
@@ -286,7 +441,7 @@
       player.hidden = false;
       demo.classList.add('is-playing');
       state.playing = { index: index, started: now(), elapsed: 0, paused: false, last: now() };
-      state.hover = null;
+      state.hover = undefined;
       updateHover();
       say(tr('demo.s.play', { item: titles[index] }));
     }
@@ -296,7 +451,7 @@
       state.playing = null;
       player.hidden = true;
       demo.classList.remove('is-playing', 'is-paused');
-      state.hover = null;
+      state.hover = undefined;
       updateHover();
       if (announce) say(tr('demo.s.back'));
     }
@@ -315,7 +470,7 @@
       view.scrollTop = Math.max(0, Math.min(view.scrollHeight - view.clientHeight, before + px));
       if (view.scrollTop !== before) {
         flashLegend('scroll');
-        state.hover = null;
+        state.hover = undefined;
         updateHover();
         clearTimeout(scrollList.timer);
         scrollList.timer = setTimeout(function () { say(tr('demo.s.scroll')); }, 400);
@@ -327,7 +482,7 @@
       demo.classList.toggle('is-dragging', down);
       if (!down) tiles.forEach(function (t) { t.classList.remove('is-held'); });
       flashLegend('hold');
-      state.hover = null;
+      state.hover = undefined;
       updateHover();
       say(tr(down ? 'demo.s.drag' : 'demo.s.drop'));
     }
@@ -468,8 +623,8 @@
         if (state.menu) { pointAt(menuItems[0]); say(tr(state.menu.kind === 'player' ? 'demo.s.menuPlayer' : 'demo.s.menu', { item: titles[state.menu.index], items: state.menu.actions.map(function (a) { return tr('demo.menu.' + a); }).join(', ') })); }
       }
       else if (e.key === 'Escape') {
-        if (state.menu) { closeMenu(); say(tr('demo.s.close')); }
-        else if (state.playing) stopPlayer(true);
+        if (state.menu) { takeOver(); closeMenu(); say(tr('demo.s.close')); }
+        else if (state.playing) { takeOver(); stopPlayer(true); }
         else handled = false;
       } else if (e.key === 'PageDown' || e.key === 'PageUp') { takeOver(); scrollList((e.key === 'PageDown' ? 1 : -1) * view.clientHeight * 0.6); }
       else handled = false;
@@ -480,7 +635,7 @@
       var c = centre(el);
       state.pointer.x = c.x / box.width;
       state.pointer.y = c.y / box.height;
-      state.hover = null;
+      state.hover = undefined;
       updateHover();
     }
     function fingerRest() { var r = pad.getBoundingClientRect(); return { x: r.width / 2, y: r.height * 0.55 }; }
@@ -488,7 +643,7 @@
     function keyMove(dir) {
       var p = pointerPx();
       var best = null;
-      var all = state.menu || state.playing ? targets() : tiles.map(function (el) { return { kind: 'tile', index: Number(el.dataset.index), el: el }; });
+      var all = state.menu || state.playing ? targets() : searchTargets().concat(tiles.filter(function (el) { return !el.hidden; }).map(function (el) { return { kind: 'tile', index: Number(el.dataset.index), el: el }; }));
       all.forEach(function (t) {
         var c = centre(t.el);
         var along = (c.x - p.x) * dir[0] + (c.y - p.y) * dir[1];
@@ -512,12 +667,14 @@
         state.pointer.y = Math.min(0.99, Math.max(0, state.pointer.y + dir[1] * 0.08));
       }
       flashLegend('slide');
-      state.hover = null;
+      state.hover = undefined;
       updateHover();
       var hit = hitTest();
       if (hit && hit.kind === 'tile') say(tr('demo.s.over', { item: nameOf(hit) }));
       else if (hit && hit.kind === 'menu') say(hit.el.querySelector('.menu__text').textContent);
       else if (hit && hit.kind === 'back') say(hit.el.textContent.trim());
+      else if (hit && hit.kind === 'field') say(tr('demo.search'));
+      else if (hit && hit.kind === 'go') say(tr('demo.search.go'));
       else say(tr('demo.s.empty'));
     }
 
@@ -530,9 +687,11 @@
       closeMenu();
       stopPlayer(false);
       setDraggingQuiet();
-      tiles.forEach(function (t) { t.classList.remove('is-selected', 'is-listed', 'is-seen', 'is-hover', 'is-held'); });
+      tiles.forEach(function (t) { t.classList.remove('is-selected', 'is-listed', 'is-seen', 'is-hover', 'is-held'); t.hidden = false; });
       view.scrollTop = 0;
       resetState();
+      renderSearch();
+      renderPhone();
       updateHover();
     }
     function setDraggingQuiet() { demo.classList.remove('is-dragging'); }
@@ -547,6 +706,15 @@
         target: targetPoint,
         contact: function (kind, point, t) { contact(kind, point, scriptStart + t); },
         finger: showFinger,
+        control: function (name) {
+          var el = buttons[name];
+          if (!el) return null;
+          var r = el.getBoundingClientRect();
+          var p = pad.getBoundingClientRect();
+          return { x: r.left + r.width / 2 - p.left, y: r.top + r.height / 2 - p.top };
+        },
+        press: function (name, down) { if (down) pressButton(name); else act(name); },
+        progress: showProgress,
         step: function (step) { demo.dataset.step = step.gesture || (step.end ? 'end' : ''); },
         done: function () { endScript(false); },
       });
@@ -563,8 +731,10 @@
       demo.classList.remove('is-scripted');
       playText.textContent = tr('demo.play');
       playButton.classList.remove('is-running');
-      if (interrupted) dispatch(touchGestures.cancel());
-      else say(tr('demo.s.done'));
+      if (interrupted) {
+        dispatch(touchGestures.cancel());
+        if (state.compose.listening) { state.compose.listening = false; renderPhone(); }
+      } else say(tr('demo.s.done'));
     }
     // Any real input takes over from the scripted demo.
     function takeOver() {
@@ -582,6 +752,37 @@
       if (script) { endScript(true); say(tr('demo.s.ready')); }
       else { autoplayed = true; startScript(); }
     });
+
+    // The phone's keyboard button, microphone and composer for visitors.
+    keyButton.addEventListener('click', function () {
+      takeOver();
+      pressButton('keyboard');
+      toggleKeyboard();
+      if (state.compose.keyboard) draftField.focus();
+      schedule();
+    });
+    micButton.addEventListener('click', function () {
+      takeOver();
+      pressButton('mic');
+      // A web page cannot stand in for the app's on-device dictation; say what it does.
+      say(tr('demo.s.mic'));
+      schedule();
+    });
+    draftField.addEventListener('input', function () {
+      takeOver();
+      var c = state.compose;
+      c.draft = draftField.value;
+      if (c.sent && c.draft !== c.sentText) c.sent = false;
+      renderPhone();
+    });
+    // Reaching into the draft (pointer or focus) takes over from the scripted demo, like any input.
+    draftField.addEventListener('pointerdown', takeOver);
+    draftField.addEventListener('focus', takeOver);
+    draftField.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); takeOver(); closeComposer(); keyButton.focus(); }
+    });
+    sendButton.addEventListener('click', function () { takeOver(); pressButton('send'); sendDraft(); schedule(); });
+    closeButton.addEventListener('click', function () { takeOver(); closeComposer(); keyButton.focus(); });
 
     // --- rendering ------------------------------------------------------------
     function render(time) {
@@ -616,6 +817,12 @@
           ring.style.transform = 'translate(-50%, -50%) scale(' + (reduced ? 1 : 0.4 + k * 1.2).toFixed(3) + ')';
         }
       }
+      Object.keys(buttons).forEach(function (name) {
+        var at = state.pressed[name];
+        buttons[name].classList.toggle('is-pressed', at !== undefined && time >= at && time - at < 0.18);
+      });
+      keyCaps.forEach(function (el, i) { el.classList.toggle('is-pressed', Boolean(state.key && state.key.index === i && time >= state.key.at && time - state.key.at < 0.12)); });
+      search.classList.toggle('has-blink', state.search.focused && !reduced && Math.floor(time * 1.9) % 2 === 1);
       legend.forEach(function (el) {
         var at = state.legend[el.dataset.gesture];
         el.classList.toggle('is-active', at !== undefined && time - at < 1.2 && time >= at);
@@ -659,6 +866,8 @@
     // gesture deadline (a tap waiting for its double-tap window, or a hold).
     function needsFrame(time) {
       if (script || state.ripples.length || state.ring) return true;
+      if (state.search.focused && stageVisible && !reducedMotion()) return true;
+      for (var b in state.pressed) if (time - state.pressed[b] < 0.2) return true;
       if (state.menu && time - state.menu.at < 0.2) return true;
       for (var name in state.legend) if (time - state.legend[name] < 1.2) return true;
       return Boolean(state.playing && !state.playing.paused && stageVisible && !reducedMotion());
@@ -685,7 +894,7 @@
 
     document.addEventListener('visibilitychange', function () { if (document.hidden) interrupt(); });
     window.addEventListener('blur', interrupt);
-    window.addEventListener('resize', function () { state.hover = null; updateHover(); schedule(); });
+    window.addEventListener('resize', function () { state.hover = undefined; updateHover(); schedule(); });
     onMotionChange(function () { render(now()); schedule(); });
 
     // Play the demo once when it first comes into view, unless the visitor prefers less motion.
@@ -708,7 +917,6 @@
           filmTime = 0;
           filmScriptStarted = false;
           demo.classList.add('is-film');
-          if (options && options.neutral) demo.classList.add('is-neutral');
           resetScene();
           render(0);
         },
@@ -724,7 +932,9 @@
           render(t);
         },
         state: function () {
-          return { pointer: state.pointer, selected: state.selected, menu: state.menu && state.menu.actions, playing: state.playing && state.playing.index, step: demo.dataset.step || '' };
+          return { pointer: state.pointer, selected: state.selected, menu: state.menu && state.menu.actions, playing: state.playing && state.playing.index, step: demo.dataset.step || '',
+            search: state.search.text, focused: state.search.focused, results: tiles.filter(function (t) { return !t.hidden; }).length,
+            draft: state.compose.draft, composer: state.compose.open, keyboard: state.compose.keyboard, listening: state.compose.listening, sent: state.compose.sent };
         },
       },
       play: function () { startScript(); },
