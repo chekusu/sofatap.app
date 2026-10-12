@@ -113,12 +113,15 @@ export async function validateMedia(dir) {
 }
 
 /**
- * The video section: the page's own narrated video with subtitles in every language, this
- * page's language on by default. It is for watching only: no download links.
+ * The video section: the page's own narrated video with its own captions, on by default.
+ * It is for watching only: no download links.
  */
 export function renderVideoSection(page, strings) {
   const m = (name) => `${page.root}media/${name}`;
-  const tracks = LOCALES.map((l) => `            <track kind="subtitles" srclang="${l.lang}" label="${l.name}" src="${m(mediaVttFor(l.lang))}"${l.lang === page.lang ? ' default' : ''}>`);
+  // Each language's video is timed to its own narration, so its captions only fit that video;
+  // the language menu switches video and captions together.
+  const own = locale(page.lang);
+  const tracks = [`          <track kind="subtitles" srclang="${own.lang}" label="${own.name}" src="${m(mediaVttFor(own.lang))}" default>`];
   return [
     '',
     '    <section class="section video" id="video" aria-labelledby="video-title">',

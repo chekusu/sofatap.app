@@ -161,8 +161,8 @@ export function refineCuts(env, spans) {
     const hi = Math.max(spans[i].end, spans[i + 1].start) + 0.35;
     cuts.push(quietest(Math.max(lo, spans[i].start + 0.2), Math.min(hi, spans[i + 1].end - 0.2)));
   }
-  // The whole file is kept: the first cue starts at 0 and the last ends at the measured end,
-  // so every sample of the source speech is used exactly once.
+  // The cues cover the file from 0 to its measured end, contiguous and without overlap,
+  // so the full narration is preserved.
   const first = 0;
   const last = total;
   return spans.map((_, i) => ({ from: i ? cuts[i - 1] : first, to: i + 1 < spans.length ? cuts[i] : last }));
@@ -222,8 +222,8 @@ export async function voice(args) {
     if (source.kind === 'full') {
       spans = cueSpans(readAlignment(JSON.parse(await readFile(source.timestamps, 'utf8'))), entry.cues.map((c) => c.speech));
       inputs = spans.map(() => source.file);
-      // Timestamps can be spread evenly over a chunk of words, so the exact cut between two
-      // cues is moved to the quietest moment near it in the audio itself: no word is chopped.
+      // Timestamps can be spread evenly over a chunk of words, so the cut between two cues is
+      // moved to the quietest moment near it in the audio itself, between words.
       spans = refineCuts(loudness(args.ffmpeg, source.file), spans);
     } else {
       inputs = source.files;

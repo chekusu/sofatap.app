@@ -219,9 +219,8 @@ function checkPage(html, page, pageDir, releaseUrls, fail) {
   const video = html.match(/<section class="section video"[\s\S]*?<\/section>/)?.[0];
   if (video) {
     const tracks = [...video.matchAll(/<track kind="subtitles" srclang="([^"]+)"[^>]*>/g)];
-    if (tracks.length !== LOCALES.length) fail(`视频字幕轨应有 ${LOCALES.length} 条，当前 ${tracks.length}`);
-    const defaults = tracks.filter((t) => / default>?/.test(t[0]));
-    if (defaults.length !== 1 || defaults[0][1] !== lang) fail('视频默认字幕必须是本页语言');
+    // Captions are timed to this language's video, so only its own track belongs here.
+    if (tracks.length !== 1 || tracks[0][1] !== lang || !/ default>?/.test(tracks[0][0])) fail('视频只能带本页语言的默认字幕');
     const own = `sofatap-demo-${lang.toLowerCase()}.mp4`;
     if (!new RegExp(`<source src="(?:\\.\\./)?media/${own}" type="video/mp4">`).test(video)) fail(`视频必须播放本页语言的版本：${own}`);
     if (!/controlslist="nodownload"/.test(video)) fail('视频播放器应隐藏下载按钮');

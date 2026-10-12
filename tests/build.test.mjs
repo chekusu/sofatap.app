@@ -201,7 +201,7 @@ async function fakeMedia(dir) {
   for (const name of LANGS.map(mediaVideoFor)) await writeFile(path.join(dir, name), mp4);
 }
 
-test('with --media: each page plays its own narrated video, twelve subtitle tracks, and no download links', async () => {
+test('with --media: each page plays its own narrated video with its own captions, and no download links', async () => {
   const media = path.join(tmp, 'media-src');
   await fakeMedia(media);
   // Measured caption times for one language replace the plan in its WebVTT file.
@@ -214,8 +214,8 @@ test('with --media: each page plays its own narrated video, twelve subtitle trac
   for (const l of LOCALES) {
     const page = await readFile(path.join(out, l.dir, 'index.html'), 'utf8');
     const tracks = [...page.matchAll(/<track kind="subtitles" srclang="([^"]+)"[^>]*>/g)];
-    assert.equal(tracks.length, 12, l.lang);
-    assert.deepEqual(tracks.filter((t) => t[0].includes(' default')).map((t) => t[1]), [l.lang]);
+    // Only the page's own captions: they are timed to this language's video.
+    assert.deepEqual(tracks.map((t) => [t[1], t[0].includes(' default')]), [[l.lang, true]], l.lang);
     assert.ok(page.includes(`<source src="${l.dir ? '../' : ''}media/${mediaVideoFor(l.lang)}" type="video/mp4">`), l.lang);
     assert.match(page, /controlslist="nodownload"/);
     assert.doesNotMatch(page, /<a\b[^>]*href="(?:\.\.\/)?media\/|\sdownload[\s>]/, l.lang);

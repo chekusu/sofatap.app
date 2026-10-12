@@ -117,7 +117,7 @@ npm run preview -- --port 0 --base /sofatap/
 
 - 旁白和字幕是同一段文字：各语言文件中的 8 条 `video.cue.*`，规划时间在 `src/video/cues.json`。`tools/film/narration.mjs` 生成配音稿（读作「Sofa tap」，字幕仍写 Sofatap）。
 - `tools/film/voice.mjs` 接收配好的整段旁白和字符时间戳，按 8 条字幕切分计时，配到母版上：网站用的每语言一个带声音、不烧字幕的 MP4，以及字幕时间 `timing.json`；另外为每种语言烧录字幕版（供推广使用，不放进网站）。
-- 网站每种语言的页面播放该语言的配音视频，默认显示本页语言的 WebVTT 字幕，也可切换为其他 11 种。播放器隐藏下载按钮（`controlslist="nodownload"`），页面上没有视频或字幕的下载链接。
+- 网站每种语言的页面播放该语言的配音视频，并显示本页语言的 WebVTT 字幕。每种语言的画面按自己的旁白计时，所以字幕只配本语言的视频；换语言请用页头的语言菜单，视频和字幕会一起切换。播放器隐藏下载按钮（`controlslist="nodownload"`），页面上没有视频或字幕的下载链接。
 
 视频文件较大，不放进 Git。步骤见 `tools/film/README.md`；网站构建只需要：
 
