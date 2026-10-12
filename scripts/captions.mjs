@@ -19,7 +19,8 @@ export function validateCues(data) {
   const fail = (msg) => { throw new Error(`字幕时间轴不正确：${msg}`); };
   const num = (v) => typeof v === 'number' && Number.isFinite(v);
   if (!data || !num(data.duration) || data.duration <= 0 || !Array.isArray(data.cues) || data.cues.length === 0) fail('缺少 duration 或 cues');
-  const all = [data.label, ...data.cues];
+  if ('label' in data) fail('不再使用常驻标注（label）');
+  const all = data.cues;
   for (const cue of all) {
     if (!cue || typeof cue.key !== 'string' || !/^video\.[\w.]+$/.test(cue.key)) fail(`键名无效：${JSON.stringify(cue?.key)}`);
     if (!num(cue.start) || !num(cue.end) || !(cue.start >= 0 && cue.end > cue.start && cue.end <= data.duration)) fail(`${cue.key} 的时间无效`);
@@ -30,8 +31,17 @@ export function validateCues(data) {
   return data;
 }
 
+/** Planned cue times, or measured ones that must be finite, ordered and non-overlapping. */
+export function cueTimes(data, timing) {
+  if (!timing) return data.cues.map((c) => ({ start: c.start, end: c.end }));
+  const ok = Array.isArray(timing) && timing.length === data.cues.length && timing.every((t, i) =>
+    Number.isFinite(t?.start) && Number.isFinite(t?.end) && t.start >= 0 && t.end > t.start && (i === 0 || t.start >= timing[i - 1].end));
+  if (!ok) throw new Error('字幕实测时间不正确：需要与字幕条数相同、递增且不重叠的 start/end');
+  return timing.map((t) => ({ start: t.start, end: t.end }));
+}
+
 /** Keys every language file must provide for the video. */
-export const cueKeys = (data) => [data.label.key, ...data.cues.map((c) => c.key)];
+export const cueKeys = (data) => data.cues.map((c) => c.key);
 
 const stamp = (seconds) => {
   const ms = Math.round(seconds * 1000);
@@ -51,15 +61,16 @@ const plain = (value, key) => {
 };
 
 /**
- * WebVTT for one language. The simulation label stays at the top for the whole video;
- * the narration cues use the player's default placement at the bottom.
+ * WebVTT for one language: the narration cues, in the player's default placement so native
+ * controls never cover them. `timing` (optional) replaces the planned cue times with the
+ * measured ones from the voiced video: [{ start, end }, …] in cue order.
  */
-export function toVtt(strings, data) {
+export function toVtt(strings, data, timing = null) {
+  const at = cueTimes(data, timing);
   const lines = ['WEBVTT', ''];
-  lines.push('label', `${stamp(data.label.start)} --> ${stamp(data.label.end)} line:4% position:50% align:center`, plain(strings[data.label.key], data.label.key), '');
   data.cues.forEach((cue, i) => {
     // No explicit line: players then keep the narration clear of their own controls.
-    lines.push(String(i + 1), `${stamp(cue.start)} --> ${stamp(cue.end)}`, plain(strings[cue.key], cue.key), '');
+    lines.push(String(i + 1), `${stamp(at[i].start)} --> ${stamp(at[i].end)}`, plain(strings[cue.key], cue.key), '');
   });
   return lines.join('\n');
 }
@@ -75,22 +86,20 @@ const assText = (value, key) => plain(value, key).replace(/&amp;/g, '&').replace
  * a boxed caption at the bottom and the simulation label at the top-left corner for every
  * language (the film keeps its brand mark at the top right).
  */
-export function toAss(strings, data, { font = 'sans-serif', rtl = false, width = 1920, height = 1080 } = {}) {
+export function toAss(strings, data, { font = 'sans-serif', rtl = false, width = 1920, height = 1080, timing = null } = {}) {
+  const at = cueTimes(data, timing);
   // A right-to-left mark gives each line a right-to-left base direction (punctuation on the left).
   const line = (text) => (rtl ? `\u200F${text}` : text);
   // Encoding -1 tells libass to take each line's base direction from its first strong character.
   const encoding = rtl ? -1 : 1;
   const scale = height / 1080;
   const size = Math.round(50 * scale);
-  const labelSize = Math.round(30 * scale);
-  // Colours are &HAABBGGRR. Text #F0F5F3, box #11191B at ~15% transparency, label mint #98E9C4.
+  // Colours are &HAABBGGRR. Text #F0F5F3, box #11191B at ~15% transparency.
   const styles = [
     `Style: Caption,${font},${size},&H00F3F5F0,&H00F3F5F0,&H2611191B,&H2611191B,0,0,0,0,100,100,0,0,3,${Math.round(18 * scale)},0,2,${Math.round(160 * scale)},${Math.round(160 * scale)},${Math.round(64 * scale)},${encoding}`,
-    `Style: Label,${font},${labelSize},&H00C4E998,&H00C4E998,&H0011191B,&H1A11191B,1,0,0,0,100,100,0,0,3,${Math.round(10 * scale)},0,7,${Math.round(56 * scale)},${Math.round(56 * scale)},${Math.round(44 * scale)},${encoding}`,
   ];
   const events = [
-    `Dialogue: 0,${assTime(data.label.start)},${assTime(data.label.end)},Label,,0,0,0,,${line(assText(strings[data.label.key], data.label.key))}`,
-    ...data.cues.map((cue) => `Dialogue: 0,${assTime(cue.start)},${assTime(cue.end)},Caption,,0,0,0,,${line(assText(strings[cue.key], cue.key))}`),
+    ...data.cues.map((cue, i) => `Dialogue: 0,${assTime(at[i].start)},${assTime(at[i].end)},Caption,,0,0,0,,${line(assText(strings[cue.key], cue.key))}`),
   ];
   return [
     '[Script Info]',

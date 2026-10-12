@@ -117,6 +117,8 @@ main:focus { outline: none; }
   margin-inline-end: auto;
 }
 .brand__mark { width: 2.25rem; height: 2.25rem; border-radius: 0.6rem; }
+/* The wordmark is a fixed-outline SVG (src/assets/sofatap-wordmark.svg); never re-typeset it. */
+.brand__wordmark { width: auto; height: 1.42rem; margin-top: 0.12rem; }
 .brand__nick {
   font-family: var(--font);
   font-size: 0.85rem;
@@ -233,25 +235,6 @@ h1, .section-title { word-break: keep-all; overflow-wrap: anywhere; text-wrap: b
 }
 .fineprint { color: var(--muted); font-size: 0.9rem; margin: 1.5rem 0 0; }
 
-.label {
-  display: inline-block;
-  padding: 0.05rem 0.55rem;
-  margin-inline-end: 0.35rem;
-  border-radius: 999px;
-  background: var(--mint-soft);
-  color: var(--mint);
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  max-width: 100%;
-}
-.dev-note {
-  max-width: 40rem;
-  margin: -0.5rem 0 1.75rem;
-  color: var(--muted);
-  font-size: 0.92rem;
-}
-
 /* Buttons and the iPhone entry */
 .button, .get-app__link, .get-app__pending {
   display: inline-flex;
@@ -286,9 +269,9 @@ h1, .section-title { word-break: keep-all; overflow-wrap: anywhere; text-wrap: b
 .hero {
   max-width: var(--page);
   margin: 0 auto;
-  padding: clamp(2.5rem, 6vw, 5rem) var(--gutter) clamp(3rem, 7vw, 5.5rem);
+  padding: clamp(2rem, 4.5vw, 3.75rem) var(--gutter) clamp(3rem, 7vw, 5.5rem);
   display: grid;
-  gap: clamp(2rem, 5vw, 3.5rem);
+  gap: clamp(1.75rem, 4vw, 2.75rem);
   align-items: center;
 }
 .hero__text { min-width: 0; }
@@ -302,17 +285,11 @@ html:lang(zh-CN) .hero h1 { letter-spacing: 0; }
 .lead { margin: 0 0 2rem; font-size: clamp(1.1rem, 2vw, 1.25rem); color: var(--muted); max-width: 34rem; }
 .hero__actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.75rem 1rem; }
 .hero__note { margin: 1.5rem 0 0; color: var(--muted); font-size: 0.9rem; }
-.hero__art { margin: 0; min-width: 0; }
-.hero__art img {
-  width: 100%;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 0.45), 0 0 0 1px rgb(152 233 196 / 0.08);
-}
 figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-height: 1.55; }
 
-@media (min-width: 60rem) {
-  .hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
-}
+/* The hero shows the product itself: the live phone → TV demo under the headline. */
+.hero__text { max-width: 46rem; }
+.hero .demo { margin: 0; }
 
 /* Sections */
 .section { position: relative; padding: clamp(3.5rem, 8vw, 6rem) 0; }
@@ -359,7 +336,6 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
   margin-bottom: 1.25rem;
 }
 .demo__title { margin: 0; min-width: 0; font-weight: 650; font-size: 1.05rem; line-height: 1.45; overflow-wrap: anywhere; }
-.label--sim { background: transparent; border: 1px dashed var(--mint); color: var(--mint); }
 .demo__play {
   display: inline-flex;
   align-items: center;
@@ -522,7 +498,7 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
   padding: 2cqw 2.4cqw;
   background: linear-gradient(rgb(0 0 0 / 0.55), transparent);
 }
-.player__back, .player__label {
+\.player__back {
   display: inline-flex;
   align-items: center;
   gap: 0.8cqw;
@@ -535,7 +511,6 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
 }
 .player__back svg { width: 2.4cqw; height: 2.4cqw; min-width: 10px; min-height: 10px; }
 .player__back.is-hover { outline-color: var(--mint); }
-.player__label { color: var(--mint); border: 1px dashed currentColor; }
 .player__toggle {
   position: absolute;
   left: 50%;
@@ -892,25 +867,14 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
 .site-footer__inner { max-width: var(--page); margin: 0 auto; padding: 0 var(--gutter); display: grid; gap: 1rem; }
 .site-footer__brand { display: flex; align-items: center; gap: 0.6rem; margin: 0; color: var(--text); font-family: var(--font-display); font-weight: 700; }
 .site-footer__brand img { width: 1.75rem; height: 1.75rem; border-radius: 0.45rem; }
+.site-footer__brand .site-footer__wordmark { width: auto; height: 1.1rem; border-radius: 0; }
 .site-footer__links { display: flex; flex-wrap: wrap; gap: 0.25rem 1.5rem; margin: 0; padding: 0; list-style: none; }
 .site-footer__links a { display: inline-block; padding: 0.35rem 0; }
 .site-footer__legal { margin: 0; font-size: 0.8rem; max-width: 48rem; }
 
 /* Demo video */
-.video__figure { margin: 0; }
 .video__player { display: block; width: 100%; height: auto; border-radius: var(--radius-lg); background: #000; border: 1px solid var(--border); }
 .video__downloads { display: grid; gap: 1rem; margin-top: 1.5rem; justify-items: start; }
-.video__downloads .button { flex-wrap: wrap; }
-.video__downloads .button span { overflow-wrap: anywhere; }
-.video__size { color: var(--muted); font-weight: 500; font-size: 0.85rem; }
-.video__more { width: 100%; }
-.video__more summary { overflow-wrap: anywhere; display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--mint); cursor: pointer; font-weight: 600; }
-.video__more ul { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.25rem 2rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); }
-.video__more li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1rem; padding: 0.2rem 0; border-bottom: 1px solid rgb(51 67 70 / 0.6); }
-.video__more li[aria-current] .video__lang { color: var(--mint); font-weight: 650; }
-.video__lang { flex: 1 1 8rem; }
-.video__more a { display: inline-block; padding: 0.45rem 0; }
-
 /* Scripts other than Latin: fonts, line height, no letter-spacing that would break joined scripts. */
 html:lang(ja) { --font: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", "Noto Sans CJK JP", "Noto Sans JP", "IPAPGothic", system-ui, sans-serif; --font-display: var(--font); }
 html:lang(ko) { --font: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", "Noto Sans KR", "WenQuanYi Zen Hei", system-ui, sans-serif; --font-display: var(--font); }
@@ -919,7 +883,7 @@ html:lang(hi) { --font: "Nirmala UI", "Kohinoor Devanagari", "Noto Sans Devanaga
 html:lang(ja) body, html:lang(ko) body, html:lang(hi) body { line-height: 1.75; }
 html:lang(ar) body { line-height: 1.8; }
 html:lang(ja) .eyebrow, html:lang(ko) .eyebrow, html:lang(ar) .eyebrow, html:lang(hi) .eyebrow { letter-spacing: 0.02em; text-transform: none; }
-html:lang(ar) .eyebrow, html:lang(hi) .eyebrow, html:lang(ar) .label, html:lang(hi) .label,
+html:lang(ar) .eyebrow, html:lang(hi) .eyebrow,
 html:lang(ar) h1, html:lang(ar) .section-title, html:lang(hi) h1, html:lang(hi) .section-title { letter-spacing: normal; }
 html:lang(ja) .hero h1, html:lang(ko) .hero h1 { letter-spacing: 0; }
 html:lang(ja) h1, html:lang(ja) .section-title { word-break: auto-phrase; }
@@ -933,7 +897,7 @@ html:lang(ja) h1, html:lang(ja) .section-title { word-break: auto-phrase; }
   .hero__text > :nth-child(3) { animation-delay: 0.12s; }
   .hero__text > :nth-child(4) { animation-delay: 0.18s; }
   .hero__text > :nth-child(5) { animation-delay: 0.24s; }
-  .hero__art { animation: settle 1s cubic-bezier(.2, .7, .2, 1) 0.1s both; }
+  .hero .demo { animation: settle 1s cubic-bezier(.2, .7, .2, 1) 0.1s both; }
   @keyframes rise { from { opacity: 0; transform: translateY(0.75rem); } to { opacity: 1; transform: none; } }
   @keyframes settle { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: none; } }
 }

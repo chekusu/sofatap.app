@@ -6,7 +6,7 @@ Sofatap 的公开网站：移动优先的静态页面，共 12 种语言。英�
 
 产品源码在 [chekusu/sofatap](https://github.com/chekusu/sofatap)。页面上的产品说明依据该仓库提交 [`861367ae901c1c0326f445c0807d26b2af38b780`](https://github.com/chekusu/sofatap/tree/861367ae901c1c0326f445c0807d26b2af38b780)（2026-10-12 核对）及其已发布的 GitHub Releases。产品有变化时，先核对新的提交再改文案：
 
-- 当前 `main` 上的单屏触控、应用内语音、自动弹出键盘和新版接收端窗口属于开发版本，页面上明确标为「开发中」，并说明下载的旧 alpha 版不含这些更新。
+- 当前 `main` 上的单屏触控、应用内语音、自动弹出键盘和新版接收端窗口属于开发版本。下载区的说明写明已发布的 alpha 安装包不含这些更新；按网站所有者的决定，营销页面和视频里不再放「开发中」「开发预览」「模拟」「示意图」之类的标签，静态检查会阻止它们回来。
 - Windows / Mac 下载来自 `v0.3.0-alpha`，Linux 来自 `v0.4.0-alpha`；iPhone App 暂无已确认的公开安装入口。
 - 未实现或尚待验证的方向（如 Windows 锁屏 PIN、Face ID、语音代操电脑）不出现在页面上。
 
@@ -17,7 +17,7 @@ Sofatap 的公开网站：移动优先的静态页面，共 12 种语言。英�
 ```sh
 npm run build     # 生成 dist/（每种语言一个页面，英文在 dist/index.html）
 npm test          # 单元测试：下载配置、发行包数据、构建输出、12 种语言文件、字幕、手势规则与演示时间轴、预览服务器
-npm run check     # 构建到临时目录并做静态检查（每种语言的结构、语言菜单、链接、资源、图片标注、演示、文案限制、配色对比度）
+npm run check     # 构建到临时目录并做静态检查（每种语言的结构、语言菜单、链接、资源、文字标志、演示、视频、文案限制、配色对比度）
 npm run verify    # test + check
 npm run preview   # 在 http://127.0.0.1:4173/ 预览 dist/
 ```
@@ -91,21 +91,16 @@ npm run preview -- --port 0 --base /sofatap/
 
 发布新版本后，按 GitHub Release 中实际的资源名和大小更新这个文件。
 
-## 图片
+## 品牌和图片
 
-所有图片都来自产品仓库（上面固定的提交），只做了缩放和格式转换，未改动内容：
-
-| 文件 | 来源 | 页面标注 |
-| --- | --- | --- |
-| `src/assets/sofatap-mark-256.webp`、`favicon-64.png`、`apple-touch-icon.png` | `ios/SofaTap/Assets.xcassets/BrandMark.imageset/BrandMark.png`（沙发 + 手机 + 光标标志，SHA-256 `bab56f45…df05`） | 品牌标志 |
-| `src/assets/living-room-{960,1600}.webp` | `docs/images/sofatap-living-room.png`（AI 生成） | 「Illustration / 示意图」：AI 生成场景，非应用截图，图中手机界面为早期概念 |
-| `src/assets/single-screen-{360,720}.webp` | `docs/images/sofatap-single-screen.png`（iOS 模拟器离线渲染） | 「Development preview / 开发预览」：并非真机测试 |
-
-静态检查会确认这两张产品图片都放在带正确标注的 `<figure>` 中。页面不使用任何二维码图片。
+- 文字标志 `src/assets/sofatap-wordmark.svg`：固定轮廓的 SVG（不含文字元素、字体或外部引用），由 `tools/brand/wordmark.mjs` 生成。圆润的单线字形，「o」的字怀里有一个薄荷色圆点（指尖点在触控面上），「t」的收笔接向后面的「a」。页头、页脚和演示视频的角标、片头、片尾都用这一个文件；品牌名不要再用普通文字排版。修改字形请改生成脚本后重新运行 `node tools/brand/wordmark.mjs`。
+- 图形标志 `src/assets/sofatap-mark-256.webp`、`favicon-64.png`、`apple-touch-icon.png`：来自产品仓库 `ios/SofaTap/Assets.xcassets/BrandMark.imageset/BrandMark.png`（沙发 + 手机 + 光标，SHA-256 `bab56f45…df05`），只做了缩放。
+- 手机画面 `src/assets/single-screen-{360,720}.webp`：来自产品仓库 `docs/images/sofatap-single-screen.png`（当前设计在 iOS 模拟器中的渲染），只做了缩放。
+- 旧的客厅场景图（AI 生成，图中带有旧版文字标志）已不再使用；首屏改为直接展示可操作的手机 → 电视演示。页面不使用任何二维码图片。
 
 ## 手机 → 电视模拟演示
 
-「怎么用」一节有一个交互式模拟：旁边的电视显示一台电脑的影片库，手机画面是开发版界面（iOS 模拟器渲染图）。它只在浏览器里运行，不连接、也不控制任何设备，页面上标为「模拟演示」。
+首屏有一个可直接操作的演示：电视显示一台电脑的影片库，旁边是手机的触控画面。它只在浏览器里运行，不连接、也不控制任何设备（不需要在页面上解释）。
 
 - 鼠标在手机触控区移动、或手指滑动：电视上的指针按相对位移移动（和触控板一样）。
 - 单击 / 轻点：等待双击判定（触摸 280 毫秒，与 App 一致；鼠标按桌面习惯 500 毫秒）后左键单击，选中影片。
@@ -118,19 +113,17 @@ npm run preview -- --port 0 --base /sofatap/
 
 ## 演示视频
 
-视频录的是同一个演示、同一条时间轴：`tools/film/record.mjs` 打开新构建的真实页面，用 `tools/film/film.css` 把演示排成 1920×1080 画面，再逐帧推进演示自己的时钟截图，编码为无声的 H.264（yuv420p、faststart）。画面里没有文字说明，字幕按语言单独加：
+视频录的是同一个演示、同一条时间轴：`tools/film/record.mjs` 打开新构建的真实页面，用 `tools/film/film.css` 把演示排成 1920×1080 画面（角标、片头、片尾使用同一个文字标志 SVG），逐帧推进演示自己的时钟截图，得到无声母版。画面里没有文字说明；旁白和字幕按语言另加：
 
-- 字幕时间轴在 `src/video/cues.json`，文案是各语言文件中的 `video.*` 键。
-- 网站播放器使用 WebVTT 字幕（构建时生成），默认显示当前页面语言，12 种语言都可切换。
-- `tools/film/burn.mjs` 用同样的字幕为每种语言烧录一个可下载的 MP4。
+- 旁白和字幕是同一段文字：各语言文件中的 8 条 `video.cue.*`，规划时间在 `src/video/cues.json`。`tools/film/narration.mjs` 生成配音稿（读作「Sofa tap」，字幕仍写 Sofatap）。
+- `tools/film/voice.mjs` 接收配好的整段旁白和字符时间戳，按 8 条字幕切分计时，配到母版上：网站用的每语言一个带声音、不烧字幕的 MP4，以及字幕时间 `timing.json`；另外为每种语言烧录字幕版（供推广使用，不放进网站）。
+- 网站每种语言的页面播放该语言的配音视频，默认显示本页语言的 WebVTT 字幕，也可切换为其他 11 种。播放器隐藏下载按钮（`controlslist="nodownload"`），页面上没有视频或字幕的下载链接。
 
-视频文件较大，不放进 Git。导出和发布步骤见 `tools/film/README.md`；简要地说：
+视频文件较大，不放进 Git。步骤见 `tools/film/README.md`；网站构建只需要：
 
 ```sh
-node tools/film/record.mjs --out <导出目录> --playwright <playwright 包路径>
-node tools/film/burn.mjs --base <导出目录>/sofatap-demo.mp4 --out <导出目录>
-node scripts/build.mjs --out <输出目录> --media <导出目录>   # 页面加入视频区和下载链接
-node scripts/check.mjs --media <导出目录>                    # 带视频的静态检查
+node scripts/build.mjs --out <输出目录> --media <网站用视频目录>   # 12 个配音视频 + 封面（+ timing.json）
+node scripts/check.mjs --media <网站用视频目录>
 ```
 
 不加 `--media` 时，构建结果没有视频区，也不引用任何视频文件。`--media` 目录必须在输出目录之外（构建会先清空输出目录），文件缺失或格式不对时构建在写入前就会失败。预览服务器为 `.mp4`、`.vtt` 返回正确的 MIME 类型并支持分段请求（Range）。
@@ -154,7 +147,8 @@ node scripts/check.mjs --media <导出目录>                    # 带视频的�
 | `src/styles.css`、`src/main.js` | 样式；语言菜单、模拟演示和点阵（均为渐进增强） |
 | `src/assets/` | 标志和产品图片 |
 | `scripts/` | 语言清单、构建、配置与发行包校验、字幕、静态检查、预览服务器 |
-| `tools/film/` | 演示视频的录制与字幕烧录 |
+| `tools/film/` | 演示视频的录制、配音稿、旁白合成与字幕烧录 |
+| `tools/brand/` | 文字标志生成脚本 |
 | `tests/` | `node:test` 单元测试 |
 
 构建只会清空 `dist/`、全新的目录或以前由本构建生成的目录（`--out` 可指定其他位置，例如候选构建）。以下输出目录会被拒绝：

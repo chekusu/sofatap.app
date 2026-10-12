@@ -2,9 +2,9 @@
 // one page per language in scripts/locales.mjs (English at index.html, the others in
 // their own directories), from one template and src/i18n/*.json.
 // Usage: node scripts/build.mjs [--config <file>] [--out <dir>] [--media <dir>]
-//   --media  a directory with the exported demo video (see tools/film/README.md). When given,
-//            the videos are copied into media/ with one WebVTT subtitle file per language and
-//            the pages get the video section. Without it the site has no video section.
+//   --media  a directory with the exported narrated videos (see tools/film/README.md). When
+//            given, they are copied into media/ with one WebVTT subtitle file per language and
+//            each page plays its own language's video. Without it the site has no video section.
 import { createHash } from 'node:crypto';
 import { cp, lstat, mkdir, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -81,18 +81,18 @@ export function renderDemoCopy(strings) {
   return JSON.stringify(copy).replace(/</g, '\\u003c');
 }
 
-// Media files the --media directory must provide, all copied to media/.
-export const MEDIA_BASE = 'sofatap-demo.mp4';
+// Media files the --media directory must provide, all copied to media/: one narrated video
+// per language (the page plays its own language) and a poster. Optional timing.json holds the
+// measured caption times per language ({ "<lang>": [{ start, end }, …] }) from tools/film/voice.mjs.
 export const MEDIA_POSTER = 'sofatap-demo-poster.jpg';
+export const MEDIA_TIMING = 'timing.json';
 export const mediaVideoFor = (lang) => `sofatap-demo-${mediaTag(lang)}.mp4`;
 export const mediaVttFor = (lang) => `sofatap-demo.${mediaTag(lang)}.vtt`;
 const MEDIA_MAX_BYTES = 64 * 1024 * 1024;
 
-const VIDEO_ICON = '<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 3v9m-4-4 4 4 4-4M4 16h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-
 /** Checks the exported media files and returns their sizes, or throws before anything is written. */
 export async function validateMedia(dir) {
-  const files = [MEDIA_BASE, MEDIA_POSTER, ...LANGS.map(mediaVideoFor)];
+  const files = [MEDIA_POSTER, ...LANGS.map(mediaVideoFor)];
   const sizes = {};
   for (const name of files) {
     const file = path.join(dir, name);
@@ -105,43 +105,31 @@ export async function validateMedia(dir) {
     if (!ok) throw new Error(`媒体文件 ${name} 的格式不正确`);
     sizes[name] = info.size;
   }
-  return sizes;
+  let timing = null;
+  try { timing = JSON.parse(await readFile(path.join(dir, MEDIA_TIMING), 'utf8')); } catch (error) {
+    if (error.code !== 'ENOENT') throw new Error(`无法读取 ${MEDIA_TIMING}：${error.message}`);
+  }
+  return { sizes, timing };
 }
 
-const megabytes = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`;
-
-/** The video section: one silent video, subtitles in every language, this page's language on by default. */
-export function renderVideoSection(page, strings, sizes) {
+/**
+ * The video section: the page's own narrated video with subtitles in every language, this
+ * page's language on by default. It is for watching only: no download links.
+ */
+export function renderVideoSection(page, strings) {
   const m = (name) => `${page.root}media/${name}`;
-  const tracks = LOCALES.map((l) => `              <track kind="subtitles" srclang="${l.lang}" label="${l.name}" src="${m(mediaVttFor(l.lang))}"${l.lang === page.lang ? ' default' : ''}>`);
-  const own = locale(page.lang);
-  const others = LOCALES.map((l) => {
-    const current = l.lang === page.lang ? ' aria-current="true"' : '';
-    return `              <li lang="${l.lang}"${l.rtl ? ' dir="rtl"' : ''}${current}><span class="video__lang">${l.name}</span> <a href="${m(mediaVideoFor(l.lang))}" download>MP4<span class="visually-hidden"> (${l.name})</span></a> <a href="${m(mediaVttFor(l.lang))}" download>WebVTT<span class="visually-hidden"> (${l.name})</span></a></li>`;
-  });
+  const tracks = LOCALES.map((l) => `            <track kind="subtitles" srclang="${l.lang}" label="${l.name}" src="${m(mediaVttFor(l.lang))}"${l.lang === page.lang ? ' default' : ''}>`);
   return [
     '',
     '    <section class="section video" id="video" aria-labelledby="video-title">',
     '      <div class="section__inner">',
     `        <h2 class="section-title" id="video-title">${strings['video.title']}</h2>`,
     `        <p class="section-lead">${strings['video.lead']}</p>`,
-    '        <figure class="video__figure">',
-    `          <video class="video__player" controls preload="metadata" playsinline width="1920" height="1080" poster="${m(MEDIA_POSTER)}">`,
-    `            <source src="${m(MEDIA_BASE)}" type="video/mp4">`,
+    `        <video class="video__player" controls controlslist="nodownload" preload="metadata" playsinline width="1920" height="1080" poster="${m(MEDIA_POSTER)}">`,
+    `          <source src="${m(mediaVideoFor(page.lang))}" type="video/mp4">`,
     ...tracks,
-    `            <p>${strings['video.fallback']}</p>`,
-    '          </video>',
-    `          <figcaption><span class="label label--sim">${strings['label.simulation']}</span> ${strings['video.caption']}</figcaption>`,
-    '        </figure>',
-    '        <div class="video__downloads">',
-    `          <a class="button button--ghost" href="${m(mediaVideoFor(page.lang))}" download>${VIDEO_ICON}<span>${fill(strings['video.download'], { language: own.name })}</span> <span class="video__size" dir="ltr">MP4 · ${megabytes(sizes[mediaVideoFor(page.lang)])}</span></a>`,
-    '          <details class="video__more">',
-    `            <summary>${strings['video.more']}</summary>`,
-    '            <ul>',
-    ...others,
-    '            </ul>',
-    '          </details>',
-    '        </div>',
+    `          <p>${strings['video.fallback']}</p>`,
+    '        </video>',
     '      </div>',
     '    </section>',
   ].join('\n');
@@ -288,7 +276,8 @@ export async function build({ config: configPath, out, media = null }) {
   // Validate everything before touching the output directory.
   out = await resolveSafeOutDir(out, configPath);
   if (media) await refuseMediaOverlap(media, out);
-  const mediaSizes = media ? await validateMedia(path.resolve(media)) : null;
+  const mediaInfo = media ? await validateMedia(path.resolve(media)) : null;
+  const mediaSizes = mediaInfo?.sizes ?? null;
   const download = validateDownloadConfig(await readJson(configPath, DownloadConfigError));
   const platforms = validateReleases(await readJson(path.join(SRC, 'releases.json'), ReleaseDataError));
   const tables = Object.fromEntries(await Promise.all(
@@ -303,7 +292,7 @@ export async function build({ config: configPath, out, media = null }) {
     readFile(path.join(SRC, 'demo-core.js'), 'utf8'),
     loadCues(),
   ]);
-  const vtts = LANGS.map((lang) => ({ file: mediaVttFor(lang), text: toVtt(tables[lang], cues) }));
+  const vtts = LANGS.map((lang) => ({ file: mediaVttFor(lang), text: toVtt(tables[lang], cues, mediaInfo?.timing?.[lang] ?? null) }));
 
   const pages = PAGES.map((page) => {
     const strings = tables[page.lang];
@@ -317,7 +306,7 @@ export async function build({ config: configPath, out, media = null }) {
       LANG_LINKS: renderLangLinks(page),
       DEMO_TILES: renderDemoTiles(strings),
       DEMO_COPY: renderDemoCopy(strings),
-      VIDEO_SECTION: mediaSizes ? renderVideoSection(page, strings, mediaSizes) : '',
+      VIDEO_SECTION: mediaSizes ? renderVideoSection(page, strings) : '',
       MOBILE_ENTRY: renderMobileEntry(download, page.lang),
       IPHONE_STATUS: copy.status,
       IPHONE_NOTE: copy.note,

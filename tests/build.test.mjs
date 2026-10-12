@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { MEDIA_BASE, MEDIA_POSTER, build, mediaVideoFor, renderPage, resolveSafeOutDir, validateStrings } from '../scripts/build.mjs';
+import { MEDIA_POSTER, MEDIA_TIMING, build, mediaVideoFor, renderPage, resolveSafeOutDir, validateStrings } from '../scripts/build.mjs';
 import { checkSite } from '../scripts/check.mjs';
 import { downloadCopy } from '../scripts/download-config.mjs';
 import { LANGS, LOCALES, hrefBetween } from '../scripts/locales.mjs';
@@ -82,7 +82,9 @@ test('desktop downloads link the real release assets with architecture and alpha
     // The old air-mouse claims and the provisional logo are gone.
     assert.doesNotMatch(page, /logo\.svg|tilt|倾斜|v0\.1\.1-alpha/i);
   }
-  assert.match(html, /In development[\s\S]*In development[\s\S]*aren’t included yet/);
+  // One factual note about what the published downloads include; no badges.
+  assert.match(html, /aren’t included yet/);
+  assert.doesNotMatch(html, /class="label|In development|Development preview|Simulation/);
 });
 
 test('language pages: twelve locales, English default, Chinese still in zh/, each linking to all others', async () => {
@@ -196,12 +198,15 @@ async function fakeMedia(dir) {
   const mp4 = Buffer.concat([Buffer.from([0, 0, 0, 24]), Buffer.from('ftypisom'), Buffer.alloc(2000)]);
   const jpg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(2000)]);
   await writeFile(path.join(dir, MEDIA_POSTER), jpg);
-  for (const name of [MEDIA_BASE, ...LANGS.map(mediaVideoFor)]) await writeFile(path.join(dir, name), mp4);
+  for (const name of LANGS.map(mediaVideoFor)) await writeFile(path.join(dir, name), mp4);
 }
 
-test('with --media: video section, twelve subtitle tracks, page language on by default, real download links', async () => {
+test('with --media: each page plays its own narrated video, twelve subtitle tracks, and no download links', async () => {
   const media = path.join(tmp, 'media-src');
   await fakeMedia(media);
+  // Measured caption times for one language replace the plan in its WebVTT file.
+  const measured = Array.from({ length: 8 }, (_, i) => ({ start: 1 + i * 3, end: 3 + i * 3 }));
+  await writeFile(path.join(media, MEDIA_TIMING), JSON.stringify({ ja: measured }));
   const configPath = path.join(tmp, 'media.json');
   await writeFile(configPath, JSON.stringify({ mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' }));
   const out = path.join(tmp, 'with-media');
@@ -211,15 +216,32 @@ test('with --media: video section, twelve subtitle tracks, page language on by d
     const tracks = [...page.matchAll(/<track kind="subtitles" srclang="([^"]+)"[^>]*>/g)];
     assert.equal(tracks.length, 12, l.lang);
     assert.deepEqual(tracks.filter((t) => t[0].includes(' default')).map((t) => t[1]), [l.lang]);
-    assert.ok(page.includes(`href="${l.dir ? '../' : ''}media/${mediaVideoFor(l.lang)}" download`), l.lang);
+    assert.ok(page.includes(`<source src="${l.dir ? '../' : ''}media/${mediaVideoFor(l.lang)}" type="video/mp4">`), l.lang);
+    assert.match(page, /controlslist="nodownload"/);
+    assert.doesNotMatch(page, /<a\b[^>]*href="(?:\.\.\/)?media\/|\sdownload[\s>]/, l.lang);
   }
   const vtt = await readFile(path.join(out, 'media', 'sofatap-demo.ja.vtt'), 'utf8');
   assert.match(vtt, /^WEBVTT/);
-  assert.match(vtt, /シミュレーション/);
+  assert.match(vtt, /00:00:01\.000 --> 00:00:03\.000\nSofatap。/);
+  assert.equal((await readFile(path.join(out, 'media', 'sofatap-demo.en.vtt'), 'utf8')).match(/ --> /g).length, 8);
   assert.deepEqual((await checkSite(out)).problems, []);
-  // Without --media there is no video section and nothing links to media/.
+  // Without --media there is no video section and nothing refers to media/.
   const plain = await buildWith('no-media', { mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' });
   assert.doesNotMatch(plain.html, /<video|media\//);
+});
+
+test('the brand is the fixed-outline wordmark, in the header and footer of every page', async () => {
+  const svg = await readFile(path.join(ROOT, 'src', 'assets', 'sofatap-wordmark.svg'), 'utf8');
+  assert.match(svg, /^<svg [^>]*viewBox="0 0 [\d.]+ [\d.]+"[^>]*role="img"/);
+  assert.match(svg, /<title id="sofatap-wordmark-title">Sofatap<\/title>/);
+  assert.doesNotMatch(svg, /<text|<image|href=|url\(|@font-face|font-family/);
+  const { out } = await buildWith('brand', { mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' });
+  for (const l of LOCALES) {
+    const page = await readFile(path.join(out, l.dir, 'index.html'), 'utf8');
+    assert.equal(page.match(/assets\/sofatap-wordmark\.svg" alt="Sofatap"/g).length, 2, l.lang);
+    assert.doesNotMatch(page, /brand__name|living-room-\d+\.webp/, l.lang);
+  }
+  assert.ok(existsSync(path.join(out, 'assets', 'sofatap-wordmark.svg')));
 });
 
 test('refuses a media directory inside (or containing) the output, without deleting anything', async () => {
@@ -230,17 +252,17 @@ test('refuses a media directory inside (or containing) the output, without delet
   const inside = path.join(out, 'media-export');
   await fakeMedia(inside);
   await assert.rejects(build({ config: configPath, out, media: inside }), /重叠/);
-  assert.ok(existsSync(path.join(inside, MEDIA_BASE)), 'source video kept');
+  assert.ok(existsSync(path.join(inside, mediaVideoFor('en'))), 'source video kept');
   assert.ok(existsSync(path.join(out, 'index.html')), 'previous output kept');
   // The same directory through a symlinked alias, and an output inside the media directory.
   await symlink(out, path.join(tmp, 'overlap-alias'));
   await assert.rejects(build({ config: configPath, out, media: path.join(tmp, 'overlap-alias', 'media-export') }), /重叠/);
   await assert.rejects(build({ config: configPath, out: path.join(inside, 'site'), media: inside }), /重叠/);
-  assert.ok(existsSync(path.join(inside, MEDIA_BASE)));
+  assert.ok(existsSync(path.join(inside, mediaVideoFor('en'))));
   // Missing or malformed exports fail before any output is written.
   const broken = path.join(tmp, 'broken-media');
   await fakeMedia(broken);
-  await writeFile(path.join(broken, MEDIA_BASE), 'not a video'.repeat(200));
+  await writeFile(path.join(broken, mediaVideoFor('ar')), 'not a video'.repeat(200));
   const fresh = path.join(tmp, 'broken-out');
   await assert.rejects(build({ config: configPath, out: fresh, media: broken }), /格式不正确/);
   assert.equal(existsSync(fresh), false);

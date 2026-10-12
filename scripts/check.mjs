@@ -56,60 +56,28 @@ const FORBIDDEN = {
 // Facts every language must state, and the page labels that must be visible.
 const REQUIRED_COMMON = ['iOS 17', 'alpha', 'macOS 15', 'Apple Silicon', 'Intel', 'x64', 'ARM64', 'X11', 'Wayland', '300'];
 const REQUIRED = {
-  en: ['Enter', 'same home network', '300 ms', 'Right click', 'Double-tap', 'two fingers', 'Tap Send', 'Illustration',
-    'Development preview', 'In development', 'aren’t included yet', 'Simulation'],
-  'zh-CN': ['同一个家庭网络', '300 毫秒', '右键', '连续双击', '双指', '发送', '回车', '示意图', '开发预览', '开发中', '尚未包含', '模拟演示'],
-  es: ['Enter', 'misma red doméstica', '300 ms', 'Clic derecho', 'Toca dos veces', 'dos dedos', 'Toca Enviar', 'Ilustración',
-    'Vista previa de desarrollo', 'En desarrollo', 'todavía no se incluyen', 'Simulación'],
-  fr: ['même réseau domestique', '300 ms', 'Clic droit', 'Toucher deux fois', 'deux doigts', 'Touchez Envoyer', 'Entrée', 'Illustration',
-    'Aperçu de développement', 'En développement', 'ne sont pas encore inclus', 'Simulation'],
-  de: ['Enter', 'demselben Heimnetz', '300 ms', 'Rechtsklick', 'Doppeltippen', 'zwei Fingern', '„Senden“', 'Illustration',
-    'Entwicklungsvorschau', 'In Entwicklung', 'noch nicht enthalten', 'Simulation'],
-  'pt-BR': ['Enter', 'mesma rede doméstica', '300 ms', 'Clique direito', 'Toque duplo', 'dois dedos', 'Toque em Enviar', 'Ilustração',
-    'Prévia de desenvolvimento', 'Em desenvolvimento', 'ainda não estão incluídos', 'Simulação'],
-  ja: ['Enter', '同じ家庭内ネットワーク', '300 ミリ秒', '右クリック', 'ダブルタップ', '2 本指', '「送信」', 'イラスト', '開発プレビュー', '開発中',
-    'まだ含まれていません', 'シミュレーション'],
-  ko: ['Enter', '같은 홈 네트워크', '300ms', '오른쪽 클릭', '두 번 탭', '두 손가락', '보내기', '일러스트', '개발 미리 보기', '개발 중',
-    '아직 포함되어 있지 않습니다', '시뮬레이션'],
-  ar: ['Enter', 'الشبكة المنزلية نفسها', '300 مللي ثانية', 'نقرة بالزر الأيمن', 'اضغط مرتين', 'بإصبعين', '«إرسال»', 'رسم توضيحي',
-    'معاينة قيد التطوير', 'قيد التطوير', 'لم تُضمَّن بعد', 'محاكاة'],
-  hi: ['Enter', 'एक ही होम नेटवर्क', '300 मि.से.', 'राइट क्लिक', 'डबल टैप', 'दो उँगलियों', 'भेजें', 'चित्रण', 'डेवलपमेंट प्रीव्यू',
-    'डेवलपमेंट में', 'शामिल नहीं हैं', 'सिम्युलेशन'],
-  ru: ['Enter', 'одной домашней сети', '300 мс', 'Правый клик', 'Коснитесь дважды', 'двумя пальцами', '«Отправить»', 'Иллюстрация',
-    'Предпросмотр разработки', 'В разработке', 'пока не включены', 'Симуляция'],
-  id: ['Enter', 'jaringan rumah yang sama', '300 ms', 'Klik kanan', 'Ketuk dua kali', 'dua jari', 'Ketuk Kirim', 'Ilustrasi',
-    'Pratinjau pengembangan', 'Dalam pengembangan', 'belum disertakan', 'Simulasi'],
+  en: ['Enter', 'same home network', '300 ms', 'Right click', 'Double-tap', 'two fingers', 'Tap Send', 'aren’t included yet'],
+  'zh-CN': ['同一个家庭网络', '300 毫秒', '右键', '连续双击', '双指', '发送', '回车', '尚未包含'],
+  es: ['Enter', 'misma red doméstica', '300 ms', 'Clic derecho', 'Toca dos veces', 'dos dedos', 'Toca Enviar', 'todavía no se incluyen'],
+  fr: ['même réseau domestique', '300 ms', 'Clic droit', 'Toucher deux fois', 'deux doigts', 'Touchez Envoyer', 'Entrée', 'ne sont pas encore inclus'],
+  de: ['Enter', 'demselben Heimnetz', '300 ms', 'Rechtsklick', 'Doppeltippen', 'zwei Fingern', '„Senden“', 'noch nicht enthalten'],
+  'pt-BR': ['Enter', 'mesma rede doméstica', '300 ms', 'Clique direito', 'Toque duplo', 'dois dedos', 'Toque em Enviar', 'ainda não estão incluídos'],
+  ja: ['Enter', '同じ家庭内ネットワーク', '300 ミリ秒', '右クリック', 'ダブルタップ', '2 本指', '「送信」', 'まだ含まれていません'],
+  ko: ['Enter', '같은 홈 네트워크', '300ms', '오른쪽 클릭', '두 번 탭', '두 손가락', '보내기', '아직 포함되어 있지 않습니다'],
+  ar: ['Enter', 'الشبكة المنزلية نفسها', '300 مللي ثانية', 'نقرة بالزر الأيمن', 'اضغط مرتين', 'بإصبعين', '«إرسال»', 'لم تُضمَّن بعد'],
+  hi: ['Enter', 'एक ही होम नेटवर्क', '300 मि.से.', 'राइट क्लिक', 'डबल टैप', 'दो उँगलियों', 'भेजें', 'शामिल नहीं हैं'],
+  ru: ['Enter', 'одной домашней сети', '300 мс', 'Правый клик', 'Коснитесь дважды', 'двумя пальцами', '«Отправить»', 'пока не включены'],
+  id: ['Enter', 'jaringan rumah yang sama', '300 ms', 'Klik kanan', 'Ketuk dua kali', 'dua jari', 'Ketuk Kirim', 'belum disertakan'],
 };
-// The "in development" label each language uses; it must appear next to both new features.
-const DEV_LABEL = {
-  en: 'In development', 'zh-CN': '开发中', es: 'En desarrollo', fr: 'En développement', de: 'In Entwicklung',
-  'pt-BR': 'Em desenvolvimento', ja: '開発中', ko: '개발 중', ar: 'قيد التطوير', hi: 'डेवलपमेंट में', ru: 'В разработке',
-  id: 'Dalam pengembangan',
-};
-// Each labelled image must sit in a figure whose caption carries the right label.
-const IMAGE_LABELS = [
-  { src: 'living-room', en: /Illustration[\s\S]*AI-generated[\s\S]*not an app screenshot/, 'zh-CN': /示意图[\s\S]*AI 生成[\s\S]*并非应用截图/,
-    es: /Ilustración[\s\S]*generada con IA[\s\S]*no es una captura/, fr: /Illustration[\s\S]*générée par IA[\s\S]*pas une capture/,
-    de: /Illustration[\s\S]*KI-generierte[\s\S]*kein App-Screenshot/, 'pt-BR': /Ilustração[\s\S]*gerada por IA[\s\S]*não é uma captura/,
-    ja: /イラスト[\s\S]*AI で生成[\s\S]*スクリーンショットではありません/, ko: /일러스트[\s\S]*AI로 생성[\s\S]*스크린샷이 아닙니다/,
-    ar: /رسم توضيحي[\s\S]*بالذكاء الاصطناعي[\s\S]*ليس لقطة شاشة/, hi: /चित्रण[\s\S]*AI से बनाया[\s\S]*स्क्रीनशॉट नहीं/,
-    ru: /Иллюстрация[\s\S]*создана ИИ[\s\S]*не снимок экрана/, id: /Ilustrasi[\s\S]*buatan AI[\s\S]*bukan tangkapan layar/ },
-  { src: 'single-screen', en: /Development preview[\s\S]*simulator[\s\S]*Not a test on a real iPhone/, 'zh-CN': /开发预览[\s\S]*模拟器[\s\S]*并非真机测试/,
-    es: /Vista previa de desarrollo[\s\S]*simulador[\s\S]*No es una prueba en un iPhone real/,
-    fr: /Aperçu de développement[\s\S]*simulateur[\s\S]*pas un test sur un vrai iPhone/,
-    de: /Entwicklungsvorschau[\s\S]*Simulator[\s\S]*Kein Test auf einem echten iPhone/,
-    'pt-BR': /Prévia de desenvolvimento[\s\S]*simulador[\s\S]*Não é um teste em um iPhone real/,
-    ja: /開発プレビュー[\s\S]*シミュレーター[\s\S]*実機の iPhone でのテストではありません/,
-    ko: /개발 미리 보기[\s\S]*시뮬레이터[\s\S]*실제 iPhone에서 테스트한 것이 아닙니다/,
-    ar: /معاينة قيد التطوير[\s\S]*محاكي iOS[\s\S]*ليس اختبارًا على جهاز iPhone حقيقي/,
-    hi: /डेवलपमेंट प्रीव्यू[\s\S]*सिम्युलेटर[\s\S]*असली iPhone पर किया गया टेस्ट नहीं/,
-    ru: /Предпросмотр разработки[\s\S]*симуляторе iOS[\s\S]*не проверка на настоящем iPhone/,
-    id: /Pratinjau pengembangan[\s\S]*simulator iOS[\s\S]*Bukan pengujian di iPhone sungguhan/ },
-];
-// The interactive demo must be labelled as a simulation in every language.
-const SIMULATION_LABEL = {
-  en: 'Simulation', 'zh-CN': '模拟演示', es: 'Simulación', fr: 'Simulation', de: 'Simulation', 'pt-BR': 'Simulação', ja: 'シミュレーション',
-  ko: '시뮬레이션', ar: 'محاكاة', hi: 'सिम्युलेशन', ru: 'Симуляция', id: 'Simulasi',
+// Owner decision: the marketing site carries no "Simulation", "Development preview" or
+// "Illustration" badges in any language (the factual download note still says what the
+// published downloads include). These words must not come back as labels.
+const BANNED_LABELS = {
+  en: ['Simulation', 'Development preview', 'Illustration'], 'zh-CN': ['模拟演示', '开发预览', '示意图'],
+  es: ['Simulación', 'Vista previa de desarrollo', 'Ilustración'], fr: ['Simulation', 'Aperçu de développement'],
+  de: ['Simulation', 'Entwicklungsvorschau'], 'pt-BR': ['Simulação', 'Prévia de desenvolvimento', 'Ilustração'],
+  ja: ['シミュレーション', '開発プレビュー'], ko: ['시뮬레이션', '개발 미리 보기'], ar: ['محاكاة', 'معاينة قيد التطوير'],
+  hi: ['सिम्युलेशन', 'डेवलपमेंट प्रीव्यू'], ru: ['Симуляция', 'Предпросмотр разработки'], id: ['Simulasi', 'Pratinjau pengembangan'],
 };
 const PRIVATE = [
   /\/home\//, /\/root\//, /\/opt\//, /\/tmp\//, /\/Users\//, /127\.0\.0\.1/, /localhost/i, /deploy/i, /部署/,
@@ -163,14 +131,15 @@ function checkPage(html, page, pageDir, releaseUrls, fail) {
     if (href === '' || href === '#') fail('空链接或 href="#"');
     else if (href.startsWith('#')) { if (!ids.includes(href.slice(1))) fail(`锚点不存在：${href}`); }
     else if (href === './' || Object.values(page.links).includes(href)) { /* this page or another language */ }
-    else if (/^(\.\.\/)?media\/[\w.-]+\.(mp4|vtt)$/.test(href)) { /* exported demo video, checked below */ }
     else if (/^https:\/\//.test(href)) {
       if (!isRepoLink(href) && !MOBILE_HOSTS.has(new URL(href).hostname)) fail(`未允许的外部链接：${href}`);
     } else fail(`不安全或非预期的链接：${href}`);
   }
   if (/target="_blank"/.test(html)) fail('不应使用 target="_blank"');
   for (const m of html.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/g)) {
-    if (!m[1].replace(/<svg[\s\S]*?<\/svg>/g, '').replace(/<[^>]+>/g, '').trim()) fail(`链接没有可读文字：${m[0].slice(0, 80)}`);
+    // Readable text, or an image's alt text (the wordmark), names the link.
+    const name = m[1].replace(/<svg[\s\S]*?<\/svg>/g, '').replace(/<img\b[^>]*\balt="([^"]*)"[^>]*>/g, ' $1 ').replace(/<[^>]+>/g, '').trim();
+    if (!name) fail(`链接没有可读文字：${m[0].slice(0, 80)}`);
   }
   for (const url of [REPO_URL, `${REPO_URL}/releases`, ...releaseUrls]) {
     if (!hrefs.includes(url)) fail(`缺少必要链接：${url}`);
@@ -197,7 +166,6 @@ function checkPage(html, page, pageDir, releaseUrls, fail) {
   // The interactive demo: present, labelled as a simulation, with its strings.
   const demo = html.match(/<figure class="demo"[\s\S]*?<\/figure>/)?.[0] ?? '';
   if (!demo || !demo.includes('class="pad"') || !demo.includes('class="tv"') || !demo.includes('role="status"')) fail('缺少交互演示');
-  if (!visibleText(demo).includes(SIMULATION_LABEL[lang])) fail(`交互演示缺少“${SIMULATION_LABEL[lang]}”标注`);
   try {
     const copy = JSON.parse(demo.match(/<script type="application\/json" id="demo-copy">([\s\S]*?)<\/script>/)?.[1] ?? '');
     for (const key of ['demo.s.select', 'demo.s.menu', 'demo.menu.play', 'demo.play', 'demo.stop']) if (!copy[key]) fail(`演示文案缺少 ${key}`);
@@ -231,31 +199,35 @@ function checkPage(html, page, pageDir, releaseUrls, fail) {
       if (before.lastIndexOf('aria-hidden="true"') < before.lastIndexOf('</span>')) fail(`svg 需要 role="img" 或 aria-hidden：${m[0].slice(0, 60)}`);
     }
   }
-  const figures = [...html.matchAll(/<figure\b[\s\S]*?<\/figure>/g)].map((m) => m[0]);
-  for (const rule of IMAGE_LABELS) {
-    const total = (html.match(new RegExp(`<img[^>]+src="[^"]*${rule.src}`, 'g')) ?? []).length;
-    const labelled = figures.filter((f) => f.includes(rule.src) && rule[lang].test(visibleText(f.match(/<figcaption[\s\S]*?<\/figcaption>/)?.[0] ?? ''))).length;
-    if (total === 0) fail(`缺少图片：${rule.src}`);
-    if (labelled !== total) fail(`图片 ${rule.src} 必须放在带正确标注的 figure 中`);
-  }
+  if (/class="(?:label|dev-note)\b/.test(html)) fail('页面不应再有标注徽章（label / dev-note）');
+  for (const word of BANNED_LABELS[lang] ?? []) if (text.includes(word)) fail(`页面不应出现标注：${word}`);
+
+  // The brand: the fixed-outline wordmark in the header and footer, never re-typeset text.
+  const wordmarks = [...html.matchAll(/<img class="(brand__wordmark|site-footer__wordmark)" src="[^"]*assets\/sofatap-wordmark\.svg" alt="Sofatap"/g)];
+  if (wordmarks.length !== 2) fail(`页头和页脚都必须使用 Sofatap 文字标志 SVG，当前 ${wordmarks.length} 处`);
+  if (/<span class="brand__name">/.test(html)) fail('品牌名不能用普通文字排版');
 
   // Copy limits
   for (const rule of [...FORBIDDEN.common, ...FORBIDDEN[lang]]) {
     const hit = typeof rule === 'string' ? text.includes(rule) : rule.test(text);
     if (hit) fail(`页面出现不允许的说法：${rule}`);
   }
-  if (!REQUIRED[lang] || !FORBIDDEN[lang] || !DEV_LABEL[lang]) { fail(`没有 ${lang} 的文案检查规则`); return; }
+  if (!REQUIRED[lang] || !FORBIDDEN[lang] || !BANNED_LABELS[lang]) { fail(`没有 ${lang} 的文案检查规则`); return; }
   for (const phrase of [...REQUIRED_COMMON, ...REQUIRED[lang]]) if (!text.includes(phrase)) fail(`缺少必要说明：${phrase}`);
-  if (text.split(DEV_LABEL[lang]).length - 1 < 2) fail('手势和语音部分都需要“开发中”提示');
 
-  // The demo video section, when the build included the exported video.
+  // The demo video section, when the build included the exported videos: watch only.
   const video = html.match(/<section class="section video"[\s\S]*?<\/section>/)?.[0];
   if (video) {
     const tracks = [...video.matchAll(/<track kind="subtitles" srclang="([^"]+)"[^>]*>/g)];
     if (tracks.length !== LOCALES.length) fail(`视频字幕轨应有 ${LOCALES.length} 条，当前 ${tracks.length}`);
     const defaults = tracks.filter((t) => / default>?/.test(t[0]));
     if (defaults.length !== 1 || defaults[0][1] !== lang) fail('视频默认字幕必须是本页语言');
-    if (!visibleText(video).includes(SIMULATION_LABEL[lang])) fail('视频缺少模拟标注');
+    const own = `sofatap-demo-${lang.toLowerCase()}.mp4`;
+    if (!new RegExp(`<source src="(?:\\.\\./)?media/${own}" type="video/mp4">`).test(video)) fail(`视频必须播放本页语言的版本：${own}`);
+    if (!/controlslist="nodownload"/.test(video)) fail('视频播放器应隐藏下载按钮');
+  }
+  if (/<a\b[^>]*href="(?:\.\.\/)?media\//.test(html) || /\bdownload\b(?==|>|\s)/.test(html.replace(/controlslist="nodownload"/g, ''))) {
+    fail('页面不应提供演示视频或字幕的下载链接');
   }
 }
 
