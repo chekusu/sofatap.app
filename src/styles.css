@@ -1015,6 +1015,47 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
 .site-footer__links a { display: inline-block; padding: 0.35rem 0; }
 .site-footer__legal { margin: 0; font-size: 0.8rem; max-width: 48rem; }
 
+/* Privacy and support pages: the product documents, republished unchanged */
+.legal-page__inner { max-width: 52rem; }
+.legal-tabs ul { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 2rem; padding: 0; list-style: none; }
+.legal-tabs a {
+  display: inline-block;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-decoration: none;
+}
+.legal-tabs a:hover { border-color: var(--mint); background: var(--surface); }
+.legal-tabs a[aria-current="page"] { background: var(--mint); border-color: var(--mint); color: var(--on-mint); font-weight: 650; }
+.legal-page .callout { margin: 0 0 2rem; }
+.legal h1 { font-size: clamp(2rem, 5vw, 2.75rem); margin-bottom: 1.25rem; overflow-wrap: anywhere; }
+.legal h2 { font-size: clamp(1.3rem, 3vw, 1.6rem); margin: 2.5rem 0 0.75rem; }
+.legal p, .legal li { color: var(--muted); }
+.legal p { margin: 0 0 1rem; }
+.legal strong { color: var(--text); }
+.legal ul, .legal ol { margin: 0 0 1rem; padding-inline-start: 1.5rem; display: grid; gap: 0.5rem; }
+.legal a { overflow-wrap: anywhere; }
+.legal code {
+  padding: 0.05rem 0.35rem;
+  border-radius: 0.35rem;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+}
+.legal__table { max-width: 100%; overflow-x: auto; margin: 0 0 1.25rem; border: 1px solid var(--border); border-radius: var(--radius); }
+.legal table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.legal th, .legal td { padding: 0.65rem 0.8rem; text-align: start; vertical-align: top; border-bottom: 1px solid var(--border); color: var(--muted); }
+.legal th { color: var(--text); background: var(--surface); font-weight: 650; }
+.legal tr:last-child td { border-bottom: 0; }
+.legal td:first-child { color: var(--text); min-width: 8rem; }
+.legal td:nth-child(2) { min-width: 9rem; }
+.legal td:nth-child(3) { min-width: 16rem; }
+.legal .num { text-align: end; font-variant-numeric: tabular-nums; }
+.legal__source { margin: 2.5rem 0 0; padding-top: 1.25rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.88rem; }
+.legal__source a { overflow-wrap: anywhere; }
+
 /* Demo video */
 .video__player { display: block; width: 100%; height: auto; border-radius: var(--radius-lg); background: #000; border: 1px solid var(--border); }
 .video__downloads { display: grid; gap: 1rem; margin-top: 1.5rem; justify-items: start; }

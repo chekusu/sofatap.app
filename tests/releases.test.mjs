@@ -9,17 +9,15 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const data = JSON.parse(await readFile(path.join(ROOT, 'src', 'releases.json'), 'utf8'));
 const clone = () => structuredClone(data);
 
-test('the shipped release data is valid and points at the published alpha assets', () => {
+test('the shipped release data is valid and points at the published 0.7.1 beta.1 assets', () => {
   const [windows, mac, linux] = validateReleases(data);
   assert.deepEqual([windows.id, mac.id, linux.id], ['windows', 'mac', 'linux']);
-  assert.equal(windows.tag, 'v0.3.0-alpha');
-  assert.equal(mac.tag, 'v0.3.0-alpha');
-  assert.equal(linux.tag, 'v0.4.0-alpha');
+  assert.ok([windows, mac, linux].every((p) => p.tag === 'v0.7.1-beta.1'));
   assert.ok([windows, mac, linux].every((p) => p.prerelease));
-  assert.equal(mac.packages[0].url, 'https://github.com/chekusu/sofatap/releases/download/v0.3.0-alpha/SofaTap-macOS-arm64-notarized.zip');
+  assert.equal(mac.packages[0].url, 'https://github.com/chekusu/sofatap/releases/download/v0.7.1-beta.1/SofaTap-macOS-arm64-notarized.zip');
   assert.equal(linux.packages[1].ext, '.tar.gz');
   assert.equal(windows.packages[0].size, '91 MB');
-  assert.equal(linux.releaseUrl, 'https://github.com/chekusu/sofatap/releases/tag/v0.4.0-alpha');
+  assert.equal(linux.releaseUrl, 'https://github.com/chekusu/sofatap/releases/tag/v0.7.1-beta.1');
   assert.equal(linux.guideUrl, 'https://github.com/chekusu/sofatap/blob/main/desktop/linux/README.md');
 });
 

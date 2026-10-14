@@ -14,7 +14,10 @@ const en = tables.en;
 // Values that are the same word in a language as in English (product and platform names,
 // or words like "Illustration" that French and German share).
 const SAME_AS_ENGLISH = new Set(['platform.windows.name', 'platform.mac.name', 'platform.linux.name', 'platform.windows.req']);
-const SAME_ALSO = { fr: ['label.illustration', 'label.simulation'], de: ['label.illustration', 'label.simulation'] };
+const SAME_ALSO = {
+  fr: ['label.illustration', 'label.simulation'],
+  de: ['label.illustration', 'label.simulation', 'footer.support', 'legal.support.title'],
+};
 // The writing system each language must actually use (no English left in its place).
 const SCRIPT = {
   'zh-CN': /\p{Script=Han}/u, ja: /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u, ko: /\p{Script=Hangul}/u,

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="{{LANG}}" dir="{{DIR}}" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{TITLE}}</title>
+  <meta name="description" content="{{DESCRIPTION}}">
+  <meta name="theme-color" content="#11191B">
+  <meta name="color-scheme" content="dark">
+{{ALTERNATES}}
+  <link rel="icon" type="image/png" href="{{ROOT}}assets/favicon-64.png">
+  <link rel="apple-touch-icon" href="{{ROOT}}assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="{{ROOT}}styles.css?v={{STYLES_HASH}}">
+  <script src="{{ROOT}}main.js?v={{SCRIPT_HASH}}" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">{{t:nav.skip}}</a>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="{{HOME}}">
+        <img class="brand__mark" src="{{ROOT}}assets/sofatap-mark-256.webp" alt="" width="40" height="40">
+        <img class="brand__wordmark" src="{{ROOT}}assets/sofatap-wordmark.svg" alt="Sofatap" width="351" height="100">{{t:brand.nickname}}
+      </a>
+      <nav class="site-nav" aria-label="{{a:nav.label}}">
+        <ul>
+          <li><a href="{{HOME}}#how">{{t:nav.how}}</a></li>
+          <li><a href="{{HOME}}#download">{{t:nav.download}}</a></li>
+          <li><a href="{{HOME}}#faq">{{t:nav.faq}}</a></li>
+        </ul>
+      </nav>
+      <details class="lang-menu">
+        <summary class="lang-menu__toggle">
+          <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 10h15M10 2.5c2.2 2.3 2.2 12.7 0 15M10 2.5c-2.2 2.3-2.2 12.7 0 15" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span class="visually-hidden">{{t:lang.label}}: </span><span class="lang-menu__name">{{LANG_SHORT}}</span>
+          <svg class="lang-menu__chevron" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m6 8 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </summary>
+        <ul class="lang-menu__list">
+{{LANG_LINKS}}
+        </ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <div class="section legal-page">
+      <div class="section__inner legal-page__inner">
+        <nav class="legal-tabs" aria-label="{{a:legal.tabs}}">
+          <ul>
+            <li><a href="{{PRIVACY_HREF}}"{{PRIVACY_CURRENT}}>{{t:footer.privacy}}</a></li>
+            <li><a href="{{SUPPORT_HREF}}"{{SUPPORT_CURRENT}}>{{t:footer.support}}</a></li>
+          </ul>
+        </nav>
+{{ENGLISH_NOTE}}
+        <article class="legal" lang="en" dir="ltr">
+{{DOCUMENT}}
+        </article>
+        <p class="legal__source">{{SOURCE_NOTE}}</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <p class="site-footer__brand"><img src="{{ROOT}}assets/sofatap-mark-256.webp" alt="" width="28" height="28" loading="lazy"> <img class="site-footer__wordmark" src="{{ROOT}}assets/sofatap-wordmark.svg" alt="Sofatap" width="351" height="100" loading="lazy">{{t:footer.nickname}}</p>
+      <ul class="site-footer__links">
+        <li><a href="https://github.com/chekusu/sofatap">GitHub</a></li>
+        <li><a href="https://github.com/chekusu/sofatap/releases">{{t:footer.releases}}</a></li>
+        <li><a href="https://github.com/chekusu/sofatap/issues">{{t:footer.issues}}</a></li>
+        <li><a href="https://github.com/chekusu/sofatap/blob/main/LICENSE">{{t:footer.license}}</a></li>
+        <li><a href="{{PRIVACY_HREF}}">{{t:footer.privacy}}</a></li>
+        <li><a href="{{SUPPORT_HREF}}">{{t:footer.support}}</a></li>
+      </ul>
+      <p class="site-footer__legal">{{t:footer.legal}}</p>
+    </div>
+  </footer>
+</body>
+</html>

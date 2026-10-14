@@ -70,11 +70,12 @@ export function validateReleases(data) {
 
 /** True when an https URL is one of the product repository links the site may use. */
 export function isRepoLink(href) {
-  if (href === REPO_URL || href === `${REPO_URL}/releases` || href === `${REPO_URL}/issues` || href === `${REPO_URL}/blob/main/LICENSE`) return true;
+  if (href === REPO_URL || href === `${REPO_URL}/releases` || href === `${REPO_URL}/issues` || href === `${REPO_URL}/issues/new`
+    || href === `${REPO_URL}/blob/main/LICENSE`) return true;
   const rest = href.startsWith(`${REPO_URL}/`) ? href.slice(REPO_URL.length) : null;
   if (rest === null) return false;
   const tag = '(v\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(?:-(?:alpha|beta|rc)(?:\\.\\d{1,3})?)?)';
   return new RegExp(`^/releases/tag/${tag}$`).test(rest)
     || new RegExp(`^/releases/download/${tag}/SofaTap-[A-Za-z0-9._-]{1,80}\\.(?:zip|tar\\.gz)$`).test(rest)
-    || (/^\/blob\/main\/(?:[A-Za-z0-9_-]+\/){0,3}[A-Za-z0-9_.-]+\.md$/.test(rest) && !rest.includes('..'));
+    || (/^\/blob\/(?:main|[0-9a-f]{40})\/(?:[A-Za-z0-9_-]+\/){0,3}[A-Za-z0-9_.-]+\.md$/.test(rest) && !rest.includes('..'));
 }

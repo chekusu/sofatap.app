@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { copyFile, lstat, mkdir, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PAGES, mediaPosterFor, mediaVideoFor, mediaVttFor } from './build.mjs';
+import { LEGAL_PAGES, PAGES, mediaPosterFor, mediaVideoFor, mediaVttFor } from './build.mjs';
 import { loadCues } from './captions.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -35,7 +35,7 @@ const sha256 = async (file) => createHash('sha256').update(await readFile(file))
 
 /** Every public file of a release build: the pages, scripts and styles, source assets, media and exports. */
 export async function publicFiles() {
-  const list = PAGES.map((p) => `${p.dir ? `${p.dir}/` : ''}index.html`);
+  const list = [...PAGES, ...LEGAL_PAGES].map((p) => `${p.dir ? `${p.dir}/` : ''}index.html`);
   list.push('demo-core.js', 'main.js', 'styles.css');
   for (const name of await listFiles(path.join(ROOT, 'src', 'assets'))) list.push(`assets/${name}`);
   for (const p of PAGES) list.push(`media/${mediaVideoFor(p.lang)}`, `media/${mediaPosterFor(p.lang)}`, `media/${mediaVttFor(p.lang)}`);
@@ -78,6 +78,7 @@ export async function checkBuild(dist) {
       problems.push(`${html} 没有视频区（不是含媒体的构建）`);
     }
   }
+  for (const page of LEGAL_PAGES) await need(`${page.dir}/index.html`, () => null);
   for (const name of EXPORTS) await need(`exports/${name}`, mp4);
   // Only the site's own public files are published: anything else (a private note, .env,
   // _redirects or _headers) stops the release instead of being uploaded.

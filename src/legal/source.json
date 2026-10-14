@@ -1,0 +1,26 @@
+{
+  "repository": "https://github.com/chekusu/sofatap",
+  "commit": "6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856",
+  "documents": {
+    "privacy": {
+      "path": "PRIVACY.md",
+      "sha256": "08e59f62cf9a07628f706bb2cc01ed03d72a7f78fccc3dfd473033dbb4a7b888"
+    },
+    "support": {
+      "path": "docs/app-store/support.md",
+      "sha256": "289117dff1aa96a276b0d754e65a698e8c15d653ff6408db4d772dbc6293c1b6"
+    }
+  },
+  "adaptations": [
+    {
+      "document": "support",
+      "find": "Browsers, custom fields, Linux and older receivers use a draft with a Send action instead. No extra Enter or form submission is added to text input.",
+      "replace": "Many browser and custom fields, Linux and older receivers use a draft with a Send action instead. No extra Return is appended to text input, but line breaks included in the text may act as Enter.",
+      "reason": "The source sentence says every browser lacks live editing and that text input can never submit a form. Mac live editing accepts any field with writable Accessibility selected-text attributes, so not all browser fields are excluded, and embedded line breaks are typed as Return and may submit a form or send a message. Corrected at the website owner's request; the rest of the document is unchanged.",
+      "evidence": [
+        "https://github.com/chekusu/sofatap/blob/6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856/docs/TEXT-FOCUS.md#L31",
+        "https://github.com/chekusu/sofatap/blob/6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856/PROTOCOL.md#L47"
+      ]
+    }
+  ]
+}

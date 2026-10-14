@@ -4,11 +4,15 @@ Sofatap 的公开网站：移动优先的静态页面，共 12 种语言。英�
 
 品牌名统一写作 **Sofatap**（一个词，只有 S 大写）；中文页可用市场名提案「沙发瘫」作辅助。`SofaTap` 只出现在发行包文件名等兼容标识中。
 
-产品源码在 [chekusu/sofatap](https://github.com/chekusu/sofatap)。页面上的产品说明依据该仓库提交 [`861367ae901c1c0326f445c0807d26b2af38b780`](https://github.com/chekusu/sofatap/tree/861367ae901c1c0326f445c0807d26b2af38b780)（2026-10-12 核对）及其已发布的 GitHub Releases。产品有变化时，先核对新的提交再改文案：
+产品源码在 [chekusu/sofatap](https://github.com/chekusu/sofatap)。页面上的产品说明依据该仓库提交 [`6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856`](https://github.com/chekusu/sofatap/tree/6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856)（2026-10-14 核对）及其已发布的 GitHub Releases。产品有变化时，先核对新的提交再改文案：
 
-- 当前 `main` 上的单屏触控、应用内语音、自动弹出键盘和新版接收端窗口属于开发版本。下载区的说明写明已发布的 alpha 安装包不含这些更新；按网站所有者的决定，营销页面和视频里不再放「开发中」「开发预览」「模拟」「示意图」之类的标签，静态检查会阻止它们回来。
-- Windows / Mac 下载来自 `v0.3.0-alpha`，Linux 来自 `v0.4.0-alpha`；iPhone App 暂无已确认的公开安装入口。
-- 未实现或尚待验证的方向（如 Windows 锁屏 PIN、Face ID、语音代操电脑）不出现在页面上。
+- 电脑端下载全部来自 [`v0.7.1-beta.1`](https://github.com/chekusu/sofatap/releases/tag/v0.7.1-beta.1)（Windows x64、Mac Apple Silicon / Intel、Linux x64 / ARM64）。这一版的二维码带有电脑类型和名称，需要 iPhone App 1.0 (15) 或更高版本；build 15 也能读取旧接收端的二维码。
+- 文字输入分两种：兼容接收端上受支持的 Windows / Mac 输入框是实时编辑（没有「发送」按钮）；其他输入框（包括许多浏览器和自定义控件，但不是全部浏览器）、Linux 和旧接收端使用草稿 +「发送」。Sofatap 不会额外添加回车或提交，但文字里的换行会被输入，在某些输入框里相当于回车。
+- iPhone App 的公开测试尚未开放（TestFlight 公开链接存在但不接受新测试者），所以页面不提供安装链接，也不提 TestFlight 或 App Store。
+- 手动控制和基础语音转文字免费；按语音目标自主完成多步操作的付费功能是未来方向，目前没有自主操作也没有订阅。这只出现在常见问题的一条回答里，其他地方不提价格。LG webOS 和 Android/Google TV 是实验性预览，没有通过验证的电视型号。
+- 按网站所有者的决定，营销页面和视频里不放「开发中」「开发预览」「模拟」「示意图」之类的标签，静态检查会阻止它们回来。
+- 未实现或尚待验证的方向（如 Windows 锁屏 PIN、Face ID、语音代操电脑）不作为现有功能出现在页面上。
+- 演示视频和网页演示展示的是草稿 +「发送」这一种流程；视频区和演示说明都写明了这一点。视频的旁白和字幕保持原样。
 
 ## 命令
 
@@ -40,7 +44,7 @@ npm run preview -- --port 0 --base /sofatap/
 - 所有文件的键必须完全一致，否则构建失败。文案不能为空（中文昵称相关的两个键除外），也不能包含脚本。测试会检查新增语言没有残留英文、占位符和链接没有丢失。
 - iPhone 下载入口的三种状态文案在 `scripts/download-config.mjs`，同样覆盖 12 种语言。
 - 页头的语言菜单是一组普通链接（`<details>`，不需要脚本），每个链接带 `hreflang` 和 `lang`，当前语言用 `aria-current` 标出；`<head>` 里有全部语言和 `x-default` 的备用链接。阿拉伯语页面为 `dir="rtl"`，样式使用逻辑属性；版本号、文件大小等技术信息单独按从左到右显示。
-- 静态检查（`scripts/check.mjs`）对每种语言都检查必须出现的事实（如 300 毫秒、右键、开发中、尚未包含）和不允许的说法。
+- 静态检查（`scripts/check.mjs`）对每种语言都检查必须出现的事实（如 300 毫秒、右键、0.7.1、1.0 (15)、许多浏览器和自定义控件、换行）和不允许的说法（如 alpha、旧版本号、「所有浏览器」、价格；价格只允许出现在常见问题里关于付费计划的那一条）。
 
 ## iPhone 下载入口
 
@@ -91,6 +95,15 @@ npm run preview -- --port 0 --base /sofatap/
 
 发布新版本后，按 GitHub Release 中实际的资源名和大小更新这个文件。
 
+## 隐私政策和支持页
+
+每种语言都有 `privacy/` 和 `support/` 两个页面（英文在 `/privacy/`、`/support/`，其他语言如 `/zh/privacy/`），从主页页脚进入。页头、语言菜单、页脚和「隐私政策 / 支持」切换是本页语言；正文是产品仓库的英文原文，标为 `lang="en" dir="ltr"`，非英文页面上方说明正文只有英文。法律和支持内容不翻译，避免自行改写其含义。
+
+- 原文在 `src/legal/privacy.md`（产品仓库 `PRIVACY.md`）和 `src/legal/support.md`（`docs/app-store/support.md`），`src/legal/source.json` 记录来源提交和 SHA-256。构建时逐字节核对，不一致就失败。更新时从产品仓库取新提交的文件，更新 SHA-256 和提交号。
+- 构建只做一处有记录的更正（`source.json` 的 `adaptations`）：支持页把「Browsers, custom fields, Linux and older receivers use a draft… No extra Enter or form submission is added」改为「Many browser and custom fields… No extra Return is appended…, but line breaks included in the text may act as Enter」。原句说所有浏览器都不支持实时编辑、文字输入不会提交表单，与产品 `docs/TEXT-FOCUS.md`、`PROTOCOL.md`（同一提交）不符。支持页的来源说明会注明这处更正。隐私政策没有改动。若产品文档以后自己改正了这句，更正记录找不到原文，构建会失败，此时删去这条记录即可。
+- `scripts/markdown.mjs` 只支持这两份文档用到的语法（标题、段落、列表、表格、粗体、代码、链接），其余按纯文本转义。文档里的相对链接：指向这两份文档的变成站内页面，其他 `.md` 指向 GitHub `main` 上的文件，其他相对链接构建失败。
+- 静态检查逐词比对正文与原文（含更正），并检查公司名、生效日期、联系途径、链接白名单、语言菜单和每种语言相同的页面结构。
+
 ## 品牌和图片
 
 - 文字标志 `src/assets/sofatap-wordmark.svg`：固定轮廓的 SVG（不含文字元素、字体或外部引用），由 `tools/brand/wordmark.mjs` 生成。圆润的单线字形，「o」的字怀里有一个薄荷色圆点（指尖点在触控面上），「t」的收笔接向后面的「a」。页头、页脚和演示视频的角标、片头、片尾都用这一个文件；品牌名不要再用普通文字排版。修改字形请改生成脚本后重新运行 `node tools/brand/wordmark.mjs`。
@@ -115,7 +128,7 @@ npm run preview -- --port 0 --base /sofatap/
 
 视频录的是同一个演示、同一条时间轴：`tools/film/record.mjs` 打开新构建的真实页面，用 `tools/film/film.css` 把演示排成 1920×1080 画面（角标、片头、片尾使用同一个文字标志 SVG），逐帧推进演示自己的时钟截图，得到无声母版。每种语言录自己的页面，所以画面里的片名、搜索框和「发送」按钮是该语言；画面里没有文字说明，旁白和字幕按语言另加。故事约一分钟，分三段：触控手势；在电视的搜索框点一下，用手机键盘打字，草稿留在手机上，点「发送」后才输入到电脑，再用指针点「搜索」；点搜索框的清除按钮，用麦克风说出片名（旁白念出这个片名），停止、检查、发送、搜索，然后播放。
 
-- 演示与网站一致：电视上的影片库有搜索框（输入框、清除、搜索按钮），手机上有键盘按钮、麦克风和草稿编辑区。访客可以在页面上点搜索框、用手机键盘按钮打字并发送；网页无法代替 App 的本机听写，点麦克风时状态栏说明它在 App 里的作用，「播放演示」会完整演示听写这一段。发送只把草稿输入到电脑当前的输入框（接在已有文字后面），从不按回车。
+- 演示与网站一致：电视上的影片库有搜索框（输入框、清除、搜索按钮），手机上有键盘按钮、麦克风和草稿编辑区。访客可以在页面上点搜索框、用手机键盘按钮打字并发送；网页无法代替 App 的本机听写，点麦克风时状态栏说明它在 App 里的作用，「播放演示」会完整演示听写这一段。发送只把草稿输入到电脑当前的输入框（接在已有文字后面），不额外按回车。这是不支持实时编辑的输入框使用的流程。
 
 - 旁白和字幕是同一段文字：各语言文件中的 18 条 `video.cue.*`，每条对应 `src/video/cues.json` 里的一个画面时刻。`tools/film/narration.mjs` 生成配音稿（读作「Sofa tap」，字幕仍写 Sofatap）。
 - `tools/film/voice.mjs` 接收配好的整段旁白和字符时间戳，按字幕条数切分计时，配到母版上：网站用的每语言一个带声音、不烧字幕的 MP4，以及字幕时间 `timing.json`；另外为每种语言烧录字幕版（供推广使用，不放进网站）。
@@ -169,6 +182,7 @@ wrangler deploy
 | `src/demo-core.js` | 演示的手势规则和时间轴（页面、视频、测试共用） |
 | `src/video/cues.json` | 演示视频的字幕时间轴 |
 | `src/releases.json` | 电脑端发行包 |
+| `src/legal/`、`src/legal.html` | 隐私政策和支持页的原文、来源记录和页面模板 |
 | `src/styles.css`、`src/main.js` | 样式；语言菜单、模拟演示和点阵（均为渐进增强） |
 | `src/assets/` | 标志和产品图片 |
 | `scripts/` | 语言清单、构建、配置与发行包校验、字幕、静态检查、预览服务器、发布准备 |

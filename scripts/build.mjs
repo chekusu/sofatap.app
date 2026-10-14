@@ -11,7 +11,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DownloadConfigError, downloadCopy, validateDownloadConfig } from './download-config.mjs';
 import { LANGS, LOCALES, hrefBetween, locale, mediaTag } from './locales.mjs';
-import { ReleaseDataError, validateReleases } from './releases.mjs';
+import { REPO_URL, ReleaseDataError, validateReleases } from './releases.mjs';
+import { renderMarkdown, resolveRepoPath } from './markdown.mjs';
 import { loadCues, toVtt } from './captions.mjs';
 import { renderDemoTiles } from './demo-art.mjs';
 
@@ -55,7 +56,72 @@ export const PAGES = LOCALES.map((l) => ({
   links: Object.fromEntries(LOCALES.map((o) => [o.lang, hrefBetween(l.lang, o.lang)])),
 }));
 // Keys that may be empty in one language (for example the Chinese nickname).
-const OPTIONAL_KEYS = new Set(['brand.nickname', 'footer.nickname']);
+const OPTIONAL_KEYS = new Set(['brand.nickname', 'footer.nickname', 'legal.english']);
+
+/**
+ * The privacy policy and support page: product documents republished unchanged from the
+ * product repository (src/legal/, pinned in src/legal/source.json). Every language has both
+ * pages at <dir>/privacy/ and <dir>/support/, with its own navigation around the English text.
+ */
+export const LEGAL_KINDS = ['privacy', 'support'];
+const LEGAL_SOURCE_PATH = { privacy: 'PRIVACY.md', support: 'docs/app-store/support.md' };
+
+/** Relative link from the `kind` page of language `from` to the `toKind` page of language `to`. */
+export function legalHref(from, to, toKind) {
+  const a = locale(from);
+  const b = locale(to);
+  if (a.lang === b.lang) return `../${toKind}/`;
+  const up = a.dir ? '../../' : '../';
+  return `${up}${b.dir ? `${b.dir}/` : ''}${toKind}/`;
+}
+
+export const LEGAL_PAGES = LEGAL_KINDS.flatMap((kind) => LOCALES.map((l) => ({
+  kind,
+  lang: l.lang,
+  dir: path.posix.join(l.dir, kind),
+  root: l.dir ? '../../' : '../',
+  rtl: Boolean(l.rtl),
+  links: Object.fromEntries(LOCALES.map((o) => [o.lang, legalHref(l.lang, o.lang, kind)])),
+})));
+
+/** Reads the pinned product documents and checks they are exactly the recorded files. */
+export async function loadLegalDocuments() {
+  const source = JSON.parse(await readFile(path.join(SRC, 'legal', 'source.json'), 'utf8'));
+  if (source.repository !== REPO_URL || !/^[0-9a-f]{40}$/.test(source.commit ?? '')) throw new Error('src/legal/source.json 的仓库或提交不正确');
+  const docs = {};
+  for (const kind of LEGAL_KINDS) {
+    const entry = source.documents?.[kind];
+    if (entry?.path !== LEGAL_SOURCE_PATH[kind]) throw new Error(`src/legal/source.json 中 ${kind} 的路径必须是 ${LEGAL_SOURCE_PATH[kind]}`);
+    const text = await readFile(path.join(SRC, 'legal', `${kind}.md`), 'utf8');
+    const digest = createHash('sha256').update(text).digest('hex');
+    if (digest !== entry.sha256) throw new Error(`src/legal/${kind}.md 与产品仓库 ${entry.path}@${source.commit.slice(0, 7)} 的 SHA-256 不一致`);
+    docs[kind] = { text, path: entry.path, sha256: digest, adapted: false };
+  }
+  // Recorded corrections (see README): each replaces one exact passage that occurs once.
+  for (const a of source.adaptations ?? []) {
+    const doc = docs[a?.document];
+    if (!doc || typeof a.find !== 'string' || typeof a.replace !== 'string' || !a.reason || !a.find) throw new Error('src/legal/source.json 中的更正记录不完整');
+    if (doc.text.split(a.find).length !== 2) throw new Error(`更正的原文必须在 ${doc.path} 中恰好出现一次：${a.find.slice(0, 60)}`);
+    doc.text = doc.text.replace(a.find, () => a.replace);
+    doc.adapted = true;
+  }
+  return { commit: source.commit, docs };
+}
+
+/**
+ * Where a link inside a product document goes on the site: the two republished documents
+ * become the site's own pages, other repository Markdown files go to GitHub, https stays.
+ */
+export function legalLink(docPath, href) {
+  if (/^https:\/\//.test(href)) return href;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('/') || href.startsWith('#')) throw new Error(`文档链接不受支持：${href}`);
+  const [target, fragment] = href.split('#');
+  const resolved = resolveRepoPath(docPath, target);
+  const own = Object.entries(LEGAL_SOURCE_PATH).find(([, p]) => p === resolved);
+  if (own) return `../${own[0]}/${fragment ? `#${fragment}` : ''}`;
+  if (!resolved.endsWith('.md') || fragment) throw new Error(`文档链接不受支持：${href}`);
+  return `${REPO_URL}/blob/main/${resolved}`;
+}
 
 /** <link rel="alternate"> for every language, plus x-default (English). */
 export function renderAlternates(page) {
@@ -288,8 +354,10 @@ export async function build({ config: configPath, out, media = null }) {
   ));
   validateStrings(tables);
 
-  const [template, styles, script, core, cues] = await Promise.all([
+  const legal = await loadLegalDocuments();
+  const [template, legalTemplate, styles, script, core, cues] = await Promise.all([
     readFile(path.join(SRC, 'index.html'), 'utf8'),
+    readFile(path.join(SRC, 'legal.html'), 'utf8'),
     readFile(path.join(SRC, 'styles.css'), 'utf8'),
     readFile(path.join(SRC, 'main.js'), 'utf8'),
     readFile(path.join(SRC, 'demo-core.js'), 'utf8'),
@@ -318,13 +386,49 @@ export async function build({ config: configPath, out, media = null }) {
       STYLES_HASH: shortHash(styles),
       SCRIPT_HASH: shortHash(script),
       CORE_HASH: shortHash(core),
+      PRIVACY_HREF: 'privacy/',
+      SUPPORT_HREF: 'support/',
     });
     return { file: path.join(page.dir, 'index.html'), html };
   });
+  const documents = Object.fromEntries(LEGAL_KINDS.map((kind) => {
+    const doc = legal.docs[kind];
+    return [kind, renderMarkdown(doc.text, { link: (href) => legalLink(doc.path, href) })];
+  }));
+  for (const page of LEGAL_PAGES) {
+    const strings = tables[page.lang];
+    const doc = legal.docs[page.kind];
+    const sourceUrl = `${REPO_URL}/blob/${legal.commit}/${doc.path}`;
+    const note = strings['legal.english'].trim();
+    const html = renderPage(legalTemplate, strings, {
+      LANG: page.lang,
+      DIR: page.rtl ? 'rtl' : 'ltr',
+      ROOT: page.root,
+      HOME: '../',
+      TITLE: escapeHtml(strings[`legal.${page.kind}.title`]),
+      DESCRIPTION: escapeHtml(strings[`legal.${page.kind}.description`]),
+      ALTERNATES: renderAlternates(page),
+      LANG_SHORT: locale(page.lang).short,
+      LANG_LINKS: renderLangLinks(page),
+      STYLES_HASH: shortHash(styles),
+      SCRIPT_HASH: shortHash(script),
+      PRIVACY_HREF: page.kind === 'privacy' ? './' : '../privacy/',
+      SUPPORT_HREF: page.kind === 'support' ? './' : '../support/',
+      PRIVACY_CURRENT: page.kind === 'privacy' ? ' aria-current="page"' : '',
+      SUPPORT_CURRENT: page.kind === 'support' ? ' aria-current="page"' : '',
+      ENGLISH_NOTE: note ? `        <p class="callout callout--quiet">${note}</p>` : '',
+      DOCUMENT: documents[page.kind],
+      SOURCE_NOTE: fill(strings['legal.source'], {
+        file: `<a href="${escapeHtml(sourceUrl)}" dir="ltr"><code>${escapeHtml(doc.path)}</code></a>`,
+        commit: `<bdi dir="ltr">${legal.commit.slice(0, 7)}</bdi>`,
+      }) + (doc.adapted ? ` ${strings['legal.adapted']}` : ''),
+    });
+    pages.push({ file: path.join(page.dir, 'index.html'), html });
+  }
 
   await rm(out, { recursive: true, force: true });
   await mkdir(out, { recursive: true });
-  await Promise.all(PAGES.filter((p) => p.dir).map((p) => mkdir(path.join(out, p.dir), { recursive: true })));
+  await Promise.all([...PAGES, ...LEGAL_PAGES].filter((p) => p.dir).map((p) => mkdir(path.join(out, p.dir), { recursive: true })));
   await Promise.all([
     writeFile(path.join(out, MARKER), 'Generated by scripts/build.mjs; safe to delete.\n'),
     ...pages.map((p) => writeFile(path.join(out, p.file), p.html)),
@@ -340,14 +444,14 @@ export async function build({ config: configPath, out, media = null }) {
       ...vtts.map((v) => writeFile(path.join(out, 'media', v.file), v.text)),
     ]);
   }
-  return { out, download, media: Boolean(mediaSizes), pages: pages.map((p) => p.file) };
+  return { out, download, media: Boolean(mediaSizes), pages: pages.map((p) => p.file), legalCommit: legal.commit };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
     const result = await build(parseArgs(process.argv.slice(2)));
     const rel = path.relative(process.cwd(), result.out) || '.';
-    console.log(`已构建 ${rel}/（${result.pages.length} 种语言；手机下载入口：${result.download.kind}${result.download.url ? ` → ${result.download.url}` : ''}；演示视频：${result.media ? '已包含' : '未包含'}）`);
+    console.log(`已构建 ${rel}/（${PAGES.length} 种语言，另有每种语言的隐私政策和支持页；手机下载入口：${result.download.kind}${result.download.url ? ` → ${result.download.url}` : ''}；演示视频：${result.media ? '已包含' : '未包含'}）`);
   } catch (error) {
     console.error(`构建失败：${error.message}`);
     process.exitCode = 1;

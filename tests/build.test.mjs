@@ -40,8 +40,8 @@ test('unavailable: neutral status in both languages, no link, no TestFlight prom
     assert.doesNotMatch(page, /href="#"/);
     assert.doesNotMatch(page, /testflight\.apple\.com|apps\.apple\.com|TestFlight|App Store|即将|coming soon/i);
   }
-  assert.match(iphoneCard(html), /Beta not open yet[\s\S]*no confirmed public install link/);
-  assert.match(iphoneCard(zh), /测试版尚未开放[\s\S]*暂无已确认的公开安装入口/);
+  assert.match(iphoneCard(html), /Beta not open yet[\s\S]*Public beta testing isn’t open yet, so there’s no install link/);
+  assert.match(iphoneCard(zh), /测试版尚未开放[\s\S]*公开测试尚未开放，所以这里没有安装链接/);
   assert.deepEqual((await checkSite(out)).problems, []);
 });
 
@@ -70,21 +70,25 @@ test('appstore: link with text, no badge image', async () => {
   assert.deepEqual((await checkSite(out)).problems, []);
 });
 
-test('desktop downloads link the real release assets with architecture and alpha labels', async () => {
+test('desktop downloads link the real 0.7.1 beta.1 release assets with architecture labels', async () => {
   const { html, zh } = await buildWith('downloads', { mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' });
   const base = 'https://github.com/chekusu/sofatap/releases/download/';
   for (const page of [html, zh]) {
-    for (const file of ['v0.3.0-alpha/SofaTap-Windows-x64.zip', 'v0.3.0-alpha/SofaTap-macOS-arm64-notarized.zip',
-      'v0.3.0-alpha/SofaTap-macOS-x64-notarized.zip', 'v0.4.0-alpha/SofaTap-Linux-x64.tar.gz', 'v0.4.0-alpha/SofaTap-Linux-arm64.tar.gz']) {
+    for (const file of ['SofaTap-Windows-x64.zip', 'SofaTap-macOS-arm64-notarized.zip', 'SofaTap-macOS-x64-notarized.zip',
+      'SofaTap-Linux-x64.tar.gz', 'SofaTap-Linux-arm64.tar.gz'].map((f) => `v0.7.1-beta.1/${f}`)) {
       assert.equal(page.split(`href="${base}${file}"`).length - 1, 1, file);
     }
-    assert.match(page, /<span class="tag" dir="ltr">v0\.3\.0-alpha<\/span>[\s\S]*<span class="tag" dir="ltr">v0\.4\.0-alpha<\/span>/);
+    assert.equal(page.split('<span class="tag" dir="ltr">v0.7.1-beta.1</span>').length - 1, 3);
+    assert.doesNotMatch(page, /v0\.[34]\.0-alpha/);
     assert.match(page, />Apple Silicon<\/bdi>[\s\S]*>Intel<\/bdi>[\s\S]*>x64<\/bdi>[\s\S]*>ARM64<\/bdi>/);
     // The old air-mouse claims and the provisional logo are gone.
     assert.doesNotMatch(page, /logo\.svg|tilt|倾斜|v0\.1\.1-alpha/i);
   }
-  // One factual note about what the published downloads include; no badges.
-  assert.match(html, /They do not include/);
+  // The QR compatibility note, and the facts about live editing and line breaks; no badges.
+  assert.match(html, /These codes need the iPhone app 1\.0 \(15\) or later/);
+  assert.match(html, /many browser and custom controls, Linux and older receivers, keep a draft/);
+  assert.match(html, /some fields treat a line break as Enter/);
+  assert.doesNotMatch(html, /Nothing is typed on the computer until you tap Send\./);
   assert.doesNotMatch(html, /class="label|In development|Development preview|Simulation/);
 });
 
