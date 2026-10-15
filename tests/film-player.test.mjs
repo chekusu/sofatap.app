@@ -57,9 +57,9 @@ class Video extends El {
   finish() { this.paused = true; this.ended = true; this.dispatchEvent(new Event('pause')); this.dispatchEvent(new Event('ended')); }
 }
 
-function setup({ without } = {}) {
+function setup({ without, labels = JSON.stringify(LABELS), before } = {}) {
   const root = new El();
-  root.setAttribute('data-labels', JSON.stringify(LABELS));
+  root.setAttribute('data-labels', labels);
   const video = new Video();
   const controls = new El(); controls.hidden = true;
   const captions = new El(); captions.hidden = true;
@@ -71,7 +71,38 @@ function setup({ without } = {}) {
     const m = sel.match(/^\[data-action="(\w+)"\]$/);
     return m ? buttons[m[1]] ?? null : null;
   };
-  return { root, video, controls, captions, buttons, player: attach(root) };
+  const parts = { root, video, controls, captions, buttons };
+  if (before) before(parts);
+  return { ...parts, player: attach(root) };
+}
+
+// Builds a player whose setup fails, and returns its parts after the failure.
+function failing(options) {
+  let parts;
+  assert.throws(() => setup({ ...options, before: (p) => { parts = p; options.before?.(p); } }), options.error);
+  return parts;
+}
+
+// The native player exactly as before: controls, the track's own mode, no custom layer or listeners.
+function assertNative({ root, video, controls, captions, buttons }) {
+  assert.equal(video.hasAttribute('controls'), true);
+  assert.equal(video.track.mode, 'showing');
+  assert.equal(video.loop, false);
+  assert.equal(controls.hidden, true);
+  assert.equal(captions.hidden, true);
+  assert.equal(captions.textContent, '');
+  assert.equal(root.getAttribute('data-ready'), null);
+  assert.equal(root.getAttribute('data-state'), null);
+  assert.equal(root.classList.contains('is-ready'), false);
+  // No listener survives: clicks, cues and track changes do nothing.
+  video.click();
+  buttons.play?.click();
+  buttons.replay?.click();
+  assert.equal(video.plays, 0);
+  video.track.cue('Hello');
+  assert.equal(captions.textContent, '');
+  video.textTracks.dispatchEvent(new Event('change'));
+  assert.equal(video.track.mode, 'showing');
 }
 const tick = () => new Promise((r) => setImmediate(r));
 
@@ -171,6 +202,33 @@ test('captions: the page track as text in one layer; the track never shows nativ
   track.cue('');
   assert.equal(captions.textContent, '');
   assert.equal(captions.hidden, true);
+});
+
+test('labels are checked before anything changes', () => {
+  for (const labels of ['null', '{}', JSON.stringify({ ...LABELS, replay: '' }), JSON.stringify({ ...LABELS, pause: 3 }), 'not json']) {
+    assertNative(failing({ labels, error: /label|JSON|Unexpected/ }));
+  }
+});
+
+test('a late failure after the track was hidden puts everything back', () => {
+  const parts = failing({
+    error: /cues unavailable/,
+    before: ({ video }) => { Object.defineProperty(video.track, 'activeCues', { get() { throw new Error('cues unavailable'); } }); },
+  });
+  delete parts.video.track.activeCues;
+  parts.video.track.activeCues = [];
+  assertNative(parts);
+});
+
+test('a late failure after the native controls were removed puts everything back', () => {
+  const parts = failing({
+    error: /render failed/,
+    before: ({ buttons }) => {
+      const set = buttons.play.setAttribute.bind(buttons.play);
+      buttons.play.setAttribute = (n, v) => { if (n === 'data-state') throw new Error('render failed'); set(n, v); };
+    },
+  });
+  assertNative(parts);
 });
 
 test('if setting up fails, the native player stays untouched', () => {
