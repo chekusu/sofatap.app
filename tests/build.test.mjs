@@ -53,8 +53,35 @@ test('testflight: one HTTPS link per page, in the single entry', async () => {
     assert.equal(page.split(url).length - 1, 1);
     assert.doesNotMatch(page, /not open yet|尚未开放/);
   }
-  assert.match(iphoneCard(html), /TestFlight beta/);
-  assert.match(iphoneCard(zh), /TestFlight 测试中/);
+  assert.match(entryOf(html), /Join the TestFlight Beta/);
+  assert.match(entryOf(zh), /加入 TestFlight 公测/);
+  assert.match(iphoneCard(html), /TestFlight beta[\s\S]*Install Apple’s TestFlight app from the App Store first\. Then, on your iPhone, tap “Join the TestFlight Beta”/);
+  assert.match(iphoneCard(zh), /TestFlight 公测中[\s\S]*请先从 App Store 安装 Apple 的 TestFlight App，然后在 iPhone 上点「加入 TestFlight 公测」/);
+  assert.deepEqual((await checkSite(out)).problems, []);
+});
+
+// The committed configuration: the real public TestFlight link, in every language.
+test('site.config.json: every language links the Sofatap TestFlight beta once, with install steps', async () => {
+  const url = 'https://testflight.apple.com/join/e6MuKx9S';
+  const config = JSON.parse(await readFile(path.join(ROOT, 'site.config.json'), 'utf8'));
+  assert.deepEqual(config, { mobileDownloadKind: 'testflight', mobileDownloadUrl: url });
+  const out = path.join(tmp, 'committed');
+  await build({ config: path.join(ROOT, 'site.config.json'), out });
+  for (const l of LOCALES) {
+    const page = await readFile(path.join(out, l.dir, 'index.html'), 'utf8');
+    const copy = downloadCopy('testflight', l.lang);
+    assert.equal(entryOf(page).match(/<a class="get-app__link" href="([^"]+)">/)?.[1], url, l.lang);
+    assert.ok(entryOf(page).includes(`<span>${copy.action}</span>`), l.lang);
+    assert.equal(page.split(url).length - 1, 1, l.lang);
+    assert.match(iphoneCard(page), /data-state="available"/);
+    assert.ok(iphoneCard(page).includes(copy.note), l.lang);
+    // Install TestFlight first, then Sofatap; no App Store listing link for Sofatap itself.
+    assert.ok(copy.note.indexOf('TestFlight') < copy.note.lastIndexOf('Sofatap'), l.lang);
+    assert.ok(copy.note.includes(copy.action), `${l.lang}: the note names the button`);
+    assert.doesNotMatch(page, /apps\.apple\.com/);
+    const closed = downloadCopy('unavailable', l.lang);
+    for (const stale of [closed.action, closed.status, closed.note]) assert.ok(!page.includes(stale), `${l.lang} still says: ${stale}`);
+  }
   assert.deepEqual((await checkSite(out)).problems, []);
 });
 
