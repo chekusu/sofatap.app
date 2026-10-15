@@ -1,4 +1,4 @@
 {
-  "mobileDownloadKind": "unavailable",
-  "mobileDownloadUrl": ""
+  "mobileDownloadKind": "testflight",
+  "mobileDownloadUrl": "https://testflight.apple.com/join/e6MuKx9S"
 }

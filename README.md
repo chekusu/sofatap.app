@@ -7,7 +7,7 @@ Sofatap 的公开网站：移动优先的静态页面，共 12 种语言。英�
 产品源码在 [chekusu/sofatap](https://github.com/chekusu/sofatap)。页面上的产品说明依据该仓库提交 [`861367ae901c1c0326f445c0807d26b2af38b780`](https://github.com/chekusu/sofatap/tree/861367ae901c1c0326f445c0807d26b2af38b780)（2026-10-12 核对）及其已发布的 GitHub Releases。产品有变化时，先核对新的提交再改文案：
 
 - 当前 `main` 上的单屏触控、应用内语音、自动弹出键盘和新版接收端窗口属于开发版本。下载区的说明写明已发布的 alpha 安装包不含这些更新；按网站所有者的决定，营销页面和视频里不再放「开发中」「开发预览」「模拟」「示意图」之类的标签，静态检查会阻止它们回来。
-- Windows / Mac 下载来自 `v0.3.0-alpha`，Linux 来自 `v0.4.0-alpha`；iPhone App 暂无已确认的公开安装入口。
+- Windows / Mac 下载来自 `v0.3.0-alpha`，Linux 来自 `v0.4.0-alpha`；iPhone App 通过 TestFlight 公开测试（`https://testflight.apple.com/join/e6MuKx9S`），尚未上架 App Store。
 - 未实现或尚待验证的方向（如 Windows 锁屏 PIN、Face ID、语音代操电脑）不出现在页面上。
 
 ## 命令
@@ -44,19 +44,19 @@ npm run preview -- --port 0 --base /sofatap/
 
 ## iPhone 下载入口
 
-页面只有一个手机下载入口，状态写在 `site.config.json`，修改后重新运行 `npm run build`：
+页面只有一个手机下载入口，状态写在 `site.config.json`，修改后重新运行 `npm run build`。当前配置：
 
 ```json
 {
-  "mobileDownloadKind": "unavailable",
-  "mobileDownloadUrl": ""
+  "mobileDownloadKind": "testflight",
+  "mobileDownloadUrl": "https://testflight.apple.com/join/e6MuKx9S"
 }
 ```
 
 | `mobileDownloadKind` | `mobileDownloadUrl` | 页面显示 |
 | --- | --- | --- |
-| `unavailable`（默认） | 必须为空 `""` | 不可点击的 “iPhone beta not open yet / iPhone 测试版尚未开放” 状态，不生成链接，也不提 TestFlight 或 App Store |
-| `testflight` | `https://testflight.apple.com/join/<邀请码>` | “Join the iPhone beta on TestFlight / 通过 TestFlight 加入 iPhone 测试”按钮 |
+| `unavailable` | 必须为空 `""` | 不可点击的 “iPhone beta not open yet / iPhone 测试版尚未开放” 状态，不生成链接，也不提 TestFlight 或 App Store |
+| `testflight` | `https://testflight.apple.com/join/<邀请码>` | “Join the TestFlight Beta / 加入 TestFlight 公测”按钮；下载区的 iPhone 说明先请用户从 App Store 安装 TestFlight，再打开链接安装 Sofatap |
 | `appstore` | `https://apps.apple.com/<地区>/app/<名称>/id<数字>`（地区和名称可省略） | “View on the App Store / 前往 App Store”按钮，不使用徽章图片 |
 
 构建会先校验配置，不通过就报错退出，不会写出任何文件。以下情况会被拒绝：
