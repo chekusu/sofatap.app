@@ -17,6 +17,23 @@ function fail(message) {
   throw new ReleaseDataError(message);
 }
 
+// The package's processor architecture, from its file name (every package names one).
+const ARCH = /-(arm64|x64)[.-]/;
+
+/** A release tag as people read it: v0.7.2-beta.1 → 0.7.2 beta.1. */
+export const displayVersion = (tag) => tag.replace(/^v/, '').replace('-', ' ');
+
+/** Orders release tags: by version number, then a pre-release before its release, then by its number. */
+export function compareTags(a, b) {
+  const parse = (tag) => {
+    const [, x, y, z, pre, n] = tag.match(/^v(\d+)\.(\d+)\.(\d+)(?:-(alpha|beta|rc)(?:\.(\d+))?)?$/);
+    return [Number(x), Number(y), Number(z), pre ? ['alpha', 'beta', 'rc'].indexOf(pre) : 3, Number(n ?? 0)];
+  };
+  const [p, q] = [parse(a), parse(b)];
+  for (let i = 0; i < p.length; i += 1) if (p[i] !== q[i]) return p[i] - q[i];
+  return 0;
+}
+
 export const releasePageUrl = (tag) => `${REPO_URL}/releases/tag/${tag}`;
 export const packageUrl = (tag, file) => `${REPO_URL}/releases/download/${tag}/${file}`;
 export const guideUrl = (guide) => `${REPO_URL}/blob/main/${guide}`;
@@ -42,6 +59,7 @@ export function validateReleases(data) {
       if (typeof pkg.file !== 'string' || !FILE.test(pkg.file) || !pkg.file.startsWith(FILE_PREFIX[id])) {
         fail(`${id} 的文件名不正确：${JSON.stringify(pkg.file)}`);
       }
+      if (!ARCH.test(pkg.file)) fail(`${id} 的文件名必须写明架构（arm64 或 x64）：${pkg.file}`);
       if (files.has(pkg.file)) fail(`${id} 的文件重复：${pkg.file}`);
       files.add(pkg.file);
       if (!Number.isInteger(pkg.bytes) || pkg.bytes < 1e6 || pkg.bytes > 2e9) fail(`${id} 的 ${pkg.file} 大小不合理：${pkg.bytes}`);
@@ -60,6 +78,7 @@ export function validateReleases(data) {
       packages: p.packages.map((pkg) => ({
         label: pkg.label,
         file: pkg.file,
+        arch: pkg.file.match(ARCH)[1],
         url: packageUrl(p.tag, pkg.file),
         size: `${Math.round(pkg.bytes / 1e6)} MB`,
         ext: pkg.file.endsWith('.tar.gz') ? '.tar.gz' : '.zip',

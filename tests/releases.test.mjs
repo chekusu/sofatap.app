@@ -3,21 +3,25 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { isRepoLink, validateReleases } from '../scripts/releases.mjs';
+import { displayVersion, isRepoLink, validateReleases } from '../scripts/releases.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const data = JSON.parse(await readFile(path.join(ROOT, 'src', 'releases.json'), 'utf8'));
 const clone = () => structuredClone(data);
 
-test('the shipped release data is valid and points at the published 0.7.1 beta.1 assets', () => {
+test('the shipped release data is valid and points at the published 0.7.2 beta.1 assets', () => {
   const [windows, mac, linux] = validateReleases(data);
   assert.deepEqual([windows.id, mac.id, linux.id], ['windows', 'mac', 'linux']);
-  assert.ok([windows, mac, linux].every((p) => p.tag === 'v0.7.1-beta.1'));
+  assert.ok([windows, mac, linux].every((p) => p.tag === 'v0.7.2-beta.1'));
   assert.ok([windows, mac, linux].every((p) => p.prerelease));
-  assert.equal(mac.packages[0].url, 'https://github.com/chekusu/sofatap/releases/download/v0.7.1-beta.1/SofaTap-macOS-arm64-notarized.zip');
+  assert.equal(mac.packages[0].url, 'https://github.com/chekusu/sofatap/releases/download/v0.7.2-beta.1/SofaTap-macOS-arm64-notarized.zip');
   assert.equal(linux.packages[1].ext, '.tar.gz');
   assert.equal(windows.packages[0].size, '91 MB');
-  assert.equal(linux.releaseUrl, 'https://github.com/chekusu/sofatap/releases/tag/v0.7.1-beta.1');
+  assert.equal(linux.releaseUrl, 'https://github.com/chekusu/sofatap/releases/tag/v0.7.2-beta.1');
+  // The exact sizes GitHub reports for the 0.7.2 beta.1 packages.
+  assert.deepEqual(data.platforms.flatMap((p) => p.packages.map((k) => k.bytes)), [90946814, 43761471, 46634659, 45335963, 43158699]);
+  assert.deepEqual([windows, mac, linux].flatMap((p) => p.packages.map((k) => k.arch)), ['x64', 'arm64', 'x64', 'x64', 'arm64']);
+  assert.equal(displayVersion(mac.tag), '0.7.2 beta.1');
   assert.equal(linux.guideUrl, 'https://github.com/chekusu/sofatap/blob/main/desktop/linux/README.md');
 });
 
@@ -38,6 +42,7 @@ test('rejects tags, files and guides that could leave the product repository', (
   bad((p) => { p.tag = 'latest'; }, /tag/);
   bad((p) => { p.packages[0].file = 'SofaTap-macOS-arm64.zip'; }, /文件名/); // wrong platform prefix
   bad((p) => { p.packages[0].file = 'SofaTap-Windows-x64.exe'; }, /文件名/);
+  bad((p) => { p.packages[0].file = 'SofaTap-Windows-portable.zip'; }, /架构/);
   bad((p) => { p.packages[0].file = 'SofaTap-Windows-x64.zip?x=https://example.com/a.zip'; }, /文件名/);
   bad((p) => { p.packages[0].file = '../SofaTap-Windows-x64.zip'; }, /文件名/);
   bad((p) => { p.packages[0].label = '<b>x64</b>'; }, /名称/);

@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LEGAL_KINDS, LEGAL_PAGES, PAGES, build, loadLegalDocuments } from './build.mjs';
 import { LOCALES } from './locales.mjs';
-import { REPO_URL, isRepoLink, validateReleases } from './releases.mjs';
+import { REPO_URL, compareTags, displayVersion, isRepoLink, validateReleases } from './releases.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // The line-art pictures on the home page, in page order (src/assets/art-<name>-<width>.webp).
@@ -18,7 +18,7 @@ const MOBILE_HOSTS = new Set(['testflight.apple.com', 'apps.apple.com']);
 // Claims the page must never make, in every language. Some product features are future
 // directions or unverified; the site must not present them as available.
 const FORBIDDEN = {
-  common: [/Face ID/i, /\bPIN\b/, /\bCUA\b/, /Sofa\s+Tap/i, /SofaTap(?!\.exe)/, /[¥￥]/, /\$\s?\d/, /\balpha\b/i, /v0\.[34]\.0/],
+  common: [/Face ID/i, /\bPIN\b/, /\bCUA\b/, /Sofa\s+Tap/i, /SofaTap(?!\.exe)/, /[¥￥]/, /\$\s?\d/, /\balpha\b/i, /v0\.[34]\.0/, /\b0\.7\.1\b/],
   en: [
     /\bmirror/i, /\bstream/i, /remote desktop/i, /supports? Bluetooth|Bluetooth support/i, /\btilt/i, /gyro/i,
     /unlock/i, /lock screen/i, /auto-?submit/i, /all apps|any app\b/i, /\bfree\b/i, /\bpric(e|ing)/i,
@@ -57,21 +57,21 @@ const FORBIDDEN = {
     /\bharga\b/i, /segera hadir/i, /versi stabil/i, /sepenuhnya kompatibel/i, /perintah suara/i, /tidak pernah merekam/i, /kirim otomatis/i],
 };
 // Facts every language must state, and the page labels that must be visible.
-const REQUIRED_COMMON = ['iOS 17', 'beta', 'macOS 15', 'Apple Silicon', 'Intel', 'x64', 'ARM64', 'X11', 'Wayland', '300', '0.7.1', '1.0 (15)', 'Authenticode',
+const REQUIRED_COMMON = ['iOS 17', 'beta', 'macOS 15', 'Apple Silicon', 'Intel', 'x64', 'ARM64', 'X11', 'Wayland', '300', '0.7.2', '1.0 (15)', 'Authenticode',
   'LG webOS', 'Android/Google TV'];
 const REQUIRED = {
-  en: ['Enter', 'same home network', '300 ms', 'Right click', 'Double-tap', 'two fingers', 'Send the draft', 'many browser and custom controls', 'line break'],
-  'zh-CN': ['同一个家庭网络', '300 毫秒', '右键', '连续双击', '双指', '发送', '回车', '许多浏览器和自定义控件', '换行'],
-  es: ['Enter', 'misma red doméstica', '300 ms', 'Clic derecho', 'Toca dos veces', 'dos dedos', 'Envía el borrador', 'muchos controles de navegador', 'saltos de línea'],
-  fr: ['même réseau domestique', '300 ms', 'Clic droit', 'Toucher deux fois', 'deux doigts', 'Envoyez le brouillon', 'Entrée', 'nombreux contrôles de navigateur', 'retours à la ligne'],
-  de: ['Enter', 'demselben Heimnetz', '300 ms', 'Rechtsklick', 'Doppeltippen', 'zwei Fingern', '„Senden“', 'viele Browser- und eigene Steuerelemente', 'Zeilenumbr'],
-  'pt-BR': ['Enter', 'mesma rede doméstica', '300 ms', 'Clique direito', 'Toque duplo', 'dois dedos', 'Envie o rascunho', 'muitos controles de navegador', 'quebras de linha'],
-  ja: ['Enter', '同じ家庭内ネットワーク', '300 ミリ秒', '右クリック', 'ダブルタップ', '2 本指', '「送信」', '多くのブラウザー', '改行'],
-  ko: ['Enter', '같은 홈 네트워크', '300ms', '오른쪽 클릭', '두 번 탭', '두 손가락', '보내기', '많은 브라우저', '줄바꿈'],
-  ar: ['Enter', 'الشبكة المنزلية نفسها', '300 مللي ثانية', 'نقرة بالزر الأيمن', 'اضغط مرتين', 'بإصبعين', '«إرسال»', 'كثير من عناصر المتصفحات', 'فواصل الأسطر'],
-  hi: ['Enter', 'एक ही होम नेटवर्क', '300 मि.से.', 'राइट क्लिक', 'डबल टैप', 'दो उँगलियों', 'भेजें', 'कई ब्राउज़र', 'नई पंक्ति'],
-  ru: ['Enter', 'одной домашней сети', '300 мс', 'Правый клик', 'Коснитесь дважды', 'двумя пальцами', '«Отправить»', 'многие элементы браузеров', 'перенос'],
-  id: ['Enter', 'jaringan rumah yang sama', '300 ms', 'Klik kanan', 'Ketuk dua kali', 'dua jari', 'Kirim draf', 'banyak kontrol browser', 'baris baru'],
+  en: ['Enter', 'same home network', '300 ms', 'Right click', 'Double-tap', 'two fingers', 'Send the draft', 'other fields, Linux and older receivers use a draft', 'line break'],
+  'zh-CN': ['同一个家庭网络', '300 毫秒', '右键', '连续双击', '双指', '发送', '回车', '其他输入框、Linux 和旧版接收端', '换行'],
+  es: ['Enter', 'misma red doméstica', '300 ms', 'Clic derecho', 'Toca dos veces', 'dos dedos', 'Envía el borrador', 'otros campos, Linux y los receptores anteriores', 'saltos de línea'],
+  fr: ['même réseau domestique', '300 ms', 'Clic droit', 'Toucher deux fois', 'deux doigts', 'Envoyez le brouillon', 'Entrée', 'les autres champs, Linux et les anciens récepteurs', 'retours à la ligne'],
+  de: ['Enter', 'demselben Heimnetz', '300 ms', 'Rechtsklick', 'Doppeltippen', 'zwei Fingern', '„Senden“', 'andere Felder, Linux und ältere Empfänger', 'Zeilenumbr'],
+  'pt-BR': ['Enter', 'mesma rede doméstica', '300 ms', 'Clique direito', 'Toque duplo', 'dois dedos', 'Envie o rascunho', 'outros campos, o Linux e receptores mais antigos', 'quebras de linha'],
+  ja: ['Enter', '同じ家庭内ネットワーク', '300 ミリ秒', '右クリック', 'ダブルタップ', '2 本指', '「送信」', 'それ以外の入力欄、Linux、古いレシーバー', '改行'],
+  ko: ['Enter', '같은 홈 네트워크', '300ms', '오른쪽 클릭', '두 번 탭', '두 손가락', '보내기', '그 밖의 입력란, Linux, 이전 수신기', '줄바꿈'],
+  ar: ['Enter', 'الشبكة المنزلية نفسها', '300 مللي ثانية', 'نقرة بالزر الأيمن', 'اضغط مرتين', 'بإصبعين', '«إرسال»', 'الحقول الأخرى وLinux وتطبيقات الاستقبال الأقدم', 'فواصل الأسطر'],
+  hi: ['Enter', 'एक ही होम नेटवर्क', '300 मि.से.', 'राइट क्लिक', 'डबल टैप', 'दो उँगलियों', 'भेजें', 'दूसरे फ़ील्ड, Linux और पुराने रिसीवर', 'नई पंक्ति'],
+  ru: ['Enter', 'одной домашней сети', '300 мс', 'Правый клик', 'Коснитесь дважды', 'двумя пальцами', '«Отправить»', 'в других полях, в Linux и со старыми приёмниками', 'перенос'],
+  id: ['Enter', 'jaringan rumah yang sama', '300 ms', 'Klik kanan', 'Ketuk dua kali', 'dua jari', 'Kirim draf', 'kolom lain, Linux, dan penerima lama', 'baris baru'],
 };
 // Owner decision: the marketing site carries no "Simulation", "Development preview" or
 // "Illustration" badges in any language (the factual download note still says what the
@@ -83,6 +83,12 @@ const BANNED_LABELS = {
   ja: ['シミュレーション', '開発プレビュー'], ko: ['시뮬레이션', '개발 미리 보기'], ar: ['محاكاة', 'معاينة قيد التطوير'],
   hi: ['सिम्युलेशन', 'डेवलपमेंट प्रीव्यू'], ru: ['Симуляция', 'Предпросмотр разработки'], id: ['Simulasi', 'Pratinjau pengembangan'],
 };
+// The plans answer states only that manual control is free: no paid plans, subscriptions or
+// autonomous control, and its question doesn't ask about AI.
+const PLANS_FORBIDDEN = [/\bpaid\b|subscription|autonom|future/i, /付费|订阅|自主|将来/, /de pago|suscrip|autónom/i, /payant|abonnement|autonome/i,
+  /kostenpflichtig|\bAbo\b|autonom/i, /\bpaga\b|assinatura|autônom/i, /有料|サブスクリプション|自律/, /유료|구독|자율/, /مدفوع|اشتراك|ذاتي/,
+  /पेड|सब्सक्रिप्शन|स्वायत्त/, /(?<!бес)платн|подписк|автономн/i, /berbayar|langganan|otomatis/i];
+const PLANS_QUESTION_FORBIDDEN = /\bAI\b|\bIA\b|\bKI\b|ИИ|ذكاء|人工智能/;
 const PRIVATE = [
   /\/home\//, /\/root\//, /\/opt\//, /\/tmp\//, /\/Users\//, /127\.0\.0\.1/, /localhost/i, /deploy/i, /部署/,
   /sofatap:\/\/pair/i, /token=/i,
@@ -127,7 +133,7 @@ function checkLanguageMenu(html, page, fail) {
 
 }
 
-function checkPage(html, page, pageDir, releaseUrls, fail) {
+function checkPage(html, page, pageDir, releases, fail) {
   const text = visibleText(html);
   const lang = page.lang;
 
@@ -168,7 +174,7 @@ function checkPage(html, page, pageDir, releaseUrls, fail) {
     const name = m[1].replace(/<svg[\s\S]*?<\/svg>/g, '').replace(/<img\b[^>]*\balt="([^"]*)"[^>]*>/g, ' $1 ').replace(/<[^>]+>/g, '').trim();
     if (!name) fail(`链接没有可读文字：${m[0].slice(0, 80)}`);
   }
-  for (const url of [REPO_URL, `${REPO_URL}/releases`, ...releaseUrls, 'privacy/', 'support/']) {
+  for (const url of [REPO_URL, `${REPO_URL}/releases`, ...releases.flatMap((p) => [p.releaseUrl, p.guideUrl, ...p.packages.map((k) => k.url)]), 'privacy/', 'support/']) {
     if (!hrefs.includes(url)) fail(`缺少必要链接：${url}`);
   }
 
@@ -235,11 +241,13 @@ function checkPage(html, page, pageDir, releaseUrls, fail) {
   if (wordmarks.length !== 2) fail(`页头和页脚都必须使用 Sofatap 文字标志 SVG，当前 ${wordmarks.length} 处`);
   if (/<span class="brand__name">/.test(html)) fail('品牌名不能用普通文字排版');
 
-  // Copy limits. The one FAQ answer about plans may say that manual control is free and that a
-  // paid autonomous option is future work (product README roadmap); the rest of the page may not
-  // mention prices, and that answer is still held to the common limits.
+  // Copy limits. The one FAQ answer about cost may say that manual control is free; the rest of
+  // the page may not mention prices, and that answer is still held to the common limits.
   const plans = html.match(/<details data-faq="plans">[\s\S]*?<\/details>/g) ?? [];
-  if (plans.length !== 1) fail('常见问题中必须恰好有一条关于免费手动控制和未来付费功能的说明');
+  if (plans.length !== 1) fail('常见问题中必须恰好有一条关于费用的说明');
+  const plansAnswer = visibleText(plans[0]?.match(/<p>[\s\S]*?<\/p>/)?.[0] ?? '');
+  for (const rule of PLANS_FORBIDDEN) if (rule.test(plansAnswer)) fail(`费用说明不应提到付费计划、订阅或自主操作：${rule}`);
+  if (PLANS_QUESTION_FORBIDDEN.test(visibleText(plans[0]?.match(/<summary>[\s\S]*?<\/summary>/)?.[0] ?? ''))) fail('费用问题不应再问 AI');
   const rest = visibleText(html.replace(/<details data-faq="plans">[\s\S]*?<\/details>/g, ' '));
   for (const rule of [...FORBIDDEN.common, ...FORBIDDEN[lang]]) {
     const hit = typeof rule === 'string' ? rest.includes(rule) : rule.test(rest);
@@ -269,6 +277,25 @@ function checkPage(html, page, pageDir, releaseUrls, fail) {
     }
     if ((video.match(/class="film__captions"/g) ?? []).length !== 1) fail('视频应有且只有一个字幕层');
   }
+  // The "how" section: only its heading and lead above the gestures (no eyebrow or footnote).
+  const how = html.match(/<section class="section section--surface" id="how"[\s\S]*?<\/section>/)?.[0] ?? '';
+  if (!how || /class="eyebrow"|class="fineprint"/.test(how)) fail('“整块屏幕”一节不应有小标题或脚注');
+
+  // Downloads: every package once, with its architecture, all in the built page (no script needed);
+  // "Other downloads" is an empty, hidden container that src/platform.js may fill.
+  const download = html.match(/<section class="section" id="download"[\s\S]*?<\/section>/)?.[0] ?? '';
+  const pkgLinks = [...download.matchAll(/<li data-arch="(arm64|x64)">\s*<a class="pkg" href="([^"]+)"/g)];
+  const expected = releases.flatMap((p) => p.packages.map((k) => `${k.arch} ${k.url}`));
+  if (pkgLinks.map((m) => `${m[1]} ${m[2]}`).join('\n') !== expected.join('\n')) fail('下载区必须按顺序列出全部安装包，并标明架构');
+  if (!/<details class="downloads-other" hidden>\s*<summary>[^<]+<\/summary>\s*<div class="platforms downloads-other__list"><\/div>\s*<\/details>/.test(download)) fail('“其他下载”应是空的隐藏容器');
+  // The hero's desktop button: a link to the downloads with a neutral icon, every computer's icon
+  // for the script, and the latest receiver version from the release data.
+  const entry = html.match(/<div class="get-desktop"[\s\S]*?<\/div>/)?.[0] ?? '';
+  if (!/<a class="button button--ghost get-desktop__link" href="#download" data-os="unknown">/.test(entry)) fail('电脑端按钮应链接到下载区，默认显示中性图标');
+  for (const os of ['unknown', 'windows', 'mac', 'linux']) if (!entry.includes(`<svg class="os-icon" data-os="${os}" `)) fail(`电脑端按钮缺少 ${os} 图标`);
+  const latest = releases.map((p) => p.tag).sort(compareTags).at(-1);
+  if (!entry.includes(`<bdi class="get-desktop__version" dir="ltr">${displayVersion(latest)}</bdi>`)) fail(`电脑端按钮下应显示最新接收端版本 ${displayVersion(latest)}`);
+
   if (/<a\b[^>]*href="(?:\.\.\/)?media\//.test(html) || /\bdownload\b(?==|>|\s)/.test(html.replace(/controlslist="nodownload"/g, ''))) {
     fail('页面不应提供演示视频或字幕的下载链接');
   }
@@ -358,7 +385,7 @@ function checkLegalPage(html, page, pageDir, legal, fail) {
 export async function checkSite(dir) {
   const problems = [];
   const releaseData = JSON.parse(await readFile(path.join(ROOT, 'src', 'releases.json'), 'utf8'));
-  const releaseUrls = validateReleases(releaseData).flatMap((p) => [p.releaseUrl, p.guideUrl, ...p.packages.map((k) => k.url)]);
+  const releases = validateReleases(releaseData);
 
   const pages = [];
   for (const page of PAGES) {
@@ -367,7 +394,7 @@ export async function checkSite(dir) {
     if (!existsSync(file)) { problems.push(`缺少页面：${path.join(page.dir, 'index.html')}`); continue; }
     const html = await readFile(file, 'utf8');
     pages.push({ page, html });
-    checkPage(html, page, pageDir, releaseUrls, (msg) => problems.push(`[${page.lang}] ${msg}`));
+    checkPage(html, page, pageDir, releases, (msg) => problems.push(`[${page.lang}] ${msg}`));
   }
 
   // Every language shares one structure; a missing page is already a problem above.
@@ -393,7 +420,7 @@ export async function checkSite(dir) {
   }
 
   // Private paths, credentials and process wording never ship in any file.
-  const files = ['styles.css', 'main.js', 'demo-core.js', 'film-player.js', ...[...PAGES, ...LEGAL_PAGES].map((p) => path.join(p.dir, 'index.html'))];
+  const files = ['styles.css', 'main.js', 'demo-core.js', 'film-player.js', 'platform.js', ...[...PAGES, ...LEGAL_PAGES].map((p) => path.join(p.dir, 'index.html'))];
   if (existsSync(path.join(dir, 'media'))) {
     for (const name of await readdir(path.join(dir, 'media'))) if (name.endsWith('.vtt')) files.push(path.join('media', name));
   }
@@ -410,7 +437,7 @@ export async function checkSite(dir) {
   const script = await readFile(path.join(dir, 'main.js'), 'utf8');
   if (!script.includes('prefers-reduced-motion: reduce')) problems.push('main.js 的动态效果必须遵守减少动态效果设置');
   // The demo must not reach the network, storage or the clipboard: it is a local simulation.
-  for (const file of ['main.js', 'demo-core.js', 'film-player.js']) {
+  for (const file of ['main.js', 'demo-core.js', 'film-player.js', 'platform.js']) {
     const code = await readFile(path.join(dir, file), 'utf8');
     for (const api of [/\bfetch\(/, /XMLHttpRequest/, /WebSocket/, /navigator\.clipboard/, /localStorage/, /sendBeacon/, /\beval\(/]) {
       if (api.test(code)) problems.push(`${file} 不应使用 ${api}`);

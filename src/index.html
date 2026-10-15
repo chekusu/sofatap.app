@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="{{ROOT}}styles.css?v={{STYLES_HASH}}">
   <script src="{{ROOT}}demo-core.js?v={{CORE_HASH}}" defer></script>
   <script src="{{ROOT}}film-player.js?v={{FILM_HASH}}" defer></script>
+  <script src="{{ROOT}}platform.js?v={{PLATFORM_HASH}}" defer></script>
   <script src="{{ROOT}}main.js?v={{SCRIPT_HASH}}" defer></script>
 </head>
 <body>
@@ -52,7 +53,7 @@
         <p class="lead">{{t:hero.lead}}</p>
         <div class="hero__actions">
 {{MOBILE_ENTRY}}
-          <a class="button button--ghost" href="#download">{{t:hero.desktop}}</a>
+{{DESKTOP_ENTRY}}
         </div>
         <p class="hero__note">{{t:hero.note}}</p>
       </div>
@@ -67,7 +68,6 @@
       <div class="section__inner">
         <div class="art-split">
           <div class="how__intro">
-            <p class="eyebrow">{{t:how.eyebrow}}</p>
             <h2 class="section-title" id="how-title">{{t:how.title}}</h2>
             <p class="section-lead">{{t:how.lead}}</p>
           </div>
@@ -102,7 +102,6 @@
             <dd>{{t:gesture.scroll.result}}</dd>
           </div>
         </dl>
-        <p class="fineprint">{{t:how.note}}</p>
       </div>
     </section>
 
@@ -282,6 +281,10 @@
           </article>
 {{DESKTOP_DOWNLOADS}}
         </div>
+        <details class="downloads-other" hidden>
+          <summary>{{t:download.other}}</summary>
+          <div class="platforms downloads-other__list"></div>
+        </details>
         <p class="callout callout--quiet">{{t:download.preview}}</p>
       </div>
     </section>

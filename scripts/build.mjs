@@ -11,7 +11,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DownloadConfigError, downloadCopy, validateDownloadConfig } from './download-config.mjs';
 import { LANGS, LOCALES, hrefBetween, locale, mediaTag } from './locales.mjs';
-import { REPO_URL, ReleaseDataError, validateReleases } from './releases.mjs';
+import { REPO_URL, ReleaseDataError, compareTags, displayVersion, validateReleases } from './releases.mjs';
 import { renderMarkdown, resolveRepoPath } from './markdown.mjs';
 import { loadCues, toVtt } from './captions.mjs';
 import { renderDemoTiles } from './demo-art.mjs';
@@ -235,11 +235,41 @@ export function renderMobileEntry({ kind, url }, lang = 'en') {
   return `        <div class="get-app" id="get-app" data-kind="${kind}">\n${body}\n${meta}\n        </div>`;
 }
 
+// The hero's desktop button shows one of these on its left: a neutral computer until
+// src/platform.js knows the operating system. Simple glyphs drawn for this site (no external
+// icon set): Windows' four panes, an apple and a penguin for Linux.
+const OS_ICONS = {
+  unknown: '<svg class="os-icon" data-os="unknown" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="12.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 20.5h7M12 16.5v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  windows: '<svg class="os-icon" data-os="windows" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3.5 3.5h7.8v7.8H3.5zM12.7 3.5h7.8v7.8h-7.8zM3.5 12.7h7.8v7.8H3.5zM12.7 12.7h7.8v7.8h-7.8z" fill="currentColor"/></svg>',
+  mac: '<svg class="os-icon" data-os="mac" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16.4 12.7c0-2.2 1.8-3.3 1.9-3.4-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.6.8-3.3.8-.7 0-1.7-.8-2.8-.8-1.5 0-2.8.9-3.6 2.2-1.5 2.6-.4 6.5 1.1 8.6.7 1 1.6 2.2 2.7 2.2 1.1 0 1.5-.7 2.8-.7 1.3 0 1.7.7 2.8.7 1.2 0 1.9-1.1 2.6-2.1.8-1.2 1.2-2.3 1.2-2.4 0 0-2.2-.9-2.2-3.4zM14.3 6.1c.6-.7 1-1.7.9-2.7-.9 0-1.9.6-2.5 1.3-.6.6-1 1.6-.9 2.6 1 .1 1.9-.5 2.5-1.2z" fill="currentColor"/></svg>',
+  linux: '<svg class="os-icon" data-os="linux" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2.5c-2.6 0-4.2 2.1-4.2 4.8 0 1.3-.4 2.2-1.2 3.4-1.1 1.6-2.1 3.6-2.1 5.8 0 1.2.4 2.3 1 3.1h13c.6-.8 1-1.9 1-3.1 0-2.2-1-4.2-2.1-5.8-.8-1.2-1.2-2.1-1.2-3.4 0-2.7-1.6-4.8-4.2-4.8zM12 10.4c-1.9 0-3.4 2.3-3.4 5.1 0 1.5.5 2.8 1.2 3.5h4.4c.7-.7 1.2-2 1.2-3.5 0-2.8-1.5-5.1-3.4-5.1zM10.5 5.8a.85.85 0 1 0 0 1.7.85.85 0 1 0 0-1.7zM13.5 5.8a.85.85 0 1 0 0 1.7.85.85 0 1 0 0-1.7zM10.6 8.5h2.8L12 9.9z" fill="currentColor" fill-rule="evenodd"/><path d="M4.6 21.5c.4-1.4 1.6-2.4 3-2.4 1 0 1.9.5 2.4 1.3l-.4 1.1zM19.4 21.5c-.4-1.4-1.6-2.4-3-2.4-1 0-1.9.5-2.4 1.3l.4 1.1z" fill="currentColor"/></svg>',
+};
+
+/** The newest desktop receiver release tag (every platform names its own). */
+export const latestTag = (platforms) => platforms.map((p) => p.tag).sort(compareTags).at(-1);
+
+/**
+ * The hero's desktop button: a link to the downloads (it never starts one), with the latest
+ * receiver version under it. src/platform.js swaps in the visitor's computer from data-labels
+ * and data-versions; without it the neutral button stays.
+ */
+export function renderDesktopEntry(platforms, strings) {
+  const labels = Object.fromEntries(platforms.map((p) => [p.id, fill(strings['dl.for'], { platform: strings[`platform.${p.id}.name`] })]));
+  const versions = Object.fromEntries(platforms.map((p) => [p.id, displayVersion(p.tag)]));
+  const version = `<bdi class="get-desktop__version" dir="ltr">${displayVersion(latestTag(platforms))}</bdi>`;
+  return [
+    `          <div class="get-desktop" data-labels="${escapeHtml(JSON.stringify(labels))}" data-versions="${escapeHtml(JSON.stringify(versions))}">`,
+    `            <a class="button button--ghost get-desktop__link" href="#download" data-os="unknown">${Object.values(OS_ICONS).join('')}<span class="get-desktop__text">${strings['hero.desktop']}</span></a>`,
+    `            <p class="get-desktop__meta">${fill(strings['hero.version'], { version })}</p>`,
+    '          </div>',
+  ].join('\n');
+}
+
 export function renderDesktopDownloads(platforms, strings) {
   return platforms.map((p) => {
     const name = strings[`platform.${p.id}.name`];
     const packages = p.packages.map((pkg) => [
-      '              <li>',
+      `              <li data-arch="${pkg.arch}">`,
       `                <a class="pkg" href="${escapeHtml(pkg.url)}">${DOWNLOAD}<span class="pkg__label"><span class="visually-hidden">${fill(strings['dl.for'], { platform: name })}: </span><bdi>${escapeHtml(pkg.label)}</bdi></span><span class="pkg__meta" dir="ltr">${pkg.size} · ${pkg.ext}</span></a>`,
       '              </li>',
     ].join('\n')).join('\n');
@@ -377,13 +407,14 @@ export async function build({ config: configPath, out, media = null }) {
   validateStrings(tables);
 
   const legal = await loadLegalDocuments();
-  const [template, legalTemplate, styles, script, core, film, cues] = await Promise.all([
+  const [template, legalTemplate, styles, script, core, film, platformScript, cues] = await Promise.all([
     readFile(path.join(SRC, 'index.html'), 'utf8'),
     readFile(path.join(SRC, 'legal.html'), 'utf8'),
     readFile(path.join(SRC, 'styles.css'), 'utf8'),
     readFile(path.join(SRC, 'main.js'), 'utf8'),
     readFile(path.join(SRC, 'demo-core.js'), 'utf8'),
     readFile(path.join(SRC, 'film-player.js'), 'utf8'),
+    readFile(path.join(SRC, 'platform.js'), 'utf8'),
     loadCues(),
   ]);
   const vtts = LANGS.map((lang) => ({ file: mediaVttFor(lang), text: toVtt(tables[lang], cues, mediaInfo?.timing?.[lang] ?? null) }));
@@ -406,10 +437,12 @@ export async function build({ config: configPath, out, media = null }) {
       IPHONE_NOTE: copy.note,
       IPHONE_STATE: download.kind === 'unavailable' ? 'unavailable' : 'available',
       DESKTOP_DOWNLOADS: renderDesktopDownloads(platforms, strings),
+      DESKTOP_ENTRY: renderDesktopEntry(platforms, strings),
       STYLES_HASH: shortHash(styles),
       SCRIPT_HASH: shortHash(script),
       CORE_HASH: shortHash(core),
       FILM_HASH: shortHash(film),
+      PLATFORM_HASH: shortHash(platformScript),
       PRIVACY_HREF: 'privacy/',
       SUPPORT_HREF: 'support/',
     });
@@ -460,6 +493,7 @@ export async function build({ config: configPath, out, media = null }) {
     writeFile(path.join(out, 'main.js'), script),
     writeFile(path.join(out, 'demo-core.js'), core),
     writeFile(path.join(out, 'film-player.js'), film),
+    writeFile(path.join(out, 'platform.js'), platformScript),
     cp(path.join(SRC, 'assets'), path.join(out, 'assets'), { recursive: true }),
   ]);
   if (mediaSizes) {

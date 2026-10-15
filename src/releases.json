@@ -2,28 +2,28 @@
   "platforms": [
     {
       "id": "windows",
-      "tag": "v0.7.1-beta.1",
+      "tag": "v0.7.2-beta.1",
       "guide": "docs/WINDOWS-START.md",
       "packages": [
-        { "label": "x64", "file": "SofaTap-Windows-x64.zip", "bytes": 90945625 }
+        { "label": "x64", "file": "SofaTap-Windows-x64.zip", "bytes": 90946814 }
       ]
     },
     {
       "id": "mac",
-      "tag": "v0.7.1-beta.1",
+      "tag": "v0.7.2-beta.1",
       "guide": "docs/MAC-START.md",
       "packages": [
-        { "label": "Apple Silicon", "file": "SofaTap-macOS-arm64-notarized.zip", "bytes": 43761364 },
-        { "label": "Intel", "file": "SofaTap-macOS-x64-notarized.zip", "bytes": 46634385 }
+        { "label": "Apple Silicon", "file": "SofaTap-macOS-arm64-notarized.zip", "bytes": 43761471 },
+        { "label": "Intel", "file": "SofaTap-macOS-x64-notarized.zip", "bytes": 46634659 }
       ]
     },
     {
       "id": "linux",
-      "tag": "v0.7.1-beta.1",
+      "tag": "v0.7.2-beta.1",
       "guide": "desktop/linux/README.md",
       "packages": [
-        { "label": "x64", "file": "SofaTap-Linux-x64.tar.gz", "bytes": 45336047 },
-        { "label": "ARM64", "file": "SofaTap-Linux-arm64.tar.gz", "bytes": 43158700 }
+        { "label": "x64", "file": "SofaTap-Linux-x64.tar.gz", "bytes": 45335963 },
+        { "label": "ARM64", "file": "SofaTap-Linux-arm64.tar.gz", "bytes": 43158699 }
       ]
     }
   ]

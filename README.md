@@ -4,12 +4,12 @@ Sofatap 的公开网站：移动优先的静态页面，共 12 种语言。英�
 
 品牌名统一写作 **Sofatap**（一个词，只有 S 大写）；中文页可用市场名提案「沙发瘫」作辅助。`SofaTap` 只出现在发行包文件名等兼容标识中。
 
-产品源码在 [chekusu/sofatap](https://github.com/chekusu/sofatap)。页面上的产品说明依据该仓库提交 [`6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856`](https://github.com/chekusu/sofatap/tree/6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856)（2026-10-14 核对）及其已发布的 GitHub Releases。产品有变化时，先核对新的提交再改文案：
+产品源码在 [chekusu/sofatap](https://github.com/chekusu/sofatap)。页面上的产品说明依据该仓库提交 [`6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856`](https://github.com/chekusu/sofatap/tree/6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856)（2026-10-14 核对），并按已发布的接收端 [`v0.7.2-beta.1`](https://github.com/chekusu/sofatap/releases/tag/v0.7.2-beta.1)（2026-10-15 发布，源码提交 [`43fd98c409fbd6971ac50a971cbdb3e9d6c3ab78`](https://github.com/chekusu/sofatap/tree/43fd98c409fbd6971ac50a971cbdb3e9d6c3ab78)，2026-10-15 核对）更新了下载和版本信息：从 0.7.1 到 0.7.2，接收端源码只改了保存配对凭据的部分和版本号，实时编辑、草稿 +「发送」和二维码兼容的事实不变。隐私政策和支持页仍是 `6cb7799` 的原文快照（见下文），里面的日期和版本号属于那份快照。产品有变化时，先核对新的提交再改文案：
 
-- 电脑端下载全部来自 [`v0.7.1-beta.1`](https://github.com/chekusu/sofatap/releases/tag/v0.7.1-beta.1)（Windows x64、Mac Apple Silicon / Intel、Linux x64 / ARM64）。这一版的二维码带有电脑类型和名称，需要 iPhone App 1.0 (15) 或更高版本；build 15 也能读取旧接收端的二维码。
+- 电脑端下载全部来自 [`v0.7.2-beta.1`](https://github.com/chekusu/sofatap/releases/tag/v0.7.2-beta.1)（Windows x64、Mac Apple Silicon / Intel、Linux x64 / ARM64），文件大小按 GitHub 报告的字节数。接收端的二维码带有电脑类型和名称，需要 iPhone App 1.0 (15) 或更高版本；下载区只用一句话说明这一点并建议两端都更新到最新版，具体改动留给发行说明。首屏电脑端按钮下的「最新接收端」版本由 `src/releases.json` 生成，不在文案里写死。
 - 文字输入分两种：兼容接收端上受支持的 Windows / Mac 输入框是实时编辑（没有「发送」按钮）；其他输入框（包括许多浏览器和自定义控件，但不是全部浏览器）、Linux 和旧接收端使用草稿 +「发送」。Sofatap 不会额外添加回车或提交，但文字里的换行会被输入，在某些输入框里相当于回车。
-- iPhone App 通过 TestFlight 公开测试（`https://testflight.apple.com/join/e6MuKx9S`），尚未上架 App Store。
-- 手动控制和基础语音转文字免费；按语音目标自主完成多步操作的付费功能是未来方向，目前没有自主操作也没有订阅。这只出现在常见问题的一条回答里，其他地方不提价格。LG webOS 和 Android/Google TV 是实验性预览，没有通过验证的电视型号。
+- iPhone App 通过 TestFlight 公开测试（`https://testflight.apple.com/join/e6MuKx9S`，build 16 已通过外部测试审核），尚未上架 App Store。常见问题「现在可以日常使用吗？」据此写作公开测试，仍保留 beta 的提醒。
+- 手动控制和基础语音转文字免费。常见问题里只有一条「Sofatap 要收费吗？」，回答只说这一点，不提付费计划、订阅或自主操作（静态检查会拦住）；其他地方不提价格。LG webOS 和 Android/Google TV 是实验性预览，没有通过验证的电视型号。
 - 按网站所有者的决定，营销页面和视频里不放「开发中」「开发预览」「模拟」「示意图」之类的标签，静态检查会阻止它们回来。
 - 未实现或尚待验证的方向（如 Windows 锁屏 PIN、Face ID、语音代操电脑）不作为现有功能出现在页面上。
 - 演示视频和网页演示展示的是草稿 +「发送」这一种流程；网页演示的说明写明了这一点。按网站所有者的决定，视频区不放标题或说明文字。视频的旁白和字幕保持原样。
@@ -20,7 +20,7 @@ Sofatap 的公开网站：移动优先的静态页面，共 12 种语言。英�
 
 ```sh
 npm run build     # 生成 dist/（每种语言一个页面，英文在 dist/index.html）
-npm test          # 单元测试：下载配置、发行包数据、构建输出、12 种语言文件、字幕、手势规则与演示时间轴、预览服务器
+npm test          # 单元测试：下载配置、发行包数据、电脑类型判断、构建输出、12 种语言文件、字幕、手势规则与演示时间轴、视频播放器、预览服务器
 npm run check     # 构建到临时目录并做静态检查（每种语言的结构、语言菜单、链接、资源、文字标志、演示、视频、文案限制、配色对比度）
 npm run verify    # test + check
 npm run preview   # 在 http://127.0.0.1:4173/ 预览 dist/
@@ -44,7 +44,7 @@ npm run preview -- --port 0 --base /sofatap/
 - 所有文件的键必须完全一致，否则构建失败。文案不能为空（中文昵称相关的两个键除外），也不能包含脚本。测试会检查新增语言没有残留英文、占位符和链接没有丢失。
 - iPhone 下载入口的三种状态文案在 `scripts/download-config.mjs`，同样覆盖 12 种语言。
 - 页头的语言菜单是一组普通链接（`<details>`，不需要脚本），每个链接带 `hreflang` 和 `lang`，当前语言用 `aria-current` 标出；`<head>` 里有全部语言和 `x-default` 的备用链接。阿拉伯语页面为 `dir="rtl"`，样式使用逻辑属性；版本号、文件大小等技术信息单独按从左到右显示。
-- 静态检查（`scripts/check.mjs`）对每种语言都检查必须出现的事实（如 300 毫秒、右键、0.7.1、1.0 (15)、许多浏览器和自定义控件、换行）和不允许的说法（如 alpha、旧版本号、「所有浏览器」、价格；价格只允许出现在常见问题里关于付费计划的那一条）。
+- 静态检查（`scripts/check.mjs`）对每种语言都检查必须出现的事实（如 300 毫秒、右键、0.7.2、1.0 (15)、「其他输入框、Linux 和旧版接收端」、换行）和不允许的说法（如 alpha、0.7.1 等旧版本号、「所有浏览器」、价格；价格只允许出现在常见问题里关于费用的那一条）。
 
 ## iPhone 下载入口
 
@@ -89,11 +89,19 @@ npm run preview -- --port 0 --base /sofatap/
 
 - 三个平台都必须有，且不能重复；
 - tag 必须形如 `v0.4.0-alpha`；
-- 文件名必须以对应平台前缀开头（`SofaTap-Windows-`、`SofaTap-macOS-`、`SofaTap-Linux-`），以 `.zip` 或 `.tar.gz` 结尾；
+- 文件名必须以对应平台前缀开头（`SofaTap-Windows-`、`SofaTap-macOS-`、`SofaTap-Linux-`），写明架构（`arm64` 或 `x64`），以 `.zip` 或 `.tar.gz` 结尾；
 - 安装说明必须是仓库内的 `.md` 路径；
 - 文件大小（字节）用于显示 MB。
 
 发布新版本后，按 GitHub Release 中实际的资源名和大小更新这个文件。
+
+页面先把五个安装包全部按平台列出（没有脚本时就是这样）。`src/platform.js` 在本机浏览器里判断电脑类型，同时用于首屏按钮和下载区，不存储、不发送、不探测任何东西：
+
+- 操作系统来自 User-Agent，有 UA Client Hints 时两者必须一致，否则不判断。iPhone、iPad（包括请求桌面网站时的 iPad）和 Android 不会被当成 Mac 或 Linux；ChromeOS、FreeBSD 等也不判断。
+- 处理器架构只在浏览器的 `getHighEntropyValues(['architecture', 'bitness'])` 在 600 毫秒内给出完整且一致的 platform、architecture 和 64 位 bitness 时采用。User-Agent 里的 `Intel Mac OS X`、`Linux x86_64` 不作为依据（Apple 芯片上的 Safari 和精简后的 UA 也这样写）。Chromium 在 Rosetta 下报告 arm，所以仍会推荐 Apple 芯片版。
+- 知道系统时，这台电脑的卡片排在最前，其他系统收进原生的「其他下载」（`<details>`）。架构明确时只突出对应的安装包，同系统的另一个安装包连同版本、大小、要求、说明和链接放进「其他下载」里的一张副本卡片（没有重复 id）；架构不明时这台电脑的两个安装包并列。Windows 只有 x64 包：报告 ARM 或 32 位的电脑保持原样，不把 x64 包说成匹配。
+- 首屏的电脑端按钮按系统换成「下载 Mac 版」等文字和左侧的系统图标（四格窗、苹果、企鹅，都是为本站画的简单图形，没有引用外部图标），未知系统和手机显示中性的电脑图标；按钮始终只是指向下载区的链接，不会自动下载。下载区要等架构结果，访客在此之前已经在下载区里点按或聚焦时就不再移动内容。
+- 选择器：`.get-desktop__link[data-os]`、`.os-icon[data-os]`、`#download[data-os][data-arch]`、`.platform--current`、`.downloads-other`、`.downloads-other__list`、`li[data-arch]`。
 
 ## 隐私政策和支持页
 
@@ -186,6 +194,7 @@ wrangler deploy
 | `src/legal/`、`src/legal.html` | 隐私政策和支持页的原文、来源记录和页面模板 |
 | `src/styles.css`、`src/main.js` | 样式；语言菜单、模拟演示和点阵（均为渐进增强） |
 | `src/film-player.js` | 视频的简洁播放器：图标按钮和单独的字幕层（渐进增强） |
+| `src/platform.js` | 在本机判断电脑类型，调整首屏电脑端按钮和下载区（渐进增强） |
 | `src/assets/` | 标志、产品图片和线稿插图 |
 | `scripts/` | 语言清单、构建、配置与发行包校验、字幕、静态检查、预览服务器、发布准备 |
 | `wrangler.jsonc`、`worker/` | 生产发布配置（Cloudflare Workers Static Assets）和为视频提供字节范围的 Worker |
