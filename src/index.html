@@ -55,111 +55,25 @@
         </div>
         <p class="hero__note">{{t:hero.note}}</p>
       </div>
-      <figure class="demo" id="demo" aria-labelledby="demo-title">
-        <div class="demo__bar">
-          <p class="demo__title" id="demo-title">{{t:demo.title}}</p>
-          <button class="demo__play" type="button" hidden>
-            <svg class="demo__play-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M7 5.5v9l7.5-4.5z" fill="currentColor"/></svg>
-            <svg class="demo__stop-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="6" y="6" width="8" height="8" rx="1.5" fill="currentColor"/></svg>
-            <span class="demo__play-text">{{t:demo.play}}</span>
-          </button>
-        </div>
-        <div class="demo__stage">
-          <div class="tv-set">
-            <div class="tv" aria-hidden="true">
-              <div class="tv__screen">
-                <div class="app">
-                  <div class="app__bar">
-                    <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="3" y="4.5" width="14" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 8v4l3.5-2z" fill="currentColor"/></svg>
-                    <span class="app__title">{{t:demo.library}}</span>
-                    <span class="search">
-                      <span class="search__field" data-hit="field"><svg class="search__icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="8.5" cy="8.5" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m12.4 12.4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="search__text" dir="auto"></span><span class="search__caret"></span><span class="search__placeholder">{{t:demo.search}}</span></span>
-                      <span class="search__clear" data-hit="clear"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m6.5 6.5 7 7m0-7-7 7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span>
-                      <span class="search__go" data-hit="go">{{t:demo.search.go}}</span>
-                    </span>
-                  </div>
-                  <div class="app__view">
-                    <ul class="app__grid">
-{{DEMO_TILES}}
-                    </ul>
-                  </div>
-                  <div class="player" hidden>
-                    <div class="player__art"></div>
-                    <div class="player__top">
-                      <span class="player__back" data-hit="back"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m12 5-5 5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>{{t:demo.player.back}}</span></span>
-                    </div>
-                    <span class="player__toggle" data-hit="toggle"><svg class="player__pause" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M7 5v10M13 5v10" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><svg class="player__resume" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M7 5v10l8-5z" fill="currentColor"/></svg></span>
-                    <div class="player__foot">
-                      <p class="player__title"></p>
-                      <div class="player__bar"><span></span></div>
-                    </div>
-                  </div>
-                  <div class="menu" hidden>
-                    <span class="menu__item" data-hit="menu"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6.5 4.5v11l9-5.5z" fill="currentColor"/></svg><span class="menu__text"></span></span>
-                    <span class="menu__item" data-hit="menu"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M5.5 3.5h9v13l-4.5-3.2-4.5 3.2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span class="menu__text"></span></span>
-                    <span class="menu__item" data-hit="menu"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m4.5 10.5 3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu__text"></span></span>
-                  </div>
-                </div>
-                <svg class="cursor" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 2.5v17.2l4.6-4.5 3 6.6 3.1-1.4-3-6.5h6.4z" fill="#fff" stroke="#11191B" stroke-width="1.5" stroke-linejoin="round"/></svg>
-              </div>
-            </div>
-            <div class="tv-set__base" aria-hidden="true">
-              <span class="tv-set__stand"></span>
-              <span class="pc"><svg viewBox="0 0 64 28" aria-hidden="true" focusable="false"><path d="M2 20c10 0 14-8 22-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="24" y="5" width="38" height="18" rx="4" fill="#1E2A2C" stroke="currentColor" stroke-width="1.6"/><circle cx="54" cy="14" r="2" fill="#98E9C4"/><path d="M30 11h12M30 16h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".6"/></svg><span class="pc__label">{{t:demo.computer}}</span></span>
-            </div>
-          </div>
-          <div class="demo__phone">
-            <div class="phone__frame">
-              <div class="phone__screen">
-              <img src="{{ROOT}}assets/single-screen-360.webp" srcset="{{ROOT}}assets/single-screen-360.webp 360w, {{ROOT}}assets/single-screen-720.webp 720w" sizes="(min-width: 52rem) 15rem, 11rem" width="720" height="1566" alt="{{a:how.alt}}" loading="lazy">
-              <div class="phone__ui">
-                <div class="phone__surface" aria-hidden="true"><img class="phone__logo" src="{{ROOT}}assets/sofatap-mark-256.webp" alt="" width="256" height="256" loading="lazy"><svg class="phone__qr" viewBox="0 0 24 24" focusable="false"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7.5 7.5h3v3h-3zM13.5 7.5h3v3h-3zM7.5 13.5h3v3h-3zM13.5 13.5h1.5v1.5h-1.5zM15 15h1.5v1.5H15z" fill="currentColor"/></svg></div>
-                <div class="composer" hidden>
-                  <div class="composer__box"><textarea class="composer__draft" rows="2" maxlength="200" dir="auto" aria-label="{{a:demo.compose.draft}}"></textarea><span class="composer__listening" aria-hidden="true">{{t:demo.s.listening}}</span></div>
-                  <div class="composer__row">
-                    <button class="composer__close" type="button" aria-label="{{a:demo.compose.close}}"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m5.5 8 4.5 4.5L14.5 8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                    <button class="composer__send" type="button" disabled><svg class="composer__arrow" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 15.5v-11m-4.5 4.5L10 4.5 14.5 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="composer__check" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m4.5 10.5 3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>{{t:demo.compose.send}}</span></button>
-                  </div>
-                </div>
-                <div class="keys" aria-hidden="true">
-                  <div class="keys__row"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-                  <div class="keys__row"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-                  <div class="keys__row"><i class="keys__wide"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="keys__wide"></i></div>
-                  <div class="keys__row"><i class="keys__wide"></i><i class="keys__space"></i><i class="keys__wide"></i></div>
-                </div>
-              </div>
-              <div class="pad" aria-label="{{a:demo.pad}}" aria-describedby="demo-keys demo-desc">
-                <canvas class="pad__fx" aria-hidden="true"></canvas>
-                <span class="pad__finger" aria-hidden="true"></span>
-              </div>
-              <div class="phone__bar">
-                <button class="phone__key" type="button" aria-label="{{a:demo.compose.keyboard}}" aria-pressed="false" hidden><svg viewBox="0 0 28 20" aria-hidden="true" focusable="false"><rect x="1.5" y="2" width="25" height="16" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M6 7h1.6M10 7h1.6M14 7h1.6M18 7h1.6M22 7h.6M6 10.5h1.6M10 10.5h1.6M14 10.5h1.6M18 10.5h1.6M22 10.5h.6M8.5 14h11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
-                <button class="phone__mic" type="button" aria-label="{{a:demo.compose.mic}}" hidden><svg class="phone__mic-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8.5" y="2.5" width="7" height="12" rx="3.5" fill="currentColor"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M8.5 21.5h7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg><svg class="phone__stop-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="currentColor"/></svg></button>
-              </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="demo__help">
-          <p class="demo__hint">{{t:demo.hint}} {{t:demo.hint.type}}</p>
-          <p class="demo__keys" id="demo-keys">{{t:demo.keys}}</p>
-          <p class="visually-hidden" id="demo-desc">{{t:demo.tv}}</p>
-          <p class="demo__status" role="status">{{t:demo.s.ready}}</p>
-        </div>
-        <script type="application/json" id="demo-copy">{{DEMO_COPY}}</script>
-      </figure>
+      <div class="hero__art art-frame">
+        <img class="art" src="{{ROOT}}assets/art-sofa-960.webp" srcset="{{ROOT}}assets/art-sofa-640.webp 640w, {{ROOT}}assets/art-sofa-960.webp 960w, {{ROOT}}assets/art-sofa-1440.webp 1440w" sizes="(min-width: 72rem) 34rem, (min-width: 60rem) 47vw, min(28rem, calc(100vw - 2rem))" width="1440" height="960" alt="" decoding="async" fetchpriority="high">
+      </div>
     </section>
+{{VIDEO_SECTION}}
 
     <section class="section section--surface" id="how" aria-labelledby="how-title">
       <canvas class="dot-field" aria-hidden="true"></canvas>
       <div class="section__inner">
-        <div class="how__intro">
-          <p class="eyebrow">{{t:how.eyebrow}}</p>
-          <h2 class="section-title" id="how-title">{{t:how.title}}</h2>
-          <p class="section-lead">{{t:how.lead}}</p>
+        <div class="art-split">
+          <div class="how__intro">
+            <p class="eyebrow">{{t:how.eyebrow}}</p>
+            <h2 class="section-title" id="how-title">{{t:how.title}}</h2>
+            <p class="section-lead">{{t:how.lead}}</p>
+          </div>
+          <div class="art-frame art-frame--how">
+            <img class="art" src="{{ROOT}}assets/art-touch-960.webp" srcset="{{ROOT}}assets/art-touch-640.webp 640w, {{ROOT}}assets/art-touch-960.webp 960w, {{ROOT}}assets/art-touch-1440.webp 1440w" sizes="(min-width: 52rem) min(34rem, 46vw), min(34rem, calc(100vw - 2rem))" width="1440" height="960" alt="" loading="lazy" decoding="async">
+          </div>
         </div>
-
-
         <dl class="gestures">
           <div class="gesture" data-gesture="slide">
             <svg class="gesture__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M9 34c8-2 15-9 21-20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 5"/><circle cx="33" cy="12" r="6" fill="currentColor"/></svg>
@@ -190,12 +104,117 @@
         <p class="fineprint">{{t:how.note}}</p>
       </div>
     </section>
-{{VIDEO_SECTION}}
+
+    <section class="section demo-section">
+      <div class="section__inner">
+        <figure class="demo" id="demo" aria-labelledby="demo-title">
+          <div class="demo__bar">
+            <p class="demo__title" id="demo-title">{{t:demo.title}}</p>
+            <button class="demo__play" type="button" hidden>
+              <svg class="demo__play-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M7 5.5v9l7.5-4.5z" fill="currentColor"/></svg>
+              <svg class="demo__stop-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="6" y="6" width="8" height="8" rx="1.5" fill="currentColor"/></svg>
+              <span class="demo__play-text">{{t:demo.play}}</span>
+            </button>
+          </div>
+          <div class="demo__stage">
+            <div class="tv-set">
+              <div class="tv" aria-hidden="true">
+                <div class="tv__screen">
+                  <div class="app">
+                    <div class="app__bar">
+                      <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="3" y="4.5" width="14" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 8v4l3.5-2z" fill="currentColor"/></svg>
+                      <span class="app__title">{{t:demo.library}}</span>
+                      <span class="search">
+                        <span class="search__field" data-hit="field"><svg class="search__icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="8.5" cy="8.5" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m12.4 12.4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="search__text" dir="auto"></span><span class="search__caret"></span><span class="search__placeholder">{{t:demo.search}}</span></span>
+                        <span class="search__clear" data-hit="clear"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m6.5 6.5 7 7m0-7-7 7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></span>
+                        <span class="search__go" data-hit="go">{{t:demo.search.go}}</span>
+                      </span>
+                    </div>
+                    <div class="app__view">
+                      <ul class="app__grid">
+  {{DEMO_TILES}}
+                      </ul>
+                    </div>
+                    <div class="player" hidden>
+                      <div class="player__art"></div>
+                      <div class="player__top">
+                        <span class="player__back" data-hit="back"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m12 5-5 5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>{{t:demo.player.back}}</span></span>
+                      </div>
+                      <span class="player__toggle" data-hit="toggle"><svg class="player__pause" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M7 5v10M13 5v10" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><svg class="player__resume" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M7 5v10l8-5z" fill="currentColor"/></svg></span>
+                      <div class="player__foot">
+                        <p class="player__title"></p>
+                        <div class="player__bar"><span></span></div>
+                      </div>
+                    </div>
+                    <div class="menu" hidden>
+                      <span class="menu__item" data-hit="menu"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6.5 4.5v11l9-5.5z" fill="currentColor"/></svg><span class="menu__text"></span></span>
+                      <span class="menu__item" data-hit="menu"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M5.5 3.5h9v13l-4.5-3.2-4.5 3.2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span class="menu__text"></span></span>
+                      <span class="menu__item" data-hit="menu"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m4.5 10.5 3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="menu__text"></span></span>
+                    </div>
+                  </div>
+                  <svg class="cursor" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 2.5v17.2l4.6-4.5 3 6.6 3.1-1.4-3-6.5h6.4z" fill="#fff" stroke="#11191B" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+              <div class="tv-set__base" aria-hidden="true">
+                <span class="tv-set__stand"></span>
+                <span class="pc"><svg viewBox="0 0 64 28" aria-hidden="true" focusable="false"><path d="M2 20c10 0 14-8 22-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".55"/><rect x="24" y="5" width="38" height="18" rx="4" fill="#1E2A2C" stroke="currentColor" stroke-width="1.6"/><circle cx="54" cy="14" r="2" fill="#98E9C4"/><path d="M30 11h12M30 16h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".6"/></svg><span class="pc__label">{{t:demo.computer}}</span></span>
+              </div>
+            </div>
+            <div class="demo__phone">
+              <div class="phone__frame">
+                <div class="phone__screen">
+                <img src="{{ROOT}}assets/single-screen-360.webp" srcset="{{ROOT}}assets/single-screen-360.webp 360w, {{ROOT}}assets/single-screen-720.webp 720w" sizes="(min-width: 52rem) 15rem, 11rem" width="720" height="1566" alt="{{a:how.alt}}" loading="lazy">
+                <div class="phone__ui">
+                  <div class="phone__surface" aria-hidden="true"><img class="phone__logo" src="{{ROOT}}assets/sofatap-mark-256.webp" alt="" width="256" height="256" loading="lazy"><svg class="phone__qr" viewBox="0 0 24 24" focusable="false"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7.5 7.5h3v3h-3zM13.5 7.5h3v3h-3zM7.5 13.5h3v3h-3zM13.5 13.5h1.5v1.5h-1.5zM15 15h1.5v1.5H15z" fill="currentColor"/></svg></div>
+                  <div class="composer" hidden>
+                    <div class="composer__box"><textarea class="composer__draft" rows="2" maxlength="200" dir="auto" aria-label="{{a:demo.compose.draft}}"></textarea><span class="composer__listening" aria-hidden="true">{{t:demo.s.listening}}</span></div>
+                    <div class="composer__row">
+                      <button class="composer__close" type="button" aria-label="{{a:demo.compose.close}}"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m5.5 8 4.5 4.5L14.5 8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                      <button class="composer__send" type="button" disabled><svg class="composer__arrow" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 15.5v-11m-4.5 4.5L10 4.5 14.5 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="composer__check" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m4.5 10.5 3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>{{t:demo.compose.send}}</span></button>
+                    </div>
+                  </div>
+                  <div class="keys" aria-hidden="true">
+                    <div class="keys__row"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                    <div class="keys__row"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                    <div class="keys__row"><i class="keys__wide"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="keys__wide"></i></div>
+                    <div class="keys__row"><i class="keys__wide"></i><i class="keys__space"></i><i class="keys__wide"></i></div>
+                  </div>
+                </div>
+                <div class="pad" aria-label="{{a:demo.pad}}" aria-describedby="demo-keys demo-desc">
+                  <canvas class="pad__fx" aria-hidden="true"></canvas>
+                  <span class="pad__finger" aria-hidden="true"></span>
+                </div>
+                <div class="phone__bar">
+                  <button class="phone__key" type="button" aria-label="{{a:demo.compose.keyboard}}" aria-pressed="false" hidden><svg viewBox="0 0 28 20" aria-hidden="true" focusable="false"><rect x="1.5" y="2" width="25" height="16" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M6 7h1.6M10 7h1.6M14 7h1.6M18 7h1.6M22 7h.6M6 10.5h1.6M10 10.5h1.6M14 10.5h1.6M18 10.5h1.6M22 10.5h.6M8.5 14h11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
+                  <button class="phone__mic" type="button" aria-label="{{a:demo.compose.mic}}" hidden><svg class="phone__mic-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8.5" y="2.5" width="7" height="12" rx="3.5" fill="currentColor"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M8.5 21.5h7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg><svg class="phone__stop-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="currentColor"/></svg></button>
+                </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="demo__help">
+            <p class="demo__hint">{{t:demo.hint}} {{t:demo.hint.type}}</p>
+            <p class="demo__keys" id="demo-keys">{{t:demo.keys}}</p>
+            <p class="visually-hidden" id="demo-desc">{{t:demo.tv}}</p>
+            <p class="demo__status" role="status">{{t:demo.s.ready}}</p>
+          </div>
+          <script type="application/json" id="demo-copy">{{DEMO_COPY}}</script>
+        </figure>
+      </div>
+    </section>
+
     <section class="section" id="type" aria-labelledby="type-title">
       <div class="section__inner">
-        <p class="eyebrow">{{t:type.eyebrow}}</p>
-        <h2 class="section-title" id="type-title">{{t:type.title}}</h2>
-        <p class="section-lead">{{t:type.lead}}</p>
+        <div class="art-split art-split--start">
+          <div>
+            <p class="eyebrow">{{t:type.eyebrow}}</p>
+            <h2 class="section-title" id="type-title">{{t:type.title}}</h2>
+            <p class="section-lead">{{t:type.lead}}</p>
+          </div>
+          <div class="art-frame art-frame--type">
+            <img class="art" src="{{ROOT}}assets/art-voice-960.webp" srcset="{{ROOT}}assets/art-voice-640.webp 640w, {{ROOT}}assets/art-voice-960.webp 960w, {{ROOT}}assets/art-voice-1440.webp 1440w" sizes="(min-width: 52rem) min(34rem, 46vw), min(34rem, calc(100vw - 2rem))" width="1440" height="960" alt="" loading="lazy" decoding="async">
+          </div>
+        </div>
         <ol class="steps">
           <li class="step">
             <span class="step__icon" aria-hidden="true"><svg viewBox="0 0 32 32" focusable="false"><rect x="12" y="5" width="8" height="14" rx="4" fill="currentColor"/><path d="M8 15a8 8 0 0 0 16 0M16 23v4m-4 0h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
@@ -228,14 +247,19 @@
             <li><h3>{{t:setup.step3.title}}</h3><p>{{t:setup.step3.body}}</p></li>
           </ol>
         </div>
-        <div class="privacy" aria-labelledby="privacy-title" role="group">
-          <h3 id="privacy-title">{{t:privacy.title}}</h3>
-          <ul>
-            <li>{{t:privacy.network}}</li>
-            <li>{{t:privacy.mic}}</li>
-            <li>{{t:privacy.send}}</li>
-            <li>{{t:privacy.code}}</li>
-          </ul>
+        <div class="setup__aside">
+          <div class="art-frame art-frame--setup">
+            <img class="art" src="{{ROOT}}assets/art-connect-960.webp" srcset="{{ROOT}}assets/art-connect-640.webp 640w, {{ROOT}}assets/art-connect-960.webp 960w, {{ROOT}}assets/art-connect-1440.webp 1440w" sizes="(min-width: 52rem) min(34rem, 46vw), min(34rem, calc(100vw - 2rem))" width="1440" height="960" alt="" loading="lazy" decoding="async">
+          </div>
+          <div class="privacy" aria-labelledby="privacy-title" role="group">
+            <h3 id="privacy-title">{{t:privacy.title}}</h3>
+            <ul>
+              <li>{{t:privacy.network}}</li>
+              <li>{{t:privacy.mic}}</li>
+              <li>{{t:privacy.send}}</li>
+              <li>{{t:privacy.code}}</li>
+            </ul>
+          </div>
         </div>
       </div>
     </section>

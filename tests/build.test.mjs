@@ -6,7 +6,8 @@ import path from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { MEDIA_TIMING, build, mediaPosterFor, mediaVideoFor, renderPage, resolveSafeOutDir, validateStrings } from '../scripts/build.mjs';
-import { checkSite } from '../scripts/check.mjs';
+import { ART, checkSite } from '../scripts/check.mjs';
+import { publicFiles } from '../scripts/prepare-deploy.mjs';
 import { downloadCopy } from '../scripts/download-config.mjs';
 import { LANGS, LOCALES, hrefBetween } from '../scripts/locales.mjs';
 import { loadCues } from '../scripts/captions.mjs';
@@ -259,9 +260,52 @@ test('with --media: each page plays its own narrated video with its own captions
   assert.match(vtt, /00:00:01\.000 --> 00:00:03\.000 line:-2\nSofatap。/);
   assert.equal((await readFile(path.join(out, 'media', 'sofatap-demo.en.vtt'), 'utf8')).match(/ --> /g).length, count);
   assert.deepEqual((await checkSite(out)).problems, []);
+  // The film comes first: straight after the hero, before how it works and the live demo.
+  const en = path.join(out, 'index.html');
+  const page = await readFile(en, 'utf8');
+  const order = ['<section class="hero"', '<section class="section video"', 'id="how"', '<figure class="demo" id="demo"', 'id="type"', 'id="setup"'].map((m) => page.indexOf(m));
+  assert.deepEqual([...order].sort((a, b) => a - b), order);
+  assert.ok(order.every((i) => i >= 0));
+  const video = page.match(/<section class="section video"[\s\S]*?<\/section>/)[0];
+  await writeFile(en, page.replace(video, '').replace('    <section class="section" id="type"', `${video}\n    <section class="section" id="type"`));
+  const moved = (await checkSite(out)).problems;
+  await writeFile(en, page);
+  assert.ok(moved.some((p) => p.startsWith('[en]') && p.includes('宣传视频应紧跟首屏')), moved.join('\n'));
   // Without --media there is no video section and nothing refers to media/.
   const plain = await buildWith('no-media', { mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' });
   assert.doesNotMatch(plain.html, /<video|media\//);
+});
+
+test('line art: four decorative pictures in every language, responsive and lazy below the hero', async () => {
+  const { out } = await buildWith('art', { mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' });
+  const files = await publicFiles();
+  for (const name of ART) {
+    for (const w of [640, 960, 1440]) {
+      const file = `assets/art-${name}-${w}.webp`;
+      assert.ok(files.has(file), `release list misses ${file}`);
+      const bytes = await readFile(path.join(out, file));
+      assert.equal(bytes.subarray(8, 12).toString('latin1'), 'WEBP', file);
+      assert.ok(bytes.length < 80_000, `${file} is ${bytes.length} bytes`);
+    }
+  }
+  const pictures = (html) => [...html.matchAll(/<img class="art" src="[^"]*assets\/art-([a-z]+)-960\.webp"[^>]*>/g)];
+  for (const l of LOCALES) {
+    const html = await readFile(path.join(out, l.dir, 'index.html'), 'utf8');
+    const found = pictures(html);
+    assert.deepEqual(found.map((m) => m[1]), ART, l.lang);
+    for (const [img, name] of found) {
+      assert.match(img, / width="1440" height="960" alt="" /, `${l.lang} ${name}`);
+      assert.equal(/ loading="lazy"/.test(img), name !== 'sofa', `${l.lang} ${name}`);
+    }
+    for (const kind of ['privacy', 'support']) assert.doesNotMatch(await readFile(path.join(out, l.dir, kind, 'index.html'), 'utf8'), /assets\/art-/);
+  }
+  // A missing picture is caught.
+  const en = path.join(out, 'index.html');
+  const html = await readFile(en, 'utf8');
+  await writeFile(en, html.replace(/<img class="art" src="assets\/art-voice[^>]*>/, ''));
+  const problems = (await checkSite(out)).problems;
+  await writeFile(en, html);
+  assert.ok(problems.some((p) => p.includes('插图 voice')), problems.join('\n'));
 });
 
 test('the brand is the fixed-outline wordmark, in the header and footer of every page', async () => {

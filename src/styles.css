@@ -289,9 +289,14 @@ html:lang(zh-CN) .hero h1 { letter-spacing: 0; }
 .hero__note { margin: 1.5rem 0 0; color: var(--muted); font-size: 0.9rem; }
 figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-height: 1.55; }
 
-/* The hero shows the product itself: the live phone → TV demo under the headline. */
+/* The hero pairs the copy with the living-room line art; the film and the live demo follow. */
 .hero__text { max-width: 46rem; }
-.hero .demo { margin: 0; }
+/* .hero__art.art-frame outranks the generic .art-frame rules further down. */
+.hero__art.art-frame { justify-self: center; width: 100%; max-width: 28rem; }
+@media (min-width: 60rem) {
+  .hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); padding-bottom: clamp(2rem, 4vw, 3rem); }
+  .hero__art.art-frame { justify-self: end; max-width: 34rem; }
+}
 
 /* Sections */
 .section { position: relative; padding: clamp(3.5rem, 8vw, 6rem) 0; }
@@ -304,6 +309,21 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
   .split { grid-template-columns: minmax(0, 20rem) minmax(0, 1fr); }
   .split--even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
 }
+
+/* Line art. Each picture is drawn on a dark ground that matches the page canvas; "lighten" lets
+   the section colour (and the gesture section's dots) show through that ground, so no picture
+   sits in a visible box. Text and art trade sides from section to section. */
+.art-frame { min-width: 0; width: 100%; max-width: 34rem; justify-self: center; }
+.art { width: 100%; height: auto; aspect-ratio: 3 / 2; mix-blend-mode: lighten; }
+.art-split { display: grid; gap: clamp(1rem, 4vw, 3rem); align-items: center; margin-bottom: clamp(1.25rem, 4vw, 2.5rem); }
+.art-split > * { min-width: 0; }
+.art-split .section-lead { margin-bottom: 0; }
+@media (min-width: 52rem) {
+  .art-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .art-split > .art-frame { justify-self: end; }
+  .art-split--start > .art-frame { order: -1; justify-self: start; }
+}
+.setup__aside { display: grid; gap: clamp(1rem, 3vw, 1.75rem); min-width: 0; }
 
 /* Ambient dots behind the gesture section. Static pattern until the script takes over. */
 .dot-field {
@@ -322,7 +342,7 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
 .how__intro { max-width: 46rem; }
 .demo {
   position: relative;
-  margin: 0.5rem 0 2.5rem;
+  margin: 0;
   padding: clamp(1rem, 3vw, 1.75rem);
   border-radius: var(--radius-lg);
   background: rgb(17 25 27 / 0.78);
@@ -1081,7 +1101,7 @@ html:lang(ja) h1, html:lang(ja) .section-title { word-break: auto-phrase; }
   .hero__text > :nth-child(3) { animation-delay: 0.12s; }
   .hero__text > :nth-child(4) { animation-delay: 0.18s; }
   .hero__text > :nth-child(5) { animation-delay: 0.24s; }
-  .hero .demo { animation: settle 1s cubic-bezier(.2, .7, .2, 1) 0.1s both; }
+  .hero__art { animation: settle 1s cubic-bezier(.2, .7, .2, 1) 0.1s both; }
   @keyframes rise { from { opacity: 0; transform: translateY(0.75rem); } to { opacity: 1; transform: none; } }
   @keyframes settle { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: none; } }
 }

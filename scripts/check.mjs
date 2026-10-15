@@ -11,6 +11,8 @@ import { LOCALES } from './locales.mjs';
 import { REPO_URL, isRepoLink, validateReleases } from './releases.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// The line-art pictures on the home page, in page order (src/assets/art-<name>-<width>.webp).
+export const ART = ['sofa', 'touch', 'voice', 'connect'];
 const MOBILE_HOSTS = new Set(['testflight.apple.com', 'apps.apple.com']);
 
 // Claims the page must never make, in every language. Some product features are future
@@ -181,6 +183,22 @@ function checkPage(html, page, pageDir, releaseUrls, fail) {
     for (const key of ['demo.s.select', 'demo.s.menu', 'demo.menu.play', 'demo.play', 'demo.stop', 'demo.search', 'demo.search.typed', 'demo.search.spoken', 'demo.compose.send', 'demo.s.sent', 'demo.s.noField']) if (!copy[key]) fail(`演示文案缺少 ${key}`);
   } catch { fail('演示文案 JSON 无法解析'); }
 
+  // Page order: the film comes first, then how it works, then the live demo.
+  const at = (re) => html.search(re);
+  const [heroAt, videoAt, howAt, demoAt, typeAt] = [/<section class="hero"/, /<section class="section video"/, /<section [^>]*id="how"/, /<figure class="demo" id="demo"/, /<section [^>]*id="type"/].map(at);
+  if (!(heroAt >= 0 && heroAt < howAt && howAt < demoAt && demoAt < typeAt)) fail('页面顺序应为：首屏、使用方式、互动演示、文字输入');
+  if (videoAt >= 0 && !(heroAt < videoAt && videoAt < howAt)) fail('宣传视频应紧跟首屏，排在使用方式和互动演示之前');
+
+  // Line art: the four pictures, each once, decorative, with fixed proportions and responsive sources.
+  for (const name of ART) {
+    const imgs = [...html.matchAll(new RegExp(`<img class="art" src="[^"]*assets/art-${name}-960\\.webp"[^>]*>`, 'g'))].map((m) => m[0]);
+    if (imgs.length !== 1) { fail(`插图 ${name} 应恰好出现一次，当前 ${imgs.length}`); continue; }
+    const img = imgs[0];
+    for (const w of [640, 960, 1440]) if (!img.includes(`assets/art-${name}-${w}.webp ${w}w`)) fail(`插图 ${name} 缺少 ${w}w`);
+    if (!/ width="1440" height="960" alt="" /.test(img) || !/ sizes="[^"]+"/.test(img) || !/ decoding="async"/.test(img)) fail(`插图 ${name} 需要尺寸、sizes、alt="" 和异步解码`);
+    if ((name === 'sofa') === / loading="lazy"/.test(img)) fail(`插图 ${name}：只有首屏插图不延迟加载`);
+  }
+
   // Only one primary mobile download entry, and never a fake one.
   const entries = [...html.matchAll(/<div class="get-app" id="get-app" data-kind="([a-z]+)"/g)];
   if (entries.length !== 1) fail(`手机下载入口应恰好一个，当前 ${entries.length}`);
@@ -309,6 +327,7 @@ function checkLegalPage(html, page, pageDir, legal, fail) {
     if (!existsSync(path.resolve(pageDir, ref.split(/[?#]/)[0]))) fail(`资源不存在：${ref}`);
   }
   for (const m of html.matchAll(/<img\b[^>]*>/g)) if (!/\balt="/.test(m[0])) fail(`图片缺少 alt：${m[0].slice(0, 80)}`);
+  if (/assets\/art-/.test(html)) fail('隐私和支持页不放插图');
   const wordmarks = [...html.matchAll(/<img class="(brand__wordmark|site-footer__wordmark)" src="[^"]*assets\/sofatap-wordmark\.svg" alt="Sofatap"/g)];
   if (wordmarks.length !== 2) fail(`页头和页脚都必须使用 Sofatap 文字标志 SVG，当前 ${wordmarks.length} 处`);
 
