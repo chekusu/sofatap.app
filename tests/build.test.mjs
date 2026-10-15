@@ -254,6 +254,20 @@ test('with --media: each page plays its own narrated video with its own captions
     assert.ok(page.includes(`poster="${l.dir ? '../' : ''}media/${mediaPosterFor(l.lang)}"`), l.lang);
     assert.match(page, /controlslist="nodownload"/);
     assert.doesNotMatch(page, /<a\b[^>]*href="(?:\.\.\/)?media\/|\sdownload[\s>]/, l.lang);
+    // The film has no visible heading or explanation: a localized name, the native player as the
+    // fallback, and the quiet player's localized button labels.
+    const strings = JSON.parse(await readFile(path.join(ROOT, 'src', 'i18n', `${l.lang}.json`), 'utf8'));
+    const film = page.match(/<section class="section video"[\s\S]*?<\/section>/)[0];
+    assert.doesNotMatch(film, /<h[1-6]|section-lead/, l.lang);
+    assert.ok(!('video.title' in strings) && !('video.lead' in strings), l.lang);
+    assert.ok(film.includes(`aria-label="${strings['film.label']}"`), l.lang);
+    assert.match(film, /<video class="video__player" controls controlslist="nodownload" preload="metadata" playsinline /);
+    assert.doesNotMatch(film, /\b(autoplay|loop|muted)\b/);
+    const labels = JSON.parse(film.match(/data-labels="([^"]+)"/)[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&'));
+    assert.deepEqual(labels, Object.fromEntries(['play', 'pause', 'soundOn', 'soundOff', 'replay'].map((k) => [k, strings[`film.${k}`]])), l.lang);
+    for (const action of ['play', 'sound', 'replay']) assert.match(film, new RegExp(`data-action="${action}" aria-label="[^"]+"`), l.lang);
+    assert.equal(film.match(/class="film__captions"/g).length, 1);
+    assert.ok(page.includes('film-player.js?v='), l.lang);
   }
   const vtt = await readFile(path.join(out, 'media', 'sofatap-demo.ja.vtt'), 'utf8');
   assert.match(vtt, /^WEBVTT/);

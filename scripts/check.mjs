@@ -259,6 +259,15 @@ function checkPage(html, page, pageDir, releaseUrls, fail) {
     const own = `sofatap-demo-${lang.toLowerCase()}.mp4`;
     if (!new RegExp(`<source src="(?:\\.\\./)?media/${own}" type="video/mp4">`).test(video)) fail(`视频必须播放本页语言的版本：${own}`);
     if (!/controlslist="nodownload"/.test(video)) fail('视频播放器应隐藏下载按钮');
+    // No visible heading or explanation around the film; a localized name, the native player as the
+    // no-script fallback, and the three player buttons for film-player.js.
+    if (/<h[1-6]\b|class="section-(title|lead)"/.test(video)) fail('视频区不应有可见的标题或说明');
+    if (!/<section class="section video" id="video" aria-label="[^"]+">/.test(video)) fail('视频区需要本地化的无障碍名称');
+    if (!/<video class="video__player" controls /.test(video) || /\bautoplay\b|\bloop\b|\bmuted\b/.test(video)) fail('视频应保留原生控件作为后备，且不能自动播放、循环或静音');
+    for (const action of ['play', 'sound', 'replay']) {
+      if (!new RegExp(`<button class="film__btn" type="button" data-action="${action}" aria-label="[^"]+"`).test(video)) fail(`视频缺少 ${action} 按钮`);
+    }
+    if ((video.match(/class="film__captions"/g) ?? []).length !== 1) fail('视频应有且只有一个字幕层');
   }
   if (/<a\b[^>]*href="(?:\.\.\/)?media\//.test(html) || /\bdownload\b(?==|>|\s)/.test(html.replace(/controlslist="nodownload"/g, ''))) {
     fail('页面不应提供演示视频或字幕的下载链接');
@@ -384,7 +393,7 @@ export async function checkSite(dir) {
   }
 
   // Private paths, credentials and process wording never ship in any file.
-  const files = ['styles.css', 'main.js', 'demo-core.js', ...[...PAGES, ...LEGAL_PAGES].map((p) => path.join(p.dir, 'index.html'))];
+  const files = ['styles.css', 'main.js', 'demo-core.js', 'film-player.js', ...[...PAGES, ...LEGAL_PAGES].map((p) => path.join(p.dir, 'index.html'))];
   if (existsSync(path.join(dir, 'media'))) {
     for (const name of await readdir(path.join(dir, 'media'))) if (name.endsWith('.vtt')) files.push(path.join('media', name));
   }
@@ -401,7 +410,7 @@ export async function checkSite(dir) {
   const script = await readFile(path.join(dir, 'main.js'), 'utf8');
   if (!script.includes('prefers-reduced-motion: reduce')) problems.push('main.js 的动态效果必须遵守减少动态效果设置');
   // The demo must not reach the network, storage or the clipboard: it is a local simulation.
-  for (const file of ['main.js', 'demo-core.js']) {
+  for (const file of ['main.js', 'demo-core.js', 'film-player.js']) {
     const code = await readFile(path.join(dir, file), 'utf8');
     for (const api of [/\bfetch\(/, /XMLHttpRequest/, /WebSocket/, /navigator\.clipboard/, /localStorage/, /sendBeacon/, /\beval\(/]) {
       if (api.test(code)) problems.push(`${file} 不应使用 ${api}`);

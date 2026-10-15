@@ -182,23 +182,45 @@ export async function validateMedia(dir) {
  * The video section: the page's own narrated video with its own captions, on by default.
  * It is for watching only: no download links.
  */
+// The film's icon buttons (src/film-player.js shows them once it takes over from the native controls).
+const FILM_ICONS = {
+  play: '<svg class="film__i-play" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="film__i-pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 5.5v13M15 5.5v13"/></svg>',
+  sound: '<svg class="film__i-on" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.5 9.5h3.5l4.5-4v13l-4.5-4H4.5z"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.8 7.8 0 0 1 0 11"/></svg><svg class="film__i-off" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.5 9.5h3.5l4.5-4v13l-4.5-4H4.5z"/><path d="m16 9.5 5 5m0-5-5 5"/></svg>',
+  replay: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12a7 7 0 1 0 2.1-5"/><path d="M5 4.5V9h4.5"/></svg>',
+};
+
+/**
+ * The film: the page language's narrated video with its own captions. It is for watching only
+ * (no download links). Without JavaScript it is a plain native player; src/film-player.js then
+ * removes the native chrome, feathers the picture into the page and draws the captions itself.
+ */
 export function renderVideoSection(page, strings) {
   const m = (name) => `${page.root}media/${name}`;
   // Each language's video is timed to its own narration, so its captions only fit that video;
   // the language menu switches video and captions together.
   const own = locale(page.lang);
-  const tracks = [`          <track kind="subtitles" srclang="${own.lang}" label="${own.name}" src="${m(mediaVttFor(own.lang))}" default>`];
+  const tracks = [`            <track kind="subtitles" srclang="${own.lang}" label="${own.name}" src="${m(mediaVttFor(own.lang))}" default>`];
+  const labels = escapeHtml(JSON.stringify(Object.fromEntries(['play', 'pause', 'soundOn', 'soundOff', 'replay'].map((k) => [k, strings[`film.${k}`]]))));
+  const button = (action, label, extra = '') => `          <button class="film__btn" type="button" data-action="${action}" aria-label="${escapeHtml(label)}"${extra}>${FILM_ICONS[action]}</button>`;
   return [
     '',
-    '    <section class="section video" id="video" aria-labelledby="video-title">',
+    `    <section class="section video" id="video" aria-label="${escapeHtml(strings['film.label'])}">`,
     '      <div class="section__inner">',
-    `        <h2 class="section-title" id="video-title">${strings['video.title']}</h2>`,
-    `        <p class="section-lead">${strings['video.lead']}</p>`,
-    `        <video class="video__player" controls controlslist="nodownload" preload="metadata" playsinline width="1920" height="1080" poster="${m(mediaPosterFor(page.lang))}">`,
-    `          <source src="${m(mediaVideoFor(page.lang))}" type="video/mp4">`,
+    `        <div class="film" data-labels="${labels}">`,
+    '          <div class="film__stage">',
+    `          <video class="video__player" controls controlslist="nodownload" preload="metadata" playsinline width="1920" height="1080" poster="${m(mediaPosterFor(page.lang))}" aria-label="${escapeHtml(strings['film.label'])}">`,
+    `            <source src="${m(mediaVideoFor(page.lang))}" type="video/mp4">`,
     ...tracks,
-    `          <p>${strings['video.fallback']}</p>`,
-    '        </video>',
+    `            <p>${strings['video.fallback']}</p>`,
+    '          </video>',
+    '          <p class="film__captions" dir="auto" hidden></p>',
+    '          </div>',
+    '          <div class="film__controls" hidden>',
+    button('play', strings['film.play']),
+    button('sound', strings['film.soundOff'], ' aria-pressed="true"'),
+    button('replay', strings['film.replay']),
+    '          </div>',
+    '        </div>',
     '      </div>',
     '    </section>',
   ].join('\n');
@@ -355,12 +377,13 @@ export async function build({ config: configPath, out, media = null }) {
   validateStrings(tables);
 
   const legal = await loadLegalDocuments();
-  const [template, legalTemplate, styles, script, core, cues] = await Promise.all([
+  const [template, legalTemplate, styles, script, core, film, cues] = await Promise.all([
     readFile(path.join(SRC, 'index.html'), 'utf8'),
     readFile(path.join(SRC, 'legal.html'), 'utf8'),
     readFile(path.join(SRC, 'styles.css'), 'utf8'),
     readFile(path.join(SRC, 'main.js'), 'utf8'),
     readFile(path.join(SRC, 'demo-core.js'), 'utf8'),
+    readFile(path.join(SRC, 'film-player.js'), 'utf8'),
     loadCues(),
   ]);
   const vtts = LANGS.map((lang) => ({ file: mediaVttFor(lang), text: toVtt(tables[lang], cues, mediaInfo?.timing?.[lang] ?? null) }));
@@ -386,6 +409,7 @@ export async function build({ config: configPath, out, media = null }) {
       STYLES_HASH: shortHash(styles),
       SCRIPT_HASH: shortHash(script),
       CORE_HASH: shortHash(core),
+      FILM_HASH: shortHash(film),
       PRIVACY_HREF: 'privacy/',
       SUPPORT_HREF: 'support/',
     });
@@ -435,6 +459,7 @@ export async function build({ config: configPath, out, media = null }) {
     writeFile(path.join(out, 'styles.css'), styles),
     writeFile(path.join(out, 'main.js'), script),
     writeFile(path.join(out, 'demo-core.js'), core),
+    writeFile(path.join(out, 'film-player.js'), film),
     cp(path.join(SRC, 'assets'), path.join(out, 'assets'), { recursive: true }),
   ]);
   if (mediaSizes) {

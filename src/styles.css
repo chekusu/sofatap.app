@@ -1076,8 +1076,66 @@ figcaption { margin-top: 0.75rem; color: var(--muted); font-size: 0.85rem; line-
 .legal__source { margin: 2.5rem 0 0; padding-top: 1.25rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.88rem; }
 .legal__source a { overflow-wrap: anywhere; }
 
-/* Demo video */
-.video__player { display: block; width: 100%; height: auto; border-radius: var(--radius-lg); background: #000; border: 1px solid var(--border); }
+/* The film, straight after the hero, with no box: no border, ring, shadow or card. Its own dark
+   edges are the page colour, so the picture meets the page directly. Once src/film-player.js takes
+   over, the outer 2.5 % (sides) and 3 % (top and bottom) feather into the page; the corner
+   wordmark and the UI start further in, and captions are drawn in their own layer so they never
+   fade. Without the script the native player and its captions stay as they are. */
+.section.video { padding-block: 0 clamp(2.5rem, 6vw, 4.5rem); }
+.film { max-width: 64rem; margin: 0 auto; }
+.film__stage { position: relative; }
+.video__player { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: var(--canvas); }
+.film.is-ready .video__player {
+  cursor: pointer;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 2.5%, #000 97.5%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 3%, #000 97%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent 0, #000 2.5%, #000 97.5%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 3%, #000 97%, transparent 100%);
+  mask-composite: intersect;
+}
+.film__captions {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 88%;
+  margin: 0;
+  padding: 0.12em 0.55em;
+  border-radius: 4px;
+  font-size: clamp(14px, 1.55vw, 22px);
+  line-height: 1.4;
+  text-align: center;
+  white-space: pre-line;
+  color: var(--text);
+  background: rgb(17 25 27 / 0.82);
+  pointer-events: none;
+}
+.film__captions[hidden], .film__controls[hidden] { display: none; }
+.film__controls { display: flex; justify-content: flex-end; gap: 0.25rem; margin-top: 0.25rem; }
+.film__btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.film__btn[data-action="play"] { color: var(--mint); }
+.film__btn:hover { color: var(--mint); background: rgb(152 233 196 / 0.08); }
+.film__btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.film__i-play path { fill: currentColor; }
+.film__btn[data-state="play"] .film__i-pause, .film__btn[data-state="pause"] .film__i-play,
+.film__btn[data-state="on"] .film__i-off, .film__btn[data-state="off"] .film__i-on,
+.film__btn:not([data-state]) .film__i-pause, .film__btn:not([data-state]) .film__i-off { display: none; }
+/* Native captions (no script): readable on phones, about 22 px on desktop. With the player
+   running, the HTML layer is the only visible caption, even if a browser shows the track itself. */
+.video__player::cue { font-size: clamp(14px, 1.55vw, 22px); line-height: 1.4; color: var(--text); background: rgb(17 25 27 / 0.82); }
+.film.is-ready .video__player::cue { visibility: hidden; }
 .video__downloads { display: grid; gap: 1rem; margin-top: 1.5rem; justify-items: start; }
 /* Scripts other than Latin: fonts, line height, no letter-spacing that would break joined scripts. */
 html:lang(ja) { --font: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", "Noto Sans CJK JP", "Noto Sans JP", "IPAPGothic", system-ui, sans-serif; --font-display: var(--font); }
