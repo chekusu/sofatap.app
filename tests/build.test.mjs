@@ -6,7 +6,7 @@ import path from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { MEDIA_TIMING, build, latestTag, mediaPosterFor, mediaVideoFor, renderPage, resolveSafeOutDir, validateStrings } from '../scripts/build.mjs';
-import { validateReleases } from '../scripts/releases.mjs';
+import { displayVersion, validateAndroidTv, validateReleases } from '../scripts/releases.mjs';
 import { ART, checkSite } from '../scripts/check.mjs';
 import { publicFiles } from '../scripts/prepare-deploy.mjs';
 import { downloadCopy } from '../scripts/download-config.mjs';
@@ -14,6 +14,12 @@ import { LANGS, LOCALES, hrefBetween } from '../scripts/locales.mjs';
 import { loadCues } from '../scripts/captions.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// The current releases come from the validated snapshot, so a refresh needs no test edits.
+const RELEASE_DATA = JSON.parse(await readFile(path.join(ROOT, 'src', 'releases.json'), 'utf8'));
+const TAG = validateReleases(RELEASE_DATA)[0].tag;
+const VERSION = displayVersion(TAG);
+const TV = validateAndroidTv(RELEASE_DATA);
+const reEscape = (v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'sofatap-test-'));
 after(() => rm(tmp, { recursive: true, force: true }));
 
@@ -99,16 +105,20 @@ test('appstore: link with text, no badge image', async () => {
   assert.deepEqual((await checkSite(out)).problems, []);
 });
 
-test('desktop downloads link the real 0.7.2 beta.1 release assets with architecture labels', async () => {
+test('desktop downloads link the current release assets with architecture labels, and the Android TV APK', async () => {
   const { html, zh } = await buildWith('downloads', { mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' });
   const base = 'https://github.com/chekusu/sofatap/releases/download/';
   for (const page of [html, zh]) {
     for (const [arch, file] of [['x64', 'SofaTap-Windows-x64.zip'], ['arm64', 'SofaTap-macOS-arm64-notarized.zip'], ['x64', 'SofaTap-macOS-x64-notarized.zip'],
       ['x64', 'SofaTap-Linux-x64.tar.gz'], ['arm64', 'SofaTap-Linux-arm64.tar.gz']]) {
-      assert.equal(page.split(`href="${base}v0.7.2-beta.1/${file}"`).length - 1, 1, file);
-      assert.match(page, new RegExp(`<li data-arch="${arch}">\\s*<a class="pkg" href="${base}v0\\.7\\.2-beta\\.1/${file.replace(/\./g, '\\.')}"`));
+      assert.equal(page.split(`href="${base}${TAG}/${file}"`).length - 1, 1, file);
+      assert.match(page, new RegExp(`<li data-arch="${arch}">\\s*<a class="pkg" href="${reEscape(`${base}${TAG}/${file}`)}"`));
     }
-    assert.equal(page.split('<span class="tag" dir="ltr">v0.7.2-beta.1</span>').length - 1, 3);
+    assert.equal(page.split(`<span class="tag" dir="ltr">${TAG}</span>`).length - 1, 3);
+    // The Android TV receiver: its own stream and tag, one APK, never with an architecture.
+    assert.equal(page.split(`href="${TV.url}"`).length - 1, 1);
+    assert.equal(page.split(`<span class="tag" dir="ltr">${TV.tag}</span>`).length - 1, 1);
+    assert.match(page, /<article class="platform" id="platform-androidtv"[\s\S]*?<li data-package="apk">[\s\S]*?<\/article>/);
     assert.doesNotMatch(page, /v0\.[34]\.0-alpha|0\.7\.1/);
     assert.match(page, />Apple Silicon<\/bdi>[\s\S]*>Intel<\/bdi>[\s\S]*>x64<\/bdi>[\s\S]*>ARM64<\/bdi>/);
     // Every package is in the built page; "Other downloads" is an empty, hidden container for the script.
@@ -137,18 +147,18 @@ test('the hero desktop button: a link to the downloads, every computer icon, the
     const entry = page.match(/<div class="get-desktop"[\s\S]*?<\/div>/)[0];
     const attr = (name) => JSON.parse(entry.match(new RegExp(`${name}="([^"]+)"`))[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&'));
     assert.deepEqual(attr('data-labels'), Object.fromEntries(['windows', 'mac', 'linux'].map((id) => [id, strings['dl.for'].replace('{platform}', strings[`platform.${id}.name`])])), l.lang);
-    assert.deepEqual(attr('data-versions'), { windows: '0.7.2 beta.1', mac: '0.7.2 beta.1', linux: '0.7.2 beta.1' });
+    assert.deepEqual(attr('data-versions'), { windows: VERSION, mac: VERSION, linux: VERSION });
     assert.match(entry, /<a class="button button--ghost get-desktop__link" href="#download" data-os="unknown"><svg class="os-icon" data-os="unknown" [\s\S]*<span class="get-desktop__text">[^<]+<\/span><\/a>/);
     assert.equal((entry.match(/<svg class="os-icon"/g) ?? []).length, 4);
-    assert.ok(entry.includes(`<p class="get-desktop__meta">${strings['hero.version'].replace('{version}', '<bdi class="get-desktop__version" dir="ltr">0.7.2 beta.1</bdi>')}</p>`), l.lang);
+    assert.ok(entry.includes(`<p class="get-desktop__meta">${strings['hero.version'].replace('{version}', `<bdi class="get-desktop__version" dir="ltr">${VERSION}</bdi>`)}</p>`), l.lang);
     assert.doesNotMatch(entry, /https?:|\bdownload=/);
     assert.match(page, /<script src="(?:\.\.\/)?platform\.js\?v=[0-9a-f]{10}" defer><\/script>/);
     // The removed explanations stay gone.
     assert.ok(!('how.eyebrow' in strings) && !('how.note' in strings));
     assert.doesNotMatch(page.match(/<section class="section section--surface" id="how"[\s\S]*?<\/section>/)[0], /class="eyebrow"|fineprint/);
   }
-  assert.equal(latestTag(releases), 'v0.7.2-beta.1');
-  assert.equal(latestTag([{ tag: 'v0.7.2-beta.1' }, { tag: 'v0.7.10-alpha' }, { tag: 'v0.7.2' }]), 'v0.7.10-alpha');
+  assert.equal(latestTag(releases), TAG);
+  assert.equal(latestTag([{ tag: 'v0.7.3-beta.1' }, { tag: 'v0.7.10-alpha' }, { tag: 'v0.7.2' }]), 'v0.7.10-alpha');
   assert.equal(latestTag([{ tag: 'v0.8.0-beta.2' }, { tag: 'v0.8.0-rc' }, { tag: 'v0.8.0-beta.10' }]), 'v0.8.0-rc');
 });
 

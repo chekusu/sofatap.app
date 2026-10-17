@@ -8,6 +8,7 @@ import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { build } from '../scripts/build.mjs';
+import { displayVersion, validateAndroidTv, validateReleases } from '../scripts/releases.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const source = await readFile(path.join(ROOT, 'src', 'platform.js'), 'utf8');
@@ -201,8 +202,14 @@ function parse(html) {
   return doc;
 }
 
-const PKG = (file) => `https://github.com/chekusu/sofatap/releases/download/v0.7.2-beta.1/${file}`;
-const ALL = ['SofaTap-Windows-x64.zip', 'SofaTap-macOS-arm64-notarized.zip', 'SofaTap-macOS-x64-notarized.zip', 'SofaTap-Linux-x64.tar.gz', 'SofaTap-Linux-arm64.tar.gz'].map(PKG);
+// Everything comes from the validated snapshot, so a release refresh needs no test edits.
+const RELEASE_DATA = JSON.parse(await readFile(path.join(ROOT, 'src', 'releases.json'), 'utf8'));
+const DESKTOP = validateReleases(RELEASE_DATA);
+const TV = validateAndroidTv(RELEASE_DATA);
+const TAG = DESKTOP[0].tag;
+const VERSION = displayVersion(TAG);
+const PKG = (file) => `https://github.com/chekusu/sofatap/releases/download/${TAG}/${file}`;
+const ALL = [...['SofaTap-Windows-x64.zip', 'SofaTap-macOS-arm64-notarized.zip', 'SofaTap-macOS-x64-notarized.zip', 'SofaTap-Linux-x64.tar.gz', 'SofaTap-Linux-arm64.tar.gz'].map(PKG), TV.url];
 
 // Runs the script on the page's body for one navigator; returns what a visitor would find.
 async function visit(nav, { lang = 'en', hash = '', before } = {}) {
@@ -227,7 +234,7 @@ async function visit(nav, { lang = 'en', hash = '', before } = {}) {
     ids,
   };
 }
-const AS_BUILT = ['platform-iphone', 'platform-windows', 'platform-mac', 'platform-linux'];
+const AS_BUILT = ['platform-iphone', 'platform-windows', 'platform-mac', 'platform-linux', 'platform-androidtv'];
 const assertNoDuplicateIds = (v) => assert.equal(v.ids.length, new Set(v.ids).size, 'duplicate ids');
 const assertEveryPackageOnce = (v) => assert.deepEqual([...v.mainLinks, ...v.restLinks].sort(), [...ALL].sort());
 
@@ -239,16 +246,16 @@ test('unknown computers, phones and tablets keep the downloads exactly as built'
     assert.equal(v.other.hidden, true);
     assert.deepEqual(v.rest, []);
     // The neutral computer button, a link to the downloads.
-    assert.deepEqual(v.hero, { os: 'unknown', text: 'Computer downloads', version: '0.7.2 beta.1', href: '#download' });
+    assert.deepEqual(v.hero, { os: 'unknown', text: 'Computer downloads', version: VERSION, href: '#download' });
   }
 });
 
 test('an Apple Silicon Mac: its package first; the Intel package, with its card details, under Other downloads', async () => {
   const v = await visit(chromium(UA.macChrome, 'macOS', { architecture: 'arm', bitness: '64' }));
-  assert.deepEqual(v.hero, { os: 'mac', text: 'Download for Mac', version: '0.7.2 beta.1', href: '#download' });
+  assert.deepEqual(v.hero, { os: 'mac', text: 'Download for Mac', version: VERSION, href: '#download' });
   assert.deepEqual(v.main, ['platform-mac', 'platform-iphone']);
   assert.deepEqual(v.mainLinks, [PKG('SofaTap-macOS-arm64-notarized.zip')]);
-  assert.deepEqual(v.rest, ['copy:platform-mac-more-title', 'platform-windows', 'platform-linux']);
+  assert.deepEqual(v.rest, ['copy:platform-mac-more-title', 'platform-windows', 'platform-linux', 'platform-androidtv']);
   assert.equal(v.other.hidden, false);
   assert.equal(v.other.open, false, 'collapsed');
   assert.equal(v.section.getAttribute('data-arch'), 'arm64');
@@ -257,12 +264,12 @@ test('an Apple Silicon Mac: its package first; the Intel package, with its card 
   // The Intel copy keeps its name, version, size, requirements, notes and links.
   const copy = v.other.querySelector('.downloads-other__list').children[0];
   assert.equal(copy.querySelector('#platform-mac-more-title').textContent, 'Mac');
-  assert.equal(copy.querySelector('.tag').textContent, 'v0.7.2-beta.1');
+  assert.equal(copy.querySelector('.tag').textContent, TAG);
   assert.match(copy.querySelector('.pkg').textContent, /Intel.*47 MB · \.zip/);
   assert.match(copy.querySelector('.platform__req').textContent, /macOS 15/);
   assert.ok(copy.querySelector('.platform__note'));
   assert.deepEqual(copy.querySelector('.platform__links').querySelectorAll('a').map((a) => a.getAttribute('href')),
-    ['https://github.com/chekusu/sofatap/blob/main/docs/MAC-START.md', 'https://github.com/chekusu/sofatap/releases/tag/v0.7.2-beta.1']);
+    ['https://github.com/chekusu/sofatap/blob/main/docs/MAC-START.md', `https://github.com/chekusu/sofatap/releases/tag/${TAG}`]);
   assert.ok(v.doc.getElementById('platform-mac').classList.contains('platform--current'));
 });
 
@@ -276,7 +283,7 @@ test('a Mac or Linux computer of unknown architecture shows both of its packages
     const v = await visit(nav);
     assert.deepEqual(v.main, [`platform-${os}`, 'platform-iphone']);
     assert.deepEqual(v.mainLinks, files.map(PKG));
-    assert.deepEqual(v.rest, ['platform-windows', 'platform-mac', 'platform-linux'].filter((id) => id !== `platform-${os}`));
+    assert.deepEqual(v.rest, ['platform-windows', 'platform-mac', 'platform-linux'].filter((id) => id !== `platform-${os}`).concat('platform-androidtv'));
     assert.equal(v.section.getAttribute('data-arch'), null);
     assertEveryPackageOnce(v);
     assertNoDuplicateIds(v);
@@ -285,7 +292,7 @@ test('a Mac or Linux computer of unknown architecture shows both of its packages
 
 test('Linux ARM64 in Chinese and x64 Linux in Arabic: localized labels, nothing lost', async () => {
   const zh = await visit(chromium(UA.linuxChrome, 'Linux', { architecture: 'arm', bitness: '64' }), { lang: 'zh' });
-  assert.deepEqual(zh.hero, { os: 'linux', text: '下载 Linux 版', version: '0.7.2 beta.1', href: '#download' });
+  assert.deepEqual(zh.hero, { os: 'linux', text: '下载 Linux 版', version: VERSION, href: '#download' });
   assert.deepEqual(zh.mainLinks, [PKG('SofaTap-Linux-arm64.tar.gz')]);
   assert.equal(zh.other.querySelector('summary').textContent, '其他下载');
   assertEveryPackageOnce(zh);
@@ -298,9 +305,9 @@ test('Linux ARM64 in Chinese and x64 Linux in Arabic: localized labels, nothing 
 
 test('Windows: the x64 package first, but never offered as the match on an ARM or 32-bit PC', async () => {
   const x64 = await visit(chromium(UA.winChrome, 'Windows', { architecture: 'x86', bitness: '64' }));
-  assert.deepEqual(x64.hero, { os: 'windows', text: 'Download for Windows', version: '0.7.2 beta.1', href: '#download' });
+  assert.deepEqual(x64.hero, { os: 'windows', text: 'Download for Windows', version: VERSION, href: '#download' });
   assert.deepEqual(x64.main, ['platform-windows', 'platform-iphone']);
-  assert.deepEqual(x64.rest, ['platform-mac', 'platform-linux']);
+  assert.deepEqual(x64.rest, ['platform-mac', 'platform-linux', 'platform-androidtv']);
   assertEveryPackageOnce(x64);
   const plain = await visit({ userAgent: UA.winChrome });
   assert.deepEqual(plain.main, ['platform-windows', 'platform-iphone']);

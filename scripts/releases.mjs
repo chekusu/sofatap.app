@@ -10,6 +10,19 @@ const TAG = /^v\d{1,3}\.\d{1,3}\.\d{1,3}(?:-(?:alpha|beta|rc)(?:\.\d{1,3})?)?$/;
 const FILE = /^SofaTap-[A-Za-z0-9._-]{1,80}\.(?:zip|tar\.gz)$/;
 const LABEL = /^[A-Za-z0-9][A-Za-z0-9 ]{0,23}$/;
 const GUIDE = /^(?:[A-Za-z0-9_-]+\/){0,3}[A-Za-z0-9_.-]+\.md$/;
+const SHA256 = /^[0-9a-f]{64}$/;
+// The Android TV receiver has its own tag stream and one APK named after its version.
+export const TV_TAG = /^android-tv-v\d{1,3}\.\d{1,3}\.\d{1,3}(?:-(?:alpha|beta|rc)(?:\.\d{1,3})?)?$/;
+export const DESKTOP_TAG = TAG;
+export const tvFile = (tag) => `Sofatap-Android-TV-${tag.replace(/^android-tv-v/, '')}.apk`;
+
+// The exact desktop packages the site offers, in page order: one source for the build, the static
+// check and the release refresh. A release that lacks any of them is incomplete.
+export const DESKTOP_PACKAGES = {
+  windows: [{ label: 'x64', file: 'SofaTap-Windows-x64.zip', arch: 'x64' }],
+  mac: [{ label: 'Apple Silicon', file: 'SofaTap-macOS-arm64-notarized.zip', arch: 'arm64' }, { label: 'Intel', file: 'SofaTap-macOS-x64-notarized.zip', arch: 'x64' }],
+  linux: [{ label: 'x64', file: 'SofaTap-Linux-x64.tar.gz', arch: 'x64' }, { label: 'ARM64', file: 'SofaTap-Linux-arm64.tar.gz', arch: 'arm64' }],
+};
 
 export class ReleaseDataError extends Error {}
 
@@ -21,12 +34,12 @@ function fail(message) {
 const ARCH = /-(arm64|x64)[.-]/;
 
 /** A release tag as people read it: v0.7.2-beta.1 → 0.7.2 beta.1. */
-export const displayVersion = (tag) => tag.replace(/^v/, '').replace('-', ' ');
+export const displayVersion = (tag) => tag.replace(/^(?:android-tv-)?v/, '').replace('-', ' ');
 
 /** Orders release tags: by version number, then a pre-release before its release, then by its number. */
 export function compareTags(a, b) {
   const parse = (tag) => {
-    const [, x, y, z, pre, n] = tag.match(/^v(\d+)\.(\d+)\.(\d+)(?:-(alpha|beta|rc)(?:\.(\d+))?)?$/);
+    const [, x, y, z, pre, n] = tag.match(/^(?:android-tv-)?v(\d+)\.(\d+)\.(\d+)(?:-(alpha|beta|rc)(?:\.(\d+))?)?$/);
     return [Number(x), Number(y), Number(z), pre ? ['alpha', 'beta', 'rc'].indexOf(pre) : 3, Number(n ?? 0)];
   };
   const [p, q] = [parse(a), parse(b)];
@@ -63,10 +76,18 @@ export function validateReleases(data) {
       if (files.has(pkg.file)) fail(`${id} 的文件重复：${pkg.file}`);
       files.add(pkg.file);
       if (!Number.isInteger(pkg.bytes) || pkg.bytes < 1e6 || pkg.bytes > 2e9) fail(`${id} 的 ${pkg.file} 大小不合理：${pkg.bytes}`);
+      if (typeof pkg.sha256 !== 'string' || !SHA256.test(pkg.sha256)) fail(`${id} 的 ${pkg.file} 缺少 SHA-256：${JSON.stringify(pkg.sha256)}`);
     }
     byId.set(id, platform);
   }
   for (const id of PLATFORM_IDS) if (!byId.has(id)) fail(`缺少平台：${id}`);
+  // Exactly the expected packages (name, label, architecture), all from one desktop release.
+  for (const id of PLATFORM_IDS) {
+    const got = byId.get(id).packages.map((k) => `${k.label}|${k.file}`).join(',');
+    const want = DESKTOP_PACKAGES[id].map((k) => `${k.label}|${k.file}`).join(',');
+    if (got !== want) fail(`${id} 的安装包必须正好是 ${want}：${got}`);
+  }
+  if (new Set(PLATFORM_IDS.map((id) => byId.get(id).tag)).size !== 1) fail('三个平台必须来自同一个电脑端发行版 tag。');
   return PLATFORM_IDS.map((id) => {
     const p = byId.get(id);
     return {
@@ -80,11 +101,31 @@ export function validateReleases(data) {
         file: pkg.file,
         arch: pkg.file.match(ARCH)[1],
         url: packageUrl(p.tag, pkg.file),
+        sha256: pkg.sha256,
         size: `${Math.round(pkg.bytes / 1e6)} MB`,
         ext: pkg.file.endsWith('.tar.gz') ? '.tar.gz' : '.zip',
       })),
     };
   });
+}
+
+/** Validates the Android TV entry of releases.json: its own tag stream and the one APK of that tag. */
+export function validateAndroidTv(data) {
+  const tv = data?.androidTv;
+  if (!tv || typeof tv !== 'object') fail('releases.json 缺少 androidTv。');
+  if (typeof tv.tag !== 'string' || !TV_TAG.test(tv.tag)) fail(`androidTv 的 tag 格式不正确：${JSON.stringify(tv.tag)}`);
+  if (tv.file !== tvFile(tv.tag)) fail(`androidTv 的文件名应为 ${tvFile(tv.tag)}：${JSON.stringify(tv.file)}`);
+  if (!Number.isInteger(tv.bytes) || tv.bytes < 1e6 || tv.bytes > 5e8) fail(`androidTv 的大小不合理：${tv.bytes}`);
+  if (typeof tv.sha256 !== 'string' || !SHA256.test(tv.sha256)) fail('androidTv 缺少 SHA-256。');
+  return {
+    id: 'androidtv',
+    tag: tv.tag,
+    file: tv.file,
+    sha256: tv.sha256,
+    releaseUrl: releasePageUrl(tv.tag),
+    url: packageUrl(tv.tag, tv.file),
+    size: `${(tv.bytes / 1e6).toFixed(1)} MB`,
+  };
 }
 
 /** True when an https URL is one of the product repository links the site may use. */
@@ -96,5 +137,7 @@ export function isRepoLink(href) {
   const tag = '(v\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(?:-(?:alpha|beta|rc)(?:\\.\\d{1,3})?)?)';
   return new RegExp(`^/releases/tag/${tag}$`).test(rest)
     || new RegExp(`^/releases/download/${tag}/SofaTap-[A-Za-z0-9._-]{1,80}\\.(?:zip|tar\\.gz)$`).test(rest)
+    || new RegExp(`^/releases/tag/android-tv-${tag}$`).test(rest)
+    || new RegExp(`^/releases/download/android-tv-${tag}/Sofatap-Android-TV-\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(?:-(?:alpha|beta|rc)(?:\\.\\d{1,3})?)?\\.apk$`).test(rest)
     || (/^\/blob\/(?:main|[0-9a-f]{40})\/(?:[A-Za-z0-9_-]+\/){0,3}[A-Za-z0-9_.-]+\.md$/.test(rest) && !rest.includes('..'));
 }

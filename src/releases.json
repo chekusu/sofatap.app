@@ -2,29 +2,60 @@
   "platforms": [
     {
       "id": "windows",
-      "tag": "v0.7.2-beta.1",
+      "tag": "v0.7.3-beta.1",
       "guide": "docs/WINDOWS-START.md",
       "packages": [
-        { "label": "x64", "file": "SofaTap-Windows-x64.zip", "bytes": 90946814 }
+        {
+          "label": "x64",
+          "file": "SofaTap-Windows-x64.zip",
+          "bytes": 90957722,
+          "sha256": "3cb4edd688507c2d756c70524dc2e38c41849ccab2fd7764d70d99a061cb2b46"
+        }
       ]
     },
     {
       "id": "mac",
-      "tag": "v0.7.2-beta.1",
+      "tag": "v0.7.3-beta.1",
       "guide": "docs/MAC-START.md",
       "packages": [
-        { "label": "Apple Silicon", "file": "SofaTap-macOS-arm64-notarized.zip", "bytes": 43761471 },
-        { "label": "Intel", "file": "SofaTap-macOS-x64-notarized.zip", "bytes": 46634659 }
+        {
+          "label": "Apple Silicon",
+          "file": "SofaTap-macOS-arm64-notarized.zip",
+          "bytes": 43778458,
+          "sha256": "a788ffa52c22ffcc99e15eec0872c7269d5b03ad08f2985f1cbde65fab121f9c"
+        },
+        {
+          "label": "Intel",
+          "file": "SofaTap-macOS-x64-notarized.zip",
+          "bytes": 46654825,
+          "sha256": "90eca4b2ce2a23609577e22e222f61b2b6f8baa9767e2457db82ad6459129cbc"
+        }
       ]
     },
     {
       "id": "linux",
-      "tag": "v0.7.2-beta.1",
+      "tag": "v0.7.3-beta.1",
       "guide": "desktop/linux/README.md",
       "packages": [
-        { "label": "x64", "file": "SofaTap-Linux-x64.tar.gz", "bytes": 45335963 },
-        { "label": "ARM64", "file": "SofaTap-Linux-arm64.tar.gz", "bytes": 43158699 }
+        {
+          "label": "x64",
+          "file": "SofaTap-Linux-x64.tar.gz",
+          "bytes": 45339435,
+          "sha256": "6c70dbcda01469332ea60aff079b58ac4205afdd608b8b1f36f9fcd206ff3242"
+        },
+        {
+          "label": "ARM64",
+          "file": "SofaTap-Linux-arm64.tar.gz",
+          "bytes": 43161570,
+          "sha256": "ef38bd25242b1d482862c52cc6597af4cc1bdd958e66d9d2d22a735648d22d02"
+        }
       ]
     }
-  ]
+  ],
+  "androidTv": {
+    "tag": "android-tv-v0.1.4-beta.1",
+    "file": "Sofatap-Android-TV-0.1.4-beta.1.apk",
+    "bytes": 6390683,
+    "sha256": "b687e54cc068f21fc7969846a24b9f609d5ba3575d0ab9c729df6f8724a84550"
+  }
 }

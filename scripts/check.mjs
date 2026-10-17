@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LEGAL_KINDS, LEGAL_PAGES, PAGES, build, loadLegalDocuments } from './build.mjs';
 import { LOCALES } from './locales.mjs';
-import { REPO_URL, compareTags, displayVersion, isRepoLink, validateReleases } from './releases.mjs';
+import { REPO_URL, compareTags, displayVersion, isRepoLink, validateAndroidTv, validateReleases } from './releases.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // The line-art pictures on the home page, in page order (src/assets/art-<name>-<width>.webp).
@@ -57,7 +57,7 @@ const FORBIDDEN = {
     /\bharga\b/i, /segera hadir/i, /versi stabil/i, /sepenuhnya kompatibel/i, /perintah suara/i, /tidak pernah merekam/i, /kirim otomatis/i],
 };
 // Facts every language must state, and the page labels that must be visible.
-const REQUIRED_COMMON = ['iOS 17', 'beta', 'macOS 15', 'Apple Silicon', 'Intel', 'x64', 'ARM64', 'X11', 'Wayland', '300', '0.7.2', '1.0 (15)', 'Authenticode',
+const REQUIRED_COMMON = ['iOS 17', 'beta', 'macOS 15', 'Apple Silicon', 'Intel', 'x64', 'ARM64', 'X11', 'Wayland', '300', '1.0 (15)', 'Authenticode',
   'LG webOS', 'Android/Google TV'];
 const REQUIRED = {
   en: ['Enter', 'same home network', '300 ms', 'Right click', 'Double-tap', 'two fingers', 'Send the draft', 'other fields, Linux and older receivers use a draft', 'line break'],
@@ -295,6 +295,16 @@ function checkPage(html, page, pageDir, releases, fail) {
   for (const os of ['unknown', 'windows', 'mac', 'linux']) if (!entry.includes(`<svg class="os-icon" data-os="${os}" `)) fail(`电脑端按钮缺少 ${os} 图标`);
   const latest = releases.map((p) => p.tag).sort(compareTags).at(-1);
   if (!entry.includes(`<bdi class="get-desktop__version" dir="ltr">${displayVersion(latest)}</bdi>`)) fail(`电脑端按钮下应显示最新接收端版本 ${displayVersion(latest)}`);
+  // Every version number on the page is a current one from the release data (desktop or Android TV),
+  // so an old version can never linger in copy.
+  const tv = releases.androidTv;
+  const current = new Set([...releases.map((p) => p.tag), tv.tag].map((t) => t.replace(/^(?:android-tv-)?v/, '').replace(/-.*/, '')));
+  for (const m of visibleText(html).matchAll(/\b\d+\.\d+\.\d+\b/g)) if (!current.has(m[0])) fail(`页面出现了不是当前发行版的版本号：${m[0]}`);
+  // The experimental Android TV card: its own release, one APK, its requirements and caveats.
+  const tvCard = download.match(/<article class="platform" id="platform-androidtv"[\s\S]*?<\/article>/)?.[0] ?? '';
+  if (!tvCard.includes(`<a class="pkg" href="${tv.url}">`) || !tvCard.includes(`href="${tv.releaseUrl}"`) || !tvCard.includes(`>${tv.tag}</span>`)) fail('下载区缺少 Android TV 卡片或其发行版链接');
+  for (const key of ['platform.androidtv.req', 'platform.androidtv.note']) if (!page.strings?.[key] || !tvCard.includes(page.strings[key])) fail(`Android TV 卡片缺少 ${key}`);
+  if (!/Android 8\.0/.test(tvCard) || !/API 26/.test(tvCard) || !/1\.0 \(20\)/.test(tvCard)) fail('Android TV 卡片应写明 Android 8.0 / API 26 和 iPhone App 1.0 (20)');
 
   if (/<a\b[^>]*href="(?:\.\.\/)?media\//.test(html) || /\bdownload\b(?==|>|\s)/.test(html.replace(/controlslist="nodownload"/g, ''))) {
     fail('页面不应提供演示视频或字幕的下载链接');
@@ -386,6 +396,7 @@ export async function checkSite(dir) {
   const problems = [];
   const releaseData = JSON.parse(await readFile(path.join(ROOT, 'src', 'releases.json'), 'utf8'));
   const releases = validateReleases(releaseData);
+  releases.androidTv = validateAndroidTv(releaseData);
 
   const pages = [];
   for (const page of PAGES) {
@@ -394,7 +405,8 @@ export async function checkSite(dir) {
     if (!existsSync(file)) { problems.push(`缺少页面：${path.join(page.dir, 'index.html')}`); continue; }
     const html = await readFile(file, 'utf8');
     pages.push({ page, html });
-    checkPage(html, page, pageDir, releases, (msg) => problems.push(`[${page.lang}] ${msg}`));
+    const strings = JSON.parse(await readFile(path.join(ROOT, 'src', 'i18n', `${page.lang}.json`), 'utf8'));
+    checkPage(html, { ...page, strings }, pageDir, releases, (msg) => problems.push(`[${page.lang}] ${msg}`));
   }
 
   // Every language shares one structure; a missing page is already a problem above.

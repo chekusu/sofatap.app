@@ -9,6 +9,9 @@
 //    decides it: Safari on Apple Silicon says "Intel Mac OS X", and reduced or privacy user agents
 //    say x86_64 on ARM. Without a clear answer both packages stay side by side. Windows has only
 //    an x64 package: on a PC that reports ARM or 32-bit, the downloads stay as built.
+//  - The Android TV card is never "this device": on a recognized computer it moves into "Other
+//    downloads" with the other computers; on a phone (Android included), tablet or unknown device
+//    it stays where it was built. Nothing ever starts a download by itself.
 //  - Nothing is stored, sent or probed: no cookies, storage, network requests or GPU queries.
 // Without this script (or on any error) every download stays on the page as it was built.
 (function (global) {
@@ -140,6 +143,9 @@
     main.insertBefore(card, main.firstChild);
     if (alt) list.appendChild(alt);
     cards.forEach(function (c) { if (c !== card) list.appendChild(c); });
+    // The Android TV receiver is for a television, not this computer: it stays one tap away.
+    var tv = doc.getElementById('platform-androidtv');
+    if (tv && tv.parentNode === main) list.appendChild(tv);
     card.classList.add('platform--current');
     other.hidden = false;
     section.setAttribute('data-os', os);

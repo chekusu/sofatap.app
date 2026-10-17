@@ -4,12 +4,13 @@ Sofatap 的公开网站：移动优先的静态页面，共 12 种语言。英�
 
 品牌名统一写作 **Sofatap**（一个词，只有 S 大写）；中文页可用市场名提案「沙发瘫」作辅助。`SofaTap` 只出现在发行包文件名等兼容标识中。
 
-产品源码在 [chekusu/sofatap](https://github.com/chekusu/sofatap)。页面上的产品说明依据该仓库提交 [`6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856`](https://github.com/chekusu/sofatap/tree/6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856)（2026-10-14 核对），并按已发布的接收端 [`v0.7.2-beta.1`](https://github.com/chekusu/sofatap/releases/tag/v0.7.2-beta.1)（2026-10-15 发布，源码提交 [`43fd98c409fbd6971ac50a971cbdb3e9d6c3ab78`](https://github.com/chekusu/sofatap/tree/43fd98c409fbd6971ac50a971cbdb3e9d6c3ab78)，2026-10-15 核对）更新了下载和版本信息：从 0.7.1 到 0.7.2，接收端源码只改了保存配对凭据的部分和版本号，实时编辑、草稿 +「发送」和二维码兼容的事实不变。隐私政策和支持页仍是 `6cb7799` 的原文快照（见下文），里面的日期和版本号属于那份快照。产品有变化时，先核对新的提交再改文案：
+产品源码在 [chekusu/sofatap](https://github.com/chekusu/sofatap)。页面上的产品说明依据该仓库提交 [`6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856`](https://github.com/chekusu/sofatap/tree/6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856)（2026-10-14 核对）。下载和版本信息来自 `src/releases.json`，它由公开的 GitHub Releases 刷新（见「电脑端和 Android TV 下载」）；2026-10-17 核对时为电脑端 [`v0.7.3-beta.1`](https://github.com/chekusu/sofatap/releases/tag/v0.7.3-beta.1)（tag 与审核提交 `a062ec3cc7f0ff38d6232d293cb30f766d026f1e`；各安装包的构建提交按其 `desktop-RELEASE-MANIFEST.json`：Windows `a062ec3`、Mac `7d945f2246b79a40eb0ba981b8db03f2cda5d991`、Linux `8b8500b9999d4efe04544c64444bb980206a9e30`，并非五个包都出自同一提交）和实验性的 Android TV 接收端 [`android-tv-v0.1.4-beta.1`](https://github.com/chekusu/sofatap/releases/tag/android-tv-v0.1.4-beta.1)（源码提交 `754d22b6f671b034e876d12f7c4ee980749a13d8`）。隐私政策和支持页仍是 `6cb7799` 的原文快照（见下文），里面的日期和版本号属于那份快照。产品有变化时，先核对新的提交再改文案：
 
-- 电脑端下载全部来自 [`v0.7.2-beta.1`](https://github.com/chekusu/sofatap/releases/tag/v0.7.2-beta.1)（Windows x64、Mac Apple Silicon / Intel、Linux x64 / ARM64），文件大小按 GitHub 报告的字节数。接收端的二维码带有电脑类型和名称，需要 iPhone App 1.0 (15) 或更高版本；下载区只用一句话说明这一点并建议两端都更新到最新版，具体改动留给发行说明。首屏电脑端按钮下的「最新接收端」版本由 `src/releases.json` 生成，不在文案里写死。
+- 电脑端下载全部来自 `src/releases.json` 里的同一个 tag（Windows x64、Mac Apple Silicon / Intel、Linux x64 / ARM64），文件大小按 GitHub 报告的字节数。接收端的二维码带有电脑类型和名称，需要 iPhone App 1.0 (15) 或更高版本；下载区只用一句话说明这一点并建议两端都更新到最新版，具体改动留给发行说明。首屏电脑端按钮下的「最新接收端」版本由 `src/releases.json` 生成，不在文案里写死。
 - 文字输入分两种：兼容接收端上受支持的 Windows / Mac 输入框是实时编辑（没有「发送」按钮）；其他输入框（包括许多浏览器和自定义控件，但不是全部浏览器）、Linux 和旧接收端使用草稿 +「发送」。Sofatap 不会额外添加回车或提交，但文字里的换行会被输入，在某些输入框里相当于回车。
-- iPhone App 通过 TestFlight 公开测试（`https://testflight.apple.com/join/e6MuKx9S`，build 16 已通过外部测试审核），尚未上架 App Store。常见问题「现在可以日常使用吗？」据此写作公开测试，仍保留 beta 的提醒。
+- iPhone App 通过 TestFlight 公开测试（`https://testflight.apple.com/join/e6MuKx9S`；2026-10-17 公开邀请开放，当前说明为 build 20），尚未上架 App Store。常见问题「现在可以日常使用吗？」据此写作公开测试，仍保留 beta 的提醒。
 - 手动控制和基础语音转文字免费。常见问题里只有一条「Sofatap 要收费吗？」，回答只说这一点，不提付费计划、订阅或自主操作（静态检查会拦住）；其他地方不提价格。LG webOS 和 Android/Google TV 是实验性预览，没有通过验证的电视型号。
+- Android TV 接收端是单独的实验性 APK（Android 8.0 / API 26 起，需要 iPhone App 1.0 (20) 或更新版本）：卡片写明尚未通过家用电视和第三方应用验收（小米、索尼配对，YouTube、Netflix 和浏览器里的文字都未验证），电视按键需要启用 Android TV Remote Service，输入文字要在电视上选择 Sofatap 键盘；只链接到它的公开发行版，不承诺一般电视都能用。电脑端二维码要求的 1.0 (15) 不变。
 - 按网站所有者的决定，营销页面和视频里不放「开发中」「开发预览」「模拟」「示意图」之类的标签，静态检查会阻止它们回来。
 - 未实现或尚待验证的方向（如 Windows 锁屏 PIN、Face ID、语音代操电脑）不作为现有功能出现在页面上。
 - 演示视频和网页演示展示的是草稿 +「发送」这一种流程；网页演示的说明写明了这一点。按网站所有者的决定，视频区不放标题或说明文字。视频的旁白和字幕保持原样。
@@ -44,7 +45,7 @@ npm run preview -- --port 0 --base /sofatap/
 - 所有文件的键必须完全一致，否则构建失败。文案不能为空（中文昵称相关的两个键除外），也不能包含脚本。测试会检查新增语言没有残留英文、占位符和链接没有丢失。
 - iPhone 下载入口的三种状态文案在 `scripts/download-config.mjs`，同样覆盖 12 种语言。
 - 页头的语言菜单是一组普通链接（`<details>`，不需要脚本），每个链接带 `hreflang` 和 `lang`，当前语言用 `aria-current` 标出；`<head>` 里有全部语言和 `x-default` 的备用链接。阿拉伯语页面为 `dir="rtl"`，样式使用逻辑属性；版本号、文件大小等技术信息单独按从左到右显示。
-- 静态检查（`scripts/check.mjs`）对每种语言都检查必须出现的事实（如 300 毫秒、右键、0.7.2、1.0 (15)、「其他输入框、Linux 和旧版接收端」、换行）和不允许的说法（如 alpha、0.7.1 等旧版本号、「所有浏览器」、价格；价格只允许出现在常见问题里关于费用的那一条）。
+- 静态检查（`scripts/check.mjs`）对每种语言都检查必须出现的事实（如 300 毫秒、右键、当前发行版版本号、1.0 (15)、「其他输入框、Linux 和旧版接收端」、换行）和不允许的说法（如 alpha、0.7.1 以及任何不是当前发行版的版本号、「所有浏览器」、价格；价格只允许出现在常见问题里关于费用的那一条）。
 
 ## iPhone 下载入口
 
@@ -77,7 +78,7 @@ npm run preview -- --port 0 --base /sofatap/
 
 开放下载前，请先确认链接能打开、是 Sofatap 的正式页面，再切换状态。
 
-## 电脑端下载
+## 电脑端和 Android TV 下载
 
 `src/releases.json` 列出 Windows、Mac、Linux 各自的发行版 tag 和安装包。链接由构建脚本固定拼成以下几种地址，数据文件本身不能写任意 URL：
 
@@ -93,7 +94,26 @@ npm run preview -- --port 0 --base /sofatap/
 - 安装说明必须是仓库内的 `.md` 路径；
 - 文件大小（字节）用于显示 MB。
 
-发布新版本后，按 GitHub Release 中实际的资源名和大小更新这个文件。
+`androidTv` 是单独的一项：tag 形如 `android-tv-v0.1.4-beta.1`，文件必须是 `Sofatap-Android-TV-<版本>.apk`。每个安装包和 APK 都记下 GitHub 报告的字节数和 SHA-256。
+
+### 刷新发行版（构建/发布时，不是定时任务）
+
+```sh
+npm run release:refresh   # 只更新 src/releases.json（有变化时）
+npm run build:publish     # 先刷新，再构建；用于准备要审核和发布的构建
+```
+
+`npm run build`、测试和冻结的候选构建都不联网，只用已提交的 `src/releases.json`。刷新只在有人运行上面的命令时发生，页面本身从不调用 GitHub API，访客也不会碰到 GitHub 的频率限制；`deploy:prepare` 既不刷新也不构建。要上线新版本，先刷新、审核 `src/releases.json` 的变化并提交，再构建和审核候选。
+
+`scripts/refresh-releases.mjs` 读取 `https://api.github.com/repos/chekusu/sofatap/releases` 的全部分页，电脑端（`v…`）和 Android TV（`android-tv-v…`）两条 tag 线各自选择：
+
+- 忽略草稿，允许 beta；按版本号排序，不看 `/latest`、列表顺序或发布时间；
+- 只有当每个预期文件（电脑端为现有的五个安装包，Android TV 为该版本的 APK）都已上传、链接正是该 tag 和文件的固定 GitHub 下载地址、并且有校验文件写明这个文件名和 64 位十六进制 SHA-256（GitHub 也报告摘要时两者必须一致）时，才算完整。电脑端用 `<文件>.sha256`；Android TV 依次接受 `<APK>.sha256`、`SHA256SUMS.txt`、`SHA256SUMS`（早期版本的命名不同），不要求清单文件。源码压缩包和其他资源一律不用；
+- 选最新的完整版本，但绝不早于当前快照（不会悄悄回退）；
+- 网络错误、超时、频率限制或响应格式不对时，两条线都保留现有快照，命令仍正常结束并给出警告；某条线的新版本不完整或格式不对时，只有这条线保留快照，另一条照常更新；
+- 本地快照本身必须有效（五个安装包同一 tag、架构齐全，Android TV 有效），否则在请求前就失败；写入用同目录临时文件再改名，中断不会截断快照。
+
+页面上的版本号、首屏「最新接收端」、静态检查和测试都从这个文件推导，刷新后不需要改别处的版本号。
 
 页面先把五个安装包全部按平台列出（没有脚本时就是这样）。`src/platform.js` 在本机浏览器里判断电脑类型，同时用于首屏按钮和下载区，不存储、不发送、不探测任何东西：
 

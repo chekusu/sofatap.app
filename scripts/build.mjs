@@ -11,7 +11,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DownloadConfigError, downloadCopy, validateDownloadConfig } from './download-config.mjs';
 import { LANGS, LOCALES, hrefBetween, locale, mediaTag } from './locales.mjs';
-import { REPO_URL, ReleaseDataError, compareTags, displayVersion, validateReleases } from './releases.mjs';
+import { REPO_URL, ReleaseDataError, compareTags, displayVersion, validateAndroidTv, validateReleases } from './releases.mjs';
 import { renderMarkdown, resolveRepoPath } from './markdown.mjs';
 import { loadCues, toVtt } from './captions.mjs';
 import { renderDemoTiles } from './demo-art.mjs';
@@ -290,6 +290,30 @@ export function renderDesktopDownloads(platforms, strings) {
   }).join('\n');
 }
 
+/**
+ * The experimental Android TV receiver: its own release stream, one APK. It sits with the computer
+ * cards; src/platform.js moves it into "Other downloads" on a recognized computer.
+ */
+export function renderTvDownload(tv, strings) {
+  const name = strings['platform.androidtv.name'];
+  return [
+    `          <article class="platform" id="platform-androidtv" aria-labelledby="platform-androidtv-title">`,
+    '            <div class="platform__head">',
+    `              <h3 id="platform-androidtv-title">${name}</h3>`,
+    `              <span class="tag" dir="ltr">${escapeHtml(tv.tag)}</span>`,
+    '            </div>',
+    `            <p class="platform__req">${strings['platform.androidtv.req']}</p>`,
+    '            <ul class="pkgs">',
+    '              <li data-package="apk">',
+    `                <a class="pkg" href="${escapeHtml(tv.url)}">${DOWNLOAD}<span class="pkg__label"><span class="visually-hidden">${fill(strings['dl.for'], { platform: name })}: </span><bdi>APK</bdi></span><span class="pkg__meta" dir="ltr">${tv.size} · .apk</span></a>`,
+    '              </li>',
+    '            </ul>',
+    `            <p class="platform__note">${strings['platform.androidtv.note']}</p>`,
+    `            <p class="platform__links"><a href="${escapeHtml(tv.releaseUrl)}">${fill(strings['dl.notes'], { tag: escapeHtml(tv.tag) })}</a></p>`,
+    '          </article>',
+  ].join('\n');
+}
+
 /** Checks that every language has the same keys, all non-empty strings. */
 export function validateStrings(tables) {
   const [first, ...rest] = Object.keys(tables);
@@ -400,7 +424,9 @@ export async function build({ config: configPath, out, media = null }) {
   const mediaInfo = media ? await validateMedia(path.resolve(media)) : null;
   const mediaSizes = mediaInfo?.sizes ?? null;
   const download = validateDownloadConfig(await readJson(configPath, DownloadConfigError));
-  const platforms = validateReleases(await readJson(path.join(SRC, 'releases.json'), ReleaseDataError));
+  const releaseData = await readJson(path.join(SRC, 'releases.json'), ReleaseDataError);
+  const platforms = validateReleases(releaseData);
+  const androidTv = validateAndroidTv(releaseData);
   const tables = Object.fromEntries(await Promise.all(
     LANGS.map(async (lang) => [lang, await readJson(path.join(SRC, 'i18n', `${lang}.json`))]),
   ));
@@ -436,7 +462,7 @@ export async function build({ config: configPath, out, media = null }) {
       IPHONE_STATUS: copy.status,
       IPHONE_NOTE: copy.note,
       IPHONE_STATE: download.kind === 'unavailable' ? 'unavailable' : 'available',
-      DESKTOP_DOWNLOADS: renderDesktopDownloads(platforms, strings),
+      DESKTOP_DOWNLOADS: `${renderDesktopDownloads(platforms, strings)}\n${renderTvDownload(androidTv, strings)}`,
       DESKTOP_ENTRY: renderDesktopEntry(platforms, strings),
       STYLES_HASH: shortHash(styles),
       SCRIPT_HASH: shortHash(script),

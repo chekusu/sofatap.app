@@ -9,6 +9,8 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
+    "release:refresh": "node scripts/refresh-releases.mjs",
+    "build:publish": "node scripts/refresh-releases.mjs && node scripts/build.mjs",
     "test": "node --test tests/*.test.mjs",
     "check": "node scripts/check.mjs",
     "verify": "npm test && npm run check",
