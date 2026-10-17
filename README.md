@@ -100,8 +100,10 @@ npm run preview -- --port 0 --base /sofatap/
 
 ```sh
 npm run release:refresh   # 只更新 src/releases.json（有变化时）
-npm run build:publish     # 先刷新，再构建；用于准备要审核和发布的构建
+npm run build:publish -- --out <候选目录> --media <现有媒体目录>   # 先刷新，再构建要审核和发布的完整构建
 ```
+
+`build:publish` 后面的参数原样交给构建脚本；不带 `--media` 的构建没有视频区，不能用于发布。
 
 `npm run build`、测试和冻结的候选构建都不联网，只用已提交的 `src/releases.json`。刷新只在有人运行上面的命令时发生，页面本身从不调用 GitHub API，访客也不会碰到 GitHub 的频率限制；`deploy:prepare` 既不刷新也不构建。要上线新版本，先刷新、审核 `src/releases.json` 的变化并提交，再构建和审核候选。
 

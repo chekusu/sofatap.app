@@ -265,7 +265,8 @@ test('an Apple Silicon Mac: its package first; the Intel package, with its card 
   const copy = v.other.querySelector('.downloads-other__list').children[0];
   assert.equal(copy.querySelector('#platform-mac-more-title').textContent, 'Mac');
   assert.equal(copy.querySelector('.tag').textContent, TAG);
-  assert.match(copy.querySelector('.pkg').textContent, /Intel.*47 MB · \.zip/);
+  const intel = DESKTOP.find((p) => p.id === 'mac').packages.find((k) => k.arch === 'x64');
+  assert.ok(copy.querySelector('.pkg').textContent.includes(`Intel${intel.size} · .zip`), copy.querySelector('.pkg').textContent);
   assert.match(copy.querySelector('.platform__req').textContent, /macOS 15/);
   assert.ok(copy.querySelector('.platform__note'));
   assert.deepEqual(copy.querySelector('.platform__links').querySelectorAll('a').map((a) => a.getAttribute('href')),
