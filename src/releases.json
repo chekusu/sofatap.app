@@ -2,52 +2,52 @@
   "platforms": [
     {
       "id": "windows",
-      "tag": "v0.7.3-beta.1",
+      "tag": "v0.8.1-beta.1",
       "guide": "docs/WINDOWS-START.md",
       "packages": [
         {
           "label": "x64",
           "file": "SofaTap-Windows-x64.zip",
-          "bytes": 90957722,
-          "sha256": "3cb4edd688507c2d756c70524dc2e38c41849ccab2fd7764d70d99a061cb2b46"
+          "bytes": 90982915,
+          "sha256": "48fba022e5799b89b786198fcc83e2b900dee1e1ed08cbae42e5752e54c0249f"
         }
       ]
     },
     {
       "id": "mac",
-      "tag": "v0.7.3-beta.1",
+      "tag": "v0.8.1-beta.1",
       "guide": "docs/MAC-START.md",
       "packages": [
         {
           "label": "Apple Silicon",
           "file": "SofaTap-macOS-arm64-notarized.zip",
-          "bytes": 43778458,
-          "sha256": "a788ffa52c22ffcc99e15eec0872c7269d5b03ad08f2985f1cbde65fab121f9c"
+          "bytes": 44948700,
+          "sha256": "fb3ec82f1e4339aa0b4f485cca203ab7afd661daf26f1c9fc26193d28140367b"
         },
         {
           "label": "Intel",
           "file": "SofaTap-macOS-x64-notarized.zip",
-          "bytes": 46654825,
-          "sha256": "90eca4b2ce2a23609577e22e222f61b2b6f8baa9767e2457db82ad6459129cbc"
+          "bytes": 47824858,
+          "sha256": "a14df82621f48f222e18aaeaf23d7c2939c41cb6806e48432062e2974123380d"
         }
       ]
     },
     {
       "id": "linux",
-      "tag": "v0.7.3-beta.1",
+      "tag": "v0.8.1-beta.1",
       "guide": "desktop/linux/README.md",
       "packages": [
         {
           "label": "x64",
           "file": "SofaTap-Linux-x64.tar.gz",
-          "bytes": 45339435,
-          "sha256": "6c70dbcda01469332ea60aff079b58ac4205afdd608b8b1f36f9fcd206ff3242"
+          "bytes": 45351254,
+          "sha256": "fe79a7273ac7f3aea8ecdb3851b06d3bd4526043b67b62edfec443d4afe3860d"
         },
         {
           "label": "ARM64",
           "file": "SofaTap-Linux-arm64.tar.gz",
-          "bytes": 43161570,
-          "sha256": "ef38bd25242b1d482862c52cc6597af4cc1bdd958e66d9d2d22a735648d22d02"
+          "bytes": 43167737,
+          "sha256": "fbcdf631a3acb3de9b7f263b311169717577559c29b983b0168c38d8bcc4d1ad"
         }
       ]
     }
