@@ -6,7 +6,7 @@ import path from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { MEDIA_TIMING, build, latestTag, mediaPosterFor, mediaVideoFor, renderPage, resolveSafeOutDir, validateStrings } from '../scripts/build.mjs';
-import { displayVersion, validateAndroidTv, validateReleases } from '../scripts/releases.mjs';
+import { displayVersion, validateAndroidController, validateAndroidTv, validateReleases } from '../scripts/releases.mjs';
 import { ART, checkSite } from '../scripts/check.mjs';
 import { publicFiles } from '../scripts/prepare-deploy.mjs';
 import { downloadCopy } from '../scripts/download-config.mjs';
@@ -19,6 +19,7 @@ const RELEASE_DATA = JSON.parse(await readFile(path.join(ROOT, 'src', 'releases.
 const TAG = validateReleases(RELEASE_DATA)[0].tag;
 const VERSION = displayVersion(TAG);
 const TV = validateAndroidTv(RELEASE_DATA);
+const PHONE = validateAndroidController(RELEASE_DATA);
 const reEscape = (v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'sofatap-test-'));
 after(() => rm(tmp, { recursive: true, force: true }));
@@ -119,6 +120,13 @@ test('desktop downloads link the current release assets with architecture labels
     assert.equal(page.split(`href="${TV.url}"`).length - 1, 1);
     assert.equal(page.split(`<span class="tag" dir="ltr">${TV.tag}</span>`).length - 1, 1);
     assert.match(page, /<article class="platform" id="platform-androidtv"[\s\S]*?<li data-package="apk">[\s\S]*?<\/article>/);
+    // The Android phone/tablet app: its own stream and exact APK, right after the iPhone card.
+    assert.equal(page.split(`href="${PHONE.url}"`).length - 1, 1);
+    assert.equal(PHONE.url, `https://github.com/chekusu/sofatap/releases/download/${PHONE.tag}/Sofatap-Android-${PHONE.tag.slice('android-controller-v'.length)}.apk`);
+    assert.match(page, /id="platform-iphone"[\s\S]*?<\/article>\s*<article class="platform platform--android" id="platform-android"/);
+    const phoneCard = page.match(/<article class="platform platform--android"[\s\S]*?<\/article>/)[0];
+    assert.ok(!phoneCard.includes(TV.url) && !phoneCard.includes('Sofatap-Android-TV-'));
+    assert.match(phoneCard, /Google Play/);
     assert.doesNotMatch(page, /v0\.[34]\.0-alpha|0\.7\.1/);
     assert.match(page, />Apple Silicon<\/bdi>[\s\S]*>Intel<\/bdi>[\s\S]*>x64<\/bdi>[\s\S]*>ARM64<\/bdi>/);
     // Every package is in the built page; "Other downloads" is an empty, hidden container for the script.
@@ -128,8 +136,9 @@ test('desktop downloads link the current release assets with architecture labels
   }
   assert.match(zh, /<summary>其他下载<\/summary>/);
   // The short QR compatibility note, and the facts about live editing and line breaks; no badges.
-  assert.match(html, /<p class="callout callout--quiet">Works with the iPhone app 1\.0 \(15\) or later\. We recommend updating both the phone and the computer to the latest version\.<\/p>/);
-  assert.match(zh, /配合 iPhone App 1\.0 \(15\) 或更新版本使用。建议将手机和电脑端都更新到最新版。/);
+  // The 1.0 (15) minimum is scoped to the iPhone app, not to every phone.
+  assert.match(html, /<p class="callout callout--quiet">On iPhone, use the app 1\.0 \(15\) or later\. We recommend updating both the phone and the computer to the latest version\.<\/p>/);
+  assert.match(zh, /iPhone 上请使用 1\.0 \(15\) 或更新版本的 App。建议将手机和电脑端都更新到最新版。/);
   assert.match(html, /Supported text fields on Windows and Mac update live as you type or dictate; other fields, Linux and older receivers use a draft and Send\./);
   assert.match(zh, /Windows 和 Mac 上受支持的文本框可实时同步输入与听写；其他输入框、Linux 和旧版接收端则先写草稿，再点「发送」。/);
   assert.doesNotMatch(html, /Typeless|many browser and custom controls/);

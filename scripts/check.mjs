@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LEGAL_KINDS, LEGAL_PAGES, PAGES, build, loadLegalDocuments } from './build.mjs';
 import { LOCALES } from './locales.mjs';
-import { REPO_URL, compareTags, displayVersion, isRepoLink, validateAndroidTv, validateReleases } from './releases.mjs';
+import { REPO_URL, compareTags, displayVersion, isRepoLink, validateAndroidController, validateAndroidTv, validateReleases } from './releases.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // The line-art pictures on the home page, in page order (src/assets/art-<name>-<width>.webp).
@@ -298,13 +298,24 @@ function checkPage(html, page, pageDir, releases, fail) {
   // Every version number on the page is a current one from the release data (desktop or Android TV),
   // so an old version can never linger in copy.
   const tv = releases.androidTv;
-  const current = new Set([...releases.map((p) => p.tag), tv.tag].map((t) => t.replace(/^(?:android-tv-)?v/, '').replace(/-.*/, '')));
+  const ctrl = releases.androidController;
+  const current = new Set([...releases.map((p) => p.tag), tv.tag, ctrl.tag].map((t) => t.replace(/^(?:android-tv-|android-controller-)?v/, '').replace(/-.*/, '')));
   for (const m of visibleText(html).matchAll(/\b\d+\.\d+\.\d+\b/g)) if (!current.has(m[0])) fail(`页面出现了不是当前发行版的版本号：${m[0]}`);
   // The experimental Android TV card: its own release, one APK, its requirements and caveats.
   const tvCard = download.match(/<article class="platform" id="platform-androidtv"[\s\S]*?<\/article>/)?.[0] ?? '';
   if (!tvCard.includes(`<a class="pkg" href="${tv.url}">`) || !tvCard.includes(`href="${tv.releaseUrl}"`) || !tvCard.includes(`>${tv.tag}</span>`)) fail('下载区缺少 Android TV 卡片或其发行版链接');
   for (const key of ['platform.androidtv.req', 'platform.androidtv.note']) if (!page.strings?.[key] || !tvCard.includes(page.strings[key])) fail(`Android TV 卡片缺少 ${key}`);
   if (!/Android 8\.0/.test(tvCard) || !/API 26/.test(tvCard) || !/1\.0 \(20\)/.test(tvCard)) fail('Android TV 卡片应写明 Android 8.0 / API 26 和 iPhone App 1.0 (20)');
+  // The Android phone/tablet controller: its own stream and card next to the iPhone, one APK, never
+  // the TV receiver's; the hero's Android entry is hidden as built and only links to that card.
+  const phoneCard = download.match(/<article class="platform platform--android" id="platform-android"[\s\S]*?<\/article>/)?.[0] ?? '';
+  if (!phoneCard.includes(`<a class="pkg" href="${ctrl.url}">`) || !phoneCard.includes(`href="${ctrl.releaseUrl}"`) || !phoneCard.includes(`>${ctrl.tag}</span>`)) fail('下载区缺少 Android 手机卡片或其发行版链接');
+  if (phoneCard.includes(tv.url) || tvCard.includes(ctrl.url)) fail('Android 手机 App 和 Android TV 接收端的下载不能混在一起');
+  for (const key of ['platform.android.name', 'platform.android.req', 'platform.android.note']) if (!page.strings?.[key] || !phoneCard.includes(page.strings[key])) fail(`Android 手机卡片缺少 ${key}`);
+  if (!/Android 8\.0/.test(phoneCard) || !/API 26/.test(phoneCard) || !/Google Play/.test(phoneCard)) fail('Android 手机卡片应写明 Android 8.0 / API 26，并说明不是 Google Play');
+  if (download.indexOf('id="platform-iphone"') > download.indexOf('id="platform-android"') || download.indexOf('id="platform-android"') > download.indexOf('id="platform-windows"')) fail('Android 手机卡片应紧跟在 iPhone 卡片后面');
+  const androidEntry = html.match(/<div class="get-android" id="get-android" hidden>[\s\S]*?<\/div>/)?.[0] ?? '';
+  if (!androidEntry.includes('<a class="get-app__link get-android__link" href="#platform-android">') || !androidEntry.includes(`<bdi class="get-android__version" dir="ltr">${displayVersion(ctrl.tag)}</bdi>`) || /https?:/.test(androidEntry)) fail('首屏的 Android 入口应隐藏、只链接到 Android 卡片并显示当前版本');
 
   if (/<a\b[^>]*href="(?:\.\.\/)?media\//.test(html) || /\bdownload\b(?==|>|\s)/.test(html.replace(/controlslist="nodownload"/g, ''))) {
     fail('页面不应提供演示视频或字幕的下载链接');
@@ -397,6 +408,7 @@ export async function checkSite(dir) {
   const releaseData = JSON.parse(await readFile(path.join(ROOT, 'src', 'releases.json'), 'utf8'));
   const releases = validateReleases(releaseData);
   releases.androidTv = validateAndroidTv(releaseData);
+  releases.androidController = validateAndroidController(releaseData);
 
   const pages = [];
   for (const page of PAGES) {

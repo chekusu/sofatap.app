@@ -11,7 +11,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DownloadConfigError, downloadCopy, validateDownloadConfig } from './download-config.mjs';
 import { LANGS, LOCALES, hrefBetween, locale, mediaTag } from './locales.mjs';
-import { REPO_URL, ReleaseDataError, compareTags, displayVersion, validateAndroidTv, validateReleases } from './releases.mjs';
+import { REPO_URL, ReleaseDataError, compareTags, displayVersion, validateAndroidController, validateAndroidTv, validateReleases } from './releases.mjs';
 import { renderMarkdown, resolveRepoPath } from './markdown.mjs';
 import { loadCues, toVtt } from './captions.mjs';
 import { renderDemoTiles } from './demo-art.mjs';
@@ -245,6 +245,45 @@ const OS_ICONS = {
   linux: '<svg class="os-icon" data-os="linux" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2.5c-2.6 0-4.2 2.1-4.2 4.8 0 1.3-.4 2.2-1.2 3.4-1.1 1.6-2.1 3.6-2.1 5.8 0 1.2.4 2.3 1 3.1h13c.6-.8 1-1.9 1-3.1 0-2.2-1-4.2-2.1-5.8-.8-1.2-1.2-2.1-1.2-3.4 0-2.7-1.6-4.8-4.2-4.8zM12 10.4c-1.9 0-3.4 2.3-3.4 5.1 0 1.5.5 2.8 1.2 3.5h4.4c.7-.7 1.2-2 1.2-3.5 0-2.8-1.5-5.1-3.4-5.1zM10.5 5.8a.85.85 0 1 0 0 1.7.85.85 0 1 0 0-1.7zM13.5 5.8a.85.85 0 1 0 0 1.7.85.85 0 1 0 0-1.7zM10.6 8.5h2.8L12 9.9z" fill="currentColor" fill-rule="evenodd"/><path d="M4.6 21.5c.4-1.4 1.6-2.4 3-2.4 1 0 1.9.5 2.4 1.3l-.4 1.1zM19.4 21.5c-.4-1.4-1.6-2.4-3-2.4-1 0-1.9.5-2.4 1.3l.4 1.1z" fill="currentColor"/></svg>',
 };
 
+// The hero's Android entry: a simple Android head, drawn for this site.
+const ANDROID_ICON = '<svg class="os-icon" data-os="android" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 17.5a8 8 0 0 1 16 0z" fill="currentColor"/><path d="M7.2 8.2 5.6 5.6M16.8 8.2l1.6-2.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="9" cy="13.6" r="1.1" fill="var(--mint)"/><circle cx="15" cy="13.6" r="1.1" fill="var(--mint)"/></svg>';
+
+/**
+ * The hero's Android phone/tablet entry, hidden as built. src/platform.js shows it in place of the
+ * iPhone entry on an Android phone or tablet. It links to the Android card (it never starts a
+ * download), with the controller's current version.
+ */
+export function renderAndroidEntry(controller, strings) {
+  const version = `<bdi class="get-android__version" dir="ltr">${displayVersion(controller.tag)}</bdi>`;
+  return [
+    '        <div class="get-android" id="get-android" hidden>',
+    `          <a class="get-app__link get-android__link" href="#platform-android">${ANDROID_ICON}<span>${strings['hero.android']}</span></a>`,
+    `          <p class="get-app__meta">${fill(strings['hero.android.meta'], { version })}</p>`,
+    '        </div>',
+  ].join('\n');
+}
+
+/** The Android phone/tablet controller card: its own release stream and one APK (not Google Play). */
+export function renderAndroidDownload(controller, strings) {
+  const name = strings['platform.android.name'];
+  return [
+    `          <article class="platform platform--android" id="platform-android" aria-labelledby="platform-android-title">`,
+    '            <div class="platform__head">',
+    `              <h3 id="platform-android-title">${name}</h3>`,
+    `              <span class="tag" dir="ltr">${escapeHtml(controller.tag)}</span>`,
+    '            </div>',
+    `            <p class="platform__req">${strings['platform.android.req']}</p>`,
+    '            <ul class="pkgs">',
+    '              <li data-package="apk">',
+    `                <a class="pkg" href="${escapeHtml(controller.url)}">${DOWNLOAD}<span class="pkg__label"><span class="visually-hidden">${fill(strings['dl.for'], { platform: name })}: </span><bdi>APK</bdi></span><span class="pkg__meta" dir="ltr">${controller.size} · .apk</span></a>`,
+    '              </li>',
+    '            </ul>',
+    `            <p class="platform__note">${strings['platform.android.note']}</p>`,
+    `            <p class="platform__links"><a href="${escapeHtml(controller.releaseUrl)}">${fill(strings['dl.notes'], { tag: escapeHtml(controller.tag) })}</a></p>`,
+    '          </article>',
+  ].join('\n');
+}
+
 /** The newest desktop receiver release tag (every platform names its own). */
 export const latestTag = (platforms) => platforms.map((p) => p.tag).sort(compareTags).at(-1);
 
@@ -427,6 +466,7 @@ export async function build({ config: configPath, out, media = null }) {
   const releaseData = await readJson(path.join(SRC, 'releases.json'), ReleaseDataError);
   const platforms = validateReleases(releaseData);
   const androidTv = validateAndroidTv(releaseData);
+  const androidController = validateAndroidController(releaseData);
   const tables = Object.fromEntries(await Promise.all(
     LANGS.map(async (lang) => [lang, await readJson(path.join(SRC, 'i18n', `${lang}.json`))]),
   ));
@@ -464,6 +504,8 @@ export async function build({ config: configPath, out, media = null }) {
       IPHONE_STATE: download.kind === 'unavailable' ? 'unavailable' : 'available',
       DESKTOP_DOWNLOADS: `${renderDesktopDownloads(platforms, strings)}\n${renderTvDownload(androidTv, strings)}`,
       DESKTOP_ENTRY: renderDesktopEntry(platforms, strings),
+      ANDROID_ENTRY: renderAndroidEntry(androidController, strings),
+      ANDROID_DOWNLOAD: renderAndroidDownload(androidController, strings),
       STYLES_HASH: shortHash(styles),
       SCRIPT_HASH: shortHash(script),
       CORE_HASH: shortHash(core),

@@ -13,6 +13,9 @@ const GUIDE = /^(?:[A-Za-z0-9_-]+\/){0,3}[A-Za-z0-9_.-]+\.md$/;
 const SHA256 = /^[0-9a-f]{64}$/;
 // The Android TV receiver has its own tag stream and one APK named after its version.
 export const TV_TAG = /^android-tv-v\d{1,3}\.\d{1,3}\.\d{1,3}(?:-(?:alpha|beta|rc)(?:\.\d{1,3})?)?$/;
+// The Android phone/tablet controller is a third, separate stream (not the TV receiver).
+export const CONTROLLER_TAG = /^android-controller-v\d{1,3}\.\d{1,3}\.\d{1,3}(?:-(?:alpha|beta|rc)(?:\.\d{1,3})?)?$/;
+export const controllerFile = (tag) => `Sofatap-Android-${tag.replace(/^android-controller-v/, '')}.apk`;
 export const DESKTOP_TAG = TAG;
 export const tvFile = (tag) => `Sofatap-Android-TV-${tag.replace(/^android-tv-v/, '')}.apk`;
 
@@ -34,12 +37,12 @@ function fail(message) {
 const ARCH = /-(arm64|x64)[.-]/;
 
 /** A release tag as people read it: v0.7.2-beta.1 → 0.7.2 beta.1. */
-export const displayVersion = (tag) => tag.replace(/^(?:android-tv-)?v/, '').replace('-', ' ');
+export const displayVersion = (tag) => tag.replace(/^(?:android-tv-|android-controller-)?v/, '').replace('-', ' ');
 
 /** Orders release tags: by version number, then a pre-release before its release, then by its number. */
 export function compareTags(a, b) {
   const parse = (tag) => {
-    const [, x, y, z, pre, n] = tag.match(/^(?:android-tv-)?v(\d+)\.(\d+)\.(\d+)(?:-(alpha|beta|rc)(?:\.(\d+))?)?$/);
+    const [, x, y, z, pre, n] = tag.match(/^(?:android-tv-|android-controller-)?v(\d+)\.(\d+)\.(\d+)(?:-(alpha|beta|rc)(?:\.(\d+))?)?$/);
     return [Number(x), Number(y), Number(z), pre ? ['alpha', 'beta', 'rc'].indexOf(pre) : 3, Number(n ?? 0)];
   };
   const [p, q] = [parse(a), parse(b)];
@@ -109,23 +112,31 @@ export function validateReleases(data) {
   });
 }
 
+// One APK release of an Android stream: its tag pattern, exact file name, size and SHA-256.
+function validateApk(entry, key, tagPattern, fileOf, maxBytes) {
+  if (!entry || typeof entry !== 'object') fail(`releases.json 缺少 ${key}。`);
+  if (typeof entry.tag !== 'string' || !tagPattern.test(entry.tag)) fail(`${key} 的 tag 格式不正确：${JSON.stringify(entry.tag)}`);
+  if (entry.file !== fileOf(entry.tag)) fail(`${key} 的文件名应为 ${fileOf(entry.tag)}：${JSON.stringify(entry.file)}`);
+  if (!Number.isInteger(entry.bytes) || entry.bytes < 1e6 || entry.bytes > maxBytes) fail(`${key} 的大小不合理：${entry.bytes}`);
+  if (typeof entry.sha256 !== 'string' || !SHA256.test(entry.sha256)) fail(`${key} 缺少 SHA-256。`);
+  return {
+    tag: entry.tag,
+    file: entry.file,
+    sha256: entry.sha256,
+    releaseUrl: releasePageUrl(entry.tag),
+    url: packageUrl(entry.tag, entry.file),
+    size: `${(entry.bytes / 1e6).toFixed(1)} MB`,
+  };
+}
+
 /** Validates the Android TV entry of releases.json: its own tag stream and the one APK of that tag. */
 export function validateAndroidTv(data) {
-  const tv = data?.androidTv;
-  if (!tv || typeof tv !== 'object') fail('releases.json 缺少 androidTv。');
-  if (typeof tv.tag !== 'string' || !TV_TAG.test(tv.tag)) fail(`androidTv 的 tag 格式不正确：${JSON.stringify(tv.tag)}`);
-  if (tv.file !== tvFile(tv.tag)) fail(`androidTv 的文件名应为 ${tvFile(tv.tag)}：${JSON.stringify(tv.file)}`);
-  if (!Number.isInteger(tv.bytes) || tv.bytes < 1e6 || tv.bytes > 5e8) fail(`androidTv 的大小不合理：${tv.bytes}`);
-  if (typeof tv.sha256 !== 'string' || !SHA256.test(tv.sha256)) fail('androidTv 缺少 SHA-256。');
-  return {
-    id: 'androidtv',
-    tag: tv.tag,
-    file: tv.file,
-    sha256: tv.sha256,
-    releaseUrl: releasePageUrl(tv.tag),
-    url: packageUrl(tv.tag, tv.file),
-    size: `${(tv.bytes / 1e6).toFixed(1)} MB`,
-  };
+  return { id: 'androidtv', ...validateApk(data?.androidTv, 'androidTv', TV_TAG, tvFile, 5e8) };
+}
+
+/** Validates the Android phone/tablet controller entry: a separate stream from the TV receiver. */
+export function validateAndroidController(data) {
+  return { id: 'android', ...validateApk(data?.androidController, 'androidController', CONTROLLER_TAG, controllerFile, 5e8) };
 }
 
 /** True when an https URL is one of the product repository links the site may use. */
@@ -137,7 +148,8 @@ export function isRepoLink(href) {
   const tag = '(v\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(?:-(?:alpha|beta|rc)(?:\\.\\d{1,3})?)?)';
   return new RegExp(`^/releases/tag/${tag}$`).test(rest)
     || new RegExp(`^/releases/download/${tag}/SofaTap-[A-Za-z0-9._-]{1,80}\\.(?:zip|tar\\.gz)$`).test(rest)
-    || new RegExp(`^/releases/tag/android-tv-${tag}$`).test(rest)
+    || new RegExp(`^/releases/tag/android-(?:tv|controller)-${tag}$`).test(rest)
+    || new RegExp(`^/releases/download/android-controller-${tag}/Sofatap-Android-\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(?:-(?:alpha|beta|rc)(?:\\.\\d{1,3})?)?\\.apk$`).test(rest)
     || new RegExp(`^/releases/download/android-tv-${tag}/Sofatap-Android-TV-\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(?:-(?:alpha|beta|rc)(?:\\.\\d{1,3})?)?\\.apk$`).test(rest)
     || (/^\/blob\/(?:main|[0-9a-f]{40})\/(?:[A-Za-z0-9_-]+\/){0,3}[A-Za-z0-9_.-]+\.md$/.test(rest) && !rest.includes('..'));
 }

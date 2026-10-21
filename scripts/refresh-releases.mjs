@@ -3,8 +3,9 @@
 // a live scheduler, and visitors' browsers never call the GitHub API. The ordinary build stays
 // offline and uses the committed snapshot.
 //
-// The desktop receiver (tags v1.2.3[-beta.N]) and the Android TV receiver (tags
-// android-tv-v1.2.3[-beta.N]) are separate streams, each chosen on its own:
+// The desktop receiver (tags v1.2.3[-beta.N]), the Android TV receiver (tags
+// android-tv-v1.2.3[-beta.N]) and the Android phone/tablet controller (tags
+// android-controller-v1.2.3[-beta.N]) are separate streams, each chosen on its own:
 //  - every release page is read (paginated); drafts are ignored, betas are allowed;
 //  - candidates are ordered by version number (never by GitHub's list order, dates or /latest);
 //  - a release counts only when every expected binary is uploaded, its link is the fixed GitHub
@@ -17,7 +18,7 @@
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DESKTOP_TAG, TV_TAG, compareTags, packageUrl, tvFile, validateAndroidTv, validateReleases } from './releases.mjs';
+import { CONTROLLER_TAG, DESKTOP_TAG, TV_TAG, compareTags, controllerFile, packageUrl, tvFile, validateAndroidController, validateAndroidTv, validateReleases } from './releases.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const API_URL = 'https://api.github.com/repos/chekusu/sofatap/releases';
@@ -88,8 +89,15 @@ async function verified(release, file, checksumNames, fetchText) {
 export function validateSnapshot(snapshot) {
   validateReleases(snapshot);
   validateAndroidTv(snapshot);
+  validateAndroidController(snapshot);
   return snapshot;
 }
+
+// The single-APK Android streams: the key in releases.json, its tags, its APK name and validator.
+const APK_STREAMS = [
+  { key: 'androidTv', tags: TV_TAG, fileOf: tvFile, validate: validateAndroidTv },
+  { key: 'androidController', tags: CONTROLLER_TAG, fileOf: controllerFile, validate: validateAndroidController },
+];
 
 /**
  * Chooses each stream's release from the API list. `snapshot` is the current releases.json; the
@@ -134,19 +142,20 @@ export async function selectReleases(releases, snapshot, fetchText) {
   });
   if (desktop) data.platforms = desktop;
 
-  const tv = await pick('androidTv', TV_TAG, data.androidTv.tag, async (release) => {
-    const file = tvFile(release.tag_name);
-    // Older TV releases named their checksum file differently; any of these, naming the exact APK.
-    const v = await verified(release, file, [`${file}.sha256`, 'SHA256SUMS.txt', 'SHA256SUMS'], fetchText);
-    if (typeof v === 'string') return v;
-    const entry = { tag: release.tag_name, file, bytes: v.bytes, sha256: v.sha256 };
-    validateAndroidTv({ androidTv: entry });
-    return entry;
-  });
-  if (tv) data.androidTv = tv;
+  for (const stream of APK_STREAMS) {
+    const entry = await pick(stream.key, stream.tags, data[stream.key].tag, async (release) => {
+      const file = stream.fileOf(release.tag_name);
+      // Releases have named their checksum file differently; any of these, naming the exact APK.
+      const v = await verified(release, file, [`${file}.sha256`, 'SHA256SUMS.txt', 'SHA256SUMS'], fetchText);
+      if (typeof v === 'string') return v;
+      const next = { tag: release.tag_name, file, bytes: v.bytes, sha256: v.sha256 };
+      stream.validate({ [stream.key]: next });
+      return next;
+    });
+    if (entry) data[stream.key] = entry;
+  }
 
-  validateReleases(data);
-  validateAndroidTv(data);
+  validateSnapshot(data);
   return { data, report };
 }
 
@@ -166,7 +175,8 @@ export async function refresh({ file = path.join(ROOT, 'src', 'releases.json'), 
   try {
     releases = await fetchReleases(fetchImpl);
   } catch (error) {
-    return { changed: false, report: { error: error.message, desktop: { decision: 'kept', tag: snapshot.platforms[0].tag }, androidTv: { decision: 'kept', tag: snapshot.androidTv.tag } } };
+    const kept = (tag) => ({ decision: 'kept', tag });
+    return { changed: false, report: { error: error.message, desktop: kept(snapshot.platforms[0].tag), androidTv: kept(snapshot.androidTv.tag), androidController: kept(snapshot.androidController.tag) } };
   }
   const { data, report } = await selectReleases(releases, snapshot, fetchText);
   const changed = JSON.stringify(data) !== JSON.stringify(snapshot);

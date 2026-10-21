@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { compareTags, displayVersion, isRepoLink, validateAndroidTv, validateReleases } from '../scripts/releases.mjs';
+import { compareTags, displayVersion, isRepoLink, validateAndroidController, validateAndroidTv, validateReleases } from '../scripts/releases.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const data = JSON.parse(await readFile(path.join(ROOT, 'src', 'releases.json'), 'utf8'));
@@ -27,6 +27,27 @@ test('the shipped snapshot: five desktop packages at one tag with sizes and chec
   assert.match(tv.tag, /^android-tv-v\d+\.\d+\.\d+/);
   assert.equal(tv.file, `Sofatap-Android-TV-${tv.tag.slice('android-tv-v'.length)}.apk`);
   assert.equal(tv.url, `https://github.com/chekusu/sofatap/releases/download/${tv.tag}/${tv.file}`);
+});
+
+test('the Android phone/tablet controller: its own stream, exact APK, size and checksum, never the TV receiver', () => {
+  const phone = validateAndroidController(data);
+  assert.match(phone.tag, /^android-controller-v\d+\.\d+\.\d+/);
+  assert.equal(phone.file, `Sofatap-Android-${phone.tag.slice('android-controller-v'.length)}.apk`);
+  assert.equal(phone.url, `https://github.com/chekusu/sofatap/releases/download/${phone.tag}/${phone.file}`);
+  assert.match(phone.sha256, /^[0-9a-f]{64}$/);
+  assert.ok(isRepoLink(phone.url) && isRepoLink(phone.releaseUrl));
+  const bad = (edit) => { const d = clone(); edit(d.androidController); return () => validateAndroidController(d); };
+  assert.throws(bad((c) => { c.tag = 'android-tv-v0.1.0-beta.1'; }), /tag/);
+  assert.throws(bad((c) => { c.file = 'Sofatap-Android-TV-0.1.0-beta.1.apk'; }), /文件名/);
+  assert.throws(bad((c) => { c.file = 'Sofatap-Android-9.9.9.apk'; }), /文件名/);
+  assert.throws(bad((c) => { c.bytes = 1000; }), /大小/);
+  assert.throws(bad((c) => { c.sha256 = 'DE34'; }), /SHA-256/);
+  assert.throws(() => validateAndroidController({ ...clone(), androidController: undefined }), /缺少 androidController/);
+  // The two Android streams never share links.
+  assert.ok(!isRepoLink('https://github.com/chekusu/sofatap/releases/download/android-controller-v0.1.0-beta.1/Sofatap-Android-TV-0.1.0-beta.1.apk'));
+  assert.ok(!isRepoLink('https://github.com/chekusu/sofatap/releases/download/android-tv-v0.2.0-beta.1/Sofatap-Android-0.2.0-beta.1.apk'));
+  assert.ok(!isRepoLink('https://github.com/chekusu/sofatap/releases/download/v0.8.1-beta.1/Sofatap-Android-0.1.0-beta.1.apk'));
+  assert.notEqual(phone.url, validateAndroidTv(data).url);
 });
 
 test('display versions and tag order across both streams (synthetic tags)', () => {

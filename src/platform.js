@@ -9,6 +9,10 @@
 //    decides it: Safari on Apple Silicon says "Intel Mac OS X", and reduced or privacy user agents
 //    say x86_64 on ARM. Without a clear answer both packages stay side by side. Windows has only
 //    an x64 package: on a PC that reports ARM or 32-bit, the downloads stay as built.
+//  - Phones and tablets: on Android the hero offers the Android app (a link to its card, which
+//    moves first in the downloads); on iPhone and iPad the iPhone TestFlight entry stays. The
+//    computer receivers stay in view on a phone, since the phone app needs one. A television's own
+//    browser (Android TV, Google TV, Fire TV and similar) is never taken for an Android phone.
 //  - The Android TV card is never "this device": on a recognized computer it moves into "Other
 //    downloads" with the other computers; on a phone (Android included), tablet or unknown device
 //    it stays where it was built. Nothing ever starts a download by itself.
@@ -28,7 +32,8 @@
     var touch = Number(nav.maxTouchPoints) || 0;
     var os = 'unknown';
     if (/iPhone|iPad|iPod/.test(ua)) os = 'ios';
-    else if (/Android/i.test(ua)) os = 'android';
+    // A TV's browser also says Android; it is not a phone or tablet, so nothing is claimed.
+    else if (/Android/i.test(ua)) os = /\b(?:Android ?TV|Google ?TV|SMART-TV|SmartTV|BRAVIA|AFT[A-Z0-9]*|AndroidTV|TV Bro|Tizen|Web0S|webOS)\b/i.test(ua) ? 'unknown' : 'android';
     // iPadOS asks for desktop sites as a Mac; a real Mac has no multi-touch screen.
     else if (/Macintosh|Mac OS X/.test(ua)) os = touch > 1 ? 'ios' : 'mac';
     else if (/Windows NT/.test(ua) && !/Windows Phone/.test(ua)) os = 'windows';
@@ -96,6 +101,30 @@
     text.textContent = labels[os];
     version.textContent = versions[os];
     link.setAttribute('data-os', os);
+    return true;
+  }
+
+  /** The hero on an Android phone or tablet: the Android app's entry in place of the iPhone one. */
+  function applyMobileHero(doc, os) {
+    var android = doc.getElementById('get-android');
+    var iphone = doc.getElementById('get-app');
+    if (os !== 'android' || !android || !iphone) return false;
+    iphone.hidden = true;
+    android.hidden = false;
+    return true;
+  }
+
+  /**
+   * The download section on a phone or tablet: its own app's card first, marked as this device.
+   * Nothing moves into "Other downloads": the phone still needs a computer receiver.
+   */
+  function applyMobileDownloads(doc, os) {
+    var section = doc.getElementById('download');
+    var main = section && section.querySelector('.platforms');
+    var card = doc.getElementById(os === 'android' ? 'platform-android' : os === 'ios' ? 'platform-iphone' : '');
+    if (!main || !card || card.parentNode !== main) return false;
+    main.insertBefore(card, main.firstChild);
+    card.classList.add('platform--current');
     return true;
   }
 
@@ -177,11 +206,12 @@
     try { os = osOf(nav); } catch (error) { os = 'unknown'; }
     if (section) section.setAttribute('data-os', os);
     // The operating system is known at once; the hero needs nothing more.
-    try { applyHero(doc, os); } catch (error) { if (global.console) global.console.warn(error); }
+    try { applyHero(doc, os); applyMobileHero(doc, os); } catch (error) { if (global.console) global.console.warn(error); }
     return detect(nav, options).then(function (found) {
       if (engaged) return found;
       try {
-        if (applyDownloads(doc, found.os, found.arch)) {
+        if (found.os === 'android' || found.os === 'ios') applyMobileDownloads(doc, found.os);
+        else if (applyDownloads(doc, found.os, found.arch)) {
           var loc = global.location;
           if (loc) openForHash(doc, loc.hash);
           if (global.addEventListener) global.addEventListener('hashchange', function () { openForHash(doc, global.location.hash); });
@@ -191,7 +221,7 @@
     });
   }
 
-  global.SofatapPlatform = { osOf: osOf, archOf: archOf, detect: detect, applyHero: applyHero, applyDownloads: applyDownloads, run: run };
+  global.SofatapPlatform = { osOf: osOf, archOf: archOf, detect: detect, applyHero: applyHero, applyMobileHero: applyMobileHero, applyDownloads: applyDownloads, applyMobileDownloads: applyMobileDownloads, run: run };
 
   if (global.document && global.navigator) {
     try { run(global.document, global.navigator); } catch (error) { if (global.console) global.console.warn(error); }

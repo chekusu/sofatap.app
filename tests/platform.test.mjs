@@ -2,13 +2,14 @@
 // tricky user agents and client hints, and what it does to the built hero and download section.
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { build } from '../scripts/build.mjs';
-import { displayVersion, validateAndroidTv, validateReleases } from '../scripts/releases.mjs';
+import { displayVersion, validateAndroidController, validateAndroidTv, validateReleases } from '../scripts/releases.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const source = await readFile(path.join(ROOT, 'src', 'platform.js'), 'utf8');
@@ -40,6 +41,13 @@ const UA = {
   iphone: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1',
   ipad: 'Mozilla/5.0 (iPad; CPU OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1',
   android: 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36',
+  androidTablet: 'Mozilla/5.0 (Linux; Android 14; SM-X710) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
+  androidFirefox: 'Mozilla/5.0 (Android 14; Mobile; rv:143.0) Gecko/143.0 Firefox/143.0',
+  // Televisions' own browsers say Android too; they are not phones.
+  googleTv: 'Mozilla/5.0 (Linux; Android 12; Chromecast HD Build/STTE.230319.008; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/141.0.0.0 Safari/537.36 GoogleTV',
+  bravia: 'Mozilla/5.0 (Linux; Android 10; BRAVIA 4K VH2 Build/QTG3.200305.006.S292) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
+  fireTv: 'Mozilla/5.0 (Linux; Android 9; AFTKA Build/PS7633.3445N; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/141.0.0.0 Mobile Safari/537.36',
+  androidTvBox: 'Mozilla/5.0 (Linux; Android 11; Android TV on MiBOX4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
 };
 // A Chromium navigator whose high-entropy hints answer `hints` (or a function producing the result).
 const chromium = (userAgent, platform, hints, extra = {}) => {
@@ -68,6 +76,9 @@ test('operating system: computers, phones and tablets, and nothing claimed on do
   assert.equal(osOf({ userAgent: UA.android }), 'android');
   assert.equal(osOf(chromium(UA.android, 'Android', {})), 'android');
   // ChromeOS and FreeBSD (X11 is not an operating system) are not Linux.
+  assert.equal(osOf({ userAgent: UA.androidTablet }), 'android');
+  assert.equal(osOf({ userAgent: UA.androidFirefox }), 'android');
+  for (const tv of [UA.googleTv, UA.bravia, UA.fireTv, UA.androidTvBox]) assert.equal(osOf({ userAgent: tv }), 'unknown', tv);
   assert.equal(osOf({ userAgent: UA.cros }), 'unknown');
   assert.equal(osOf({ userAgent: UA.freebsd }), 'unknown');
   assert.equal(osOf({}), 'unknown');
@@ -206,10 +217,12 @@ function parse(html) {
 const RELEASE_DATA = JSON.parse(await readFile(path.join(ROOT, 'src', 'releases.json'), 'utf8'));
 const DESKTOP = validateReleases(RELEASE_DATA);
 const TV = validateAndroidTv(RELEASE_DATA);
+const PHONE = validateAndroidController(RELEASE_DATA);
 const TAG = DESKTOP[0].tag;
 const VERSION = displayVersion(TAG);
 const PKG = (file) => `https://github.com/chekusu/sofatap/releases/download/${TAG}/${file}`;
-const ALL = [...['SofaTap-Windows-x64.zip', 'SofaTap-macOS-arm64-notarized.zip', 'SofaTap-macOS-x64-notarized.zip', 'SofaTap-Linux-x64.tar.gz', 'SofaTap-Linux-arm64.tar.gz'].map(PKG), TV.url];
+// In page order: the Android phone app (next to the iPhone card), the computers, the TV receiver.
+const ALL = [PHONE.url, ...['SofaTap-Windows-x64.zip', 'SofaTap-macOS-arm64-notarized.zip', 'SofaTap-macOS-x64-notarized.zip', 'SofaTap-Linux-x64.tar.gz', 'SofaTap-Linux-arm64.tar.gz'].map(PKG), TV.url];
 
 // Runs the script on the page's body for one navigator; returns what a visitor would find.
 async function visit(nav, { lang = 'en', hash = '', before } = {}) {
@@ -230,31 +243,91 @@ async function visit(nav, { lang = 'en', hash = '', before } = {}) {
     doc, found, section, other, win,
     main: cards(main), mainLinks: links(main),
     rest: cards(other.querySelector('.downloads-other__list')), restLinks: links(other),
+    mobile: {
+      iphone: !doc.getElementById('get-app').hidden,
+      android: !doc.getElementById('get-android').hidden,
+      href: doc.querySelector('.get-android__link').getAttribute('href'),
+      text: doc.querySelector('.get-android__link').children.find((c) => c.tagName === 'span').textContent,
+      version: doc.querySelector('.get-android__version').textContent,
+    },
+    current: main.children.filter((c) => c.classList?.contains('platform--current')).map((c) => c.getAttribute('id')),
     hero: { os: hero.getAttribute('data-os'), text: doc.querySelector('.get-desktop__text').textContent, version: doc.querySelector('.get-desktop__version').textContent, href: hero.getAttribute('href') },
     ids,
   };
 }
-const AS_BUILT = ['platform-iphone', 'platform-windows', 'platform-mac', 'platform-linux', 'platform-androidtv'];
+const AS_BUILT = ['platform-iphone', 'platform-android', 'platform-windows', 'platform-mac', 'platform-linux', 'platform-androidtv'];
+const PHONE_VERSION = displayVersion(PHONE.tag);
+const IPHONE_HERO = { iphone: true, android: false, href: '#platform-android', text: 'Get the Android app', version: PHONE_VERSION };
 const assertNoDuplicateIds = (v) => assert.equal(v.ids.length, new Set(v.ids).size, 'duplicate ids');
 const assertEveryPackageOnce = (v) => assert.deepEqual([...v.mainLinks, ...v.restLinks].sort(), [...ALL].sort());
 
-test('unknown computers, phones and tablets keep the downloads exactly as built', async () => {
-  for (const nav of [{ userAgent: UA.freebsd }, { userAgent: UA.iphone, maxTouchPoints: 5 }, { userAgent: UA.macSafari, maxTouchPoints: 5 }, { userAgent: UA.android }, { userAgent: UA.cros }, {}]) {
+test('unknown devices, TV browsers and no script keep the downloads exactly as built', async () => {
+  for (const nav of [{ userAgent: UA.freebsd }, { userAgent: UA.cros }, {}, ...[UA.googleTv, UA.bravia, UA.fireTv, UA.androidTvBox].map((userAgent) => ({ userAgent }))]) {
     const v = await visit(nav);
     assert.deepEqual(v.main, AS_BUILT, nav.userAgent);
     assert.deepEqual(v.mainLinks, ALL);
     assert.equal(v.other.hidden, true);
     assert.deepEqual(v.rest, []);
-    // The neutral computer button, a link to the downloads.
+    assert.deepEqual(v.current, []);
+    // The iPhone entry and the neutral computer button, a link to the downloads; the Android entry stays hidden.
+    assert.deepEqual(v.mobile, IPHONE_HERO);
     assert.deepEqual(v.hero, { os: 'unknown', text: 'Computer downloads', version: VERSION, href: '#download' });
   }
+  // As built (no script), the Android entry is hidden and only links to its card.
+  const built = PAGES.en.match(/<div class="get-android" id="get-android" hidden>[\s\S]*?<\/div>/)[0];
+  assert.doesNotMatch(built, /https?:|\.apk/);
+});
+
+test('iPhone and iPad (also in desktop mode): the TestFlight entry and the iPhone card, nothing hidden', async () => {
+  for (const nav of [{ userAgent: UA.iphone, maxTouchPoints: 5 }, { userAgent: UA.ipad, maxTouchPoints: 5 }, { userAgent: UA.macSafari, maxTouchPoints: 5 }]) {
+    const v = await visit(nav);
+    assert.deepEqual(v.main, AS_BUILT, nav.userAgent);
+    assert.deepEqual(v.current, ['platform-iphone']);
+    assert.deepEqual(v.mobile, IPHONE_HERO);
+    assert.equal(v.other.hidden, true);
+    assert.deepEqual(v.mainLinks, ALL);
+    assert.deepEqual(v.hero, { os: 'unknown', text: 'Computer downloads', version: VERSION, href: '#download' });
+  }
+});
+
+test('Android phones and tablets: the Android app first and in the hero, never the TV receiver; computers stay in view', async () => {
+  for (const nav of [{ userAgent: UA.android }, { userAgent: UA.androidTablet }, { userAgent: UA.androidFirefox }, chromium(UA.android, 'Android', {}, { userAgentData: { platform: 'Android', mobile: true, getHighEntropyValues: () => Promise.resolve({}) } })]) {
+    const v = await visit(nav);
+    assert.deepEqual(v.main, ['platform-android', 'platform-iphone', 'platform-windows', 'platform-mac', 'platform-linux', 'platform-androidtv'], nav.userAgent);
+    assert.deepEqual(v.current, ['platform-android']);
+    assert.deepEqual(v.mobile, { ...IPHONE_HERO, iphone: false, android: true });
+    assert.deepEqual(v.mainLinks, [PHONE.url, ...ALL.filter((u) => u !== PHONE.url)]);
+    assert.equal(v.other.hidden, true);
+    assert.equal(v.section.getAttribute('data-os'), 'android');
+    assertNoDuplicateIds(v);
+    // The hero links to the card; the card's package is the phone APK, not the TV receiver's.
+    const card = v.doc.getElementById('platform-android');
+    assert.deepEqual(card.querySelectorAll('.pkg').map((a) => a.getAttribute('href')), [PHONE.url]);
+    assert.notEqual(PHONE.url, TV.url);
+    assert.ok(!v.doc.getElementById('platform-androidtv').classList.contains('platform--current'));
+    assert.deepEqual(v.hero, { os: 'unknown', text: 'Computer downloads', version: VERSION, href: '#download' });
+  }
+});
+
+test('Android in Arabic (right to left) and Chinese: localized entry and card, same order', async () => {
+  const strings = (lang) => JSON.parse(readFileSync(path.join(ROOT, 'src', 'i18n', `${lang}.json`), 'utf8'));
+  for (const [lang, file] of [['ar', 'ar'], ['zh', 'zh-CN']]) {
+    const v = await visit({ userAgent: UA.android }, { lang });
+    assert.equal(v.mobile.text, strings(file)['hero.android']);
+    assert.equal(v.mobile.version, PHONE_VERSION);
+    assert.equal(v.doc.getElementById('platform-android-title').textContent, strings(file)['platform.android.name']);
+    assert.equal(v.main[0], 'platform-android');
+  }
+  assert.match(PAGES.ar, /<html lang="ar" dir="rtl"/);
+  assert.match(PAGES.ar, /<bdi class="get-android__version" dir="ltr">/);
 });
 
 test('an Apple Silicon Mac: its package first; the Intel package, with its card details, under Other downloads', async () => {
   const v = await visit(chromium(UA.macChrome, 'macOS', { architecture: 'arm', bitness: '64' }));
   assert.deepEqual(v.hero, { os: 'mac', text: 'Download for Mac', version: VERSION, href: '#download' });
-  assert.deepEqual(v.main, ['platform-mac', 'platform-iphone']);
-  assert.deepEqual(v.mainLinks, [PKG('SofaTap-macOS-arm64-notarized.zip')]);
+  assert.deepEqual(v.main, ['platform-mac', 'platform-iphone', 'platform-android']);
+  assert.deepEqual(v.mobile, IPHONE_HERO);
+  assert.deepEqual(v.mainLinks, [PKG('SofaTap-macOS-arm64-notarized.zip'), PHONE.url]);
   assert.deepEqual(v.rest, ['copy:platform-mac-more-title', 'platform-windows', 'platform-linux', 'platform-androidtv']);
   assert.equal(v.other.hidden, false);
   assert.equal(v.other.open, false, 'collapsed');
@@ -282,8 +355,8 @@ test('a Mac or Linux computer of unknown architecture shows both of its packages
     [chromium(UA.linuxChrome, 'Linux', { architecture: 'x86', bitness: '32' }), 'linux', ['SofaTap-Linux-x64.tar.gz', 'SofaTap-Linux-arm64.tar.gz']],
   ]) {
     const v = await visit(nav);
-    assert.deepEqual(v.main, [`platform-${os}`, 'platform-iphone']);
-    assert.deepEqual(v.mainLinks, files.map(PKG));
+    assert.deepEqual(v.main, [`platform-${os}`, 'platform-iphone', 'platform-android']);
+    assert.deepEqual(v.mainLinks, [...files.map(PKG), PHONE.url]);
     assert.deepEqual(v.rest, ['platform-windows', 'platform-mac', 'platform-linux'].filter((id) => id !== `platform-${os}`).concat('platform-androidtv'));
     assert.equal(v.section.getAttribute('data-arch'), null);
     assertEveryPackageOnce(v);
@@ -294,12 +367,12 @@ test('a Mac or Linux computer of unknown architecture shows both of its packages
 test('Linux ARM64 in Chinese and x64 Linux in Arabic: localized labels, nothing lost', async () => {
   const zh = await visit(chromium(UA.linuxChrome, 'Linux', { architecture: 'arm', bitness: '64' }), { lang: 'zh' });
   assert.deepEqual(zh.hero, { os: 'linux', text: '下载 Linux 版', version: VERSION, href: '#download' });
-  assert.deepEqual(zh.mainLinks, [PKG('SofaTap-Linux-arm64.tar.gz')]);
+  assert.deepEqual(zh.mainLinks, [PKG('SofaTap-Linux-arm64.tar.gz'), PHONE.url]);
   assert.equal(zh.other.querySelector('summary').textContent, '其他下载');
   assertEveryPackageOnce(zh);
   const ar = await visit(chromium(UA.linuxChrome, 'Linux', { architecture: 'x86', bitness: '64' }), { lang: 'ar' });
   assert.equal(ar.hero.text, 'تنزيل لنظام Linux');
-  assert.deepEqual(ar.mainLinks, [PKG('SofaTap-Linux-x64.tar.gz')]);
+  assert.deepEqual(ar.mainLinks, [PKG('SofaTap-Linux-x64.tar.gz'), PHONE.url]);
   assertEveryPackageOnce(ar);
   assertNoDuplicateIds(ar);
 });
@@ -307,11 +380,11 @@ test('Linux ARM64 in Chinese and x64 Linux in Arabic: localized labels, nothing 
 test('Windows: the x64 package first, but never offered as the match on an ARM or 32-bit PC', async () => {
   const x64 = await visit(chromium(UA.winChrome, 'Windows', { architecture: 'x86', bitness: '64' }));
   assert.deepEqual(x64.hero, { os: 'windows', text: 'Download for Windows', version: VERSION, href: '#download' });
-  assert.deepEqual(x64.main, ['platform-windows', 'platform-iphone']);
+  assert.deepEqual(x64.main, ['platform-windows', 'platform-iphone', 'platform-android']);
   assert.deepEqual(x64.rest, ['platform-mac', 'platform-linux', 'platform-androidtv']);
   assertEveryPackageOnce(x64);
   const plain = await visit({ userAgent: UA.winChrome });
-  assert.deepEqual(plain.main, ['platform-windows', 'platform-iphone']);
+  assert.deepEqual(plain.main, ['platform-windows', 'platform-iphone', 'platform-android']);
   for (const hints of [{ architecture: 'arm', bitness: '64' }, { architecture: 'x86', bitness: '32' }]) {
     const v = await visit(chromium(UA.winChrome, 'Windows', hints));
     assert.equal(v.hero.os, 'windows', 'the button names the system only');
@@ -330,6 +403,12 @@ test('nothing moves once the visitor is using the download section; a link into 
   const v = await pending;
   assert.deepEqual(v.main, AS_BUILT);
   assert.equal(v.hero.os, 'mac', 'the hero changed at once, before anything was pressed');
+
+  // A phone never waits for hints (they are only asked on a computer), so its card is placed as the
+  // deferred script first runs, before anyone can use the section; hints that never answer change nothing.
+  const phone = await visit(chromium(UA.android, 'Android', () => new Promise(() => {}), { userAgentData: { platform: 'Android', mobile: true, getHighEntropyValues: () => new Promise(() => {}) } }));
+  assert.equal(phone.main[0], 'platform-android');
+  assert.equal(phone.mobile.android, true);
 
   const linked = await visit(chromium(UA.macChrome, 'macOS', { architecture: 'arm', bitness: '64' }), { hash: '#platform-linux' });
   assert.equal(linked.other.open, true);

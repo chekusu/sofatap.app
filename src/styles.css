@@ -253,7 +253,8 @@ h1, .section-title { word-break: keep-all; overflow-wrap: anywhere; text-wrap: b
 .button svg, .get-app__link svg, .get-app__pending svg { width: 1.2rem; height: 1.2rem; flex: none; }
 .button--ghost { border: 1px solid var(--border); color: var(--text); background: transparent; }
 .button--ghost:hover { border-color: var(--mint); background: var(--surface); }
-.get-app { max-width: 100%; }
+.get-app, .get-android { max-width: 100%; }
+.get-android[hidden] { display: none; }
 .get-app__link { background: var(--mint); color: var(--on-mint); }
 .get-app__link:hover { background: #B3F0D3; }
 .get-app__pending {

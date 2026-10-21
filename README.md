@@ -4,13 +4,14 @@ Sofatap 的公开网站：移动优先的静态页面，共 12 种语言。英�
 
 品牌名统一写作 **Sofatap**（一个词，只有 S 大写）；中文页可用市场名提案「沙发瘫」作辅助。`SofaTap` 只出现在发行包文件名等兼容标识中。
 
-产品源码在 [chekusu/sofatap](https://github.com/chekusu/sofatap)。页面上的产品说明依据该仓库提交 [`6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856`](https://github.com/chekusu/sofatap/tree/6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856)（2026-10-14 核对）。下载和版本信息来自 `src/releases.json`，它由公开的 GitHub Releases 刷新（见「电脑端和 Android TV 下载」）；2026-10-19 核对时为电脑端 [`v0.8.1-beta.1`](https://github.com/chekusu/sofatap/releases/tag/v0.8.1-beta.1)（发行版的 tag 与源码提交 `e798f8db485555b27990cc53e2eae7fff27fbc53`）和实验性的 Android TV 接收端 [`android-tv-v0.2.0-beta.1`](https://github.com/chekusu/sofatap/releases/tag/android-tv-v0.2.0-beta.1)（2026-10-17 发布；tag 指向提交 `5096e2ef061d33b316456befdd6c4f6a126c0cd1`，发行说明写明源码为 PR #9 合并的 `a9076becaad7d0d9bcca33086212de542ff8a00b`）。隐私政策和支持页仍是 `6cb7799` 的原文快照（见下文），里面的日期和版本号属于那份快照。产品有变化时，先核对新的提交再改文案：
+产品源码在 [chekusu/sofatap](https://github.com/chekusu/sofatap)。页面上的产品说明依据该仓库提交 [`6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856`](https://github.com/chekusu/sofatap/tree/6cb7799d574c37c2f5ac6a455db3cdd7b7d4e856)（2026-10-14 核对）。下载和版本信息来自 `src/releases.json`，它由公开的 GitHub Releases 刷新（见「电脑端和 Android TV 下载」）；2026-10-19 核对时为电脑端 [`v0.8.1-beta.1`](https://github.com/chekusu/sofatap/releases/tag/v0.8.1-beta.1)（发行版的 tag 与源码提交 `e798f8db485555b27990cc53e2eae7fff27fbc53`）和实验性的 Android TV 接收端 [`android-tv-v0.2.0-beta.1`](https://github.com/chekusu/sofatap/releases/tag/android-tv-v0.2.0-beta.1)（2026-10-17 发布；tag 指向提交 `5096e2ef061d33b316456befdd6c4f6a126c0cd1`，发行说明写明源码为 PR #9 合并的 `a9076becaad7d0d9bcca33086212de542ff8a00b`），以及 Android 手机/平板 App [`android-controller-v0.1.0-beta.1`](https://github.com/chekusu/sofatap/releases/tag/android-controller-v0.1.0-beta.1)（2026-10-21 发布；tag 和源码提交 `2fe1f554caa807797183ad41cafcbe19543911c0`，PR #19 合并）。隐私政策和支持页仍是 `6cb7799` 的原文快照（见下文），里面的日期和版本号属于那份快照。产品有变化时，先核对新的提交再改文案：
 
 - 电脑端下载全部来自 `src/releases.json` 里的同一个 tag（Windows x64、Mac Apple Silicon / Intel、Linux x64 / ARM64），文件大小按 GitHub 报告的字节数。接收端的二维码带有电脑类型和名称，需要 iPhone App 1.0 (15) 或更高版本；下载区只用一句话说明这一点并建议两端都更新到最新版，具体改动留给发行说明。首屏电脑端按钮下的「最新接收端」版本由 `src/releases.json` 生成，不在文案里写死。
 - 文字输入分两种：兼容接收端上受支持的 Windows / Mac 输入框是实时编辑（没有「发送」按钮）；其他输入框（包括许多浏览器和自定义控件，但不是全部浏览器）、Linux 和旧接收端使用草稿 +「发送」。Sofatap 不会额外添加回车或提交，但文字里的换行会被输入，在某些输入框里相当于回车。
 - iPhone App 通过 TestFlight 公开测试（`https://testflight.apple.com/join/e6MuKx9S`；2026-10-17 公开邀请开放，当前说明为 build 20），尚未上架 App Store。常见问题「现在可以日常使用吗？」据此写作公开测试，仍保留 beta 的提醒。
 - 手动控制和基础语音转文字免费。常见问题里只有一条「Sofatap 要收费吗？」，回答只说这一点，不提付费计划、订阅或自主操作（静态检查会拦住）；其他地方不提价格。LG webOS 和 Android/Google TV 是实验性预览，没有通过验证的电视型号。
-- Android TV 接收端是单独的实验性 APK（Android 8.0 / API 26 起，需要 iPhone App 1.0 (20) 或更新版本）：卡片写明尚未通过家用电视和第三方应用验收（小米、索尼配对，YouTube、Netflix 和浏览器里的文字都未验证），电视按键需要启用 Android TV Remote Service，输入文字要在电视上选择 Sofatap 键盘；只链接到它的公开发行版，不承诺一般电视都能用。电脑端二维码要求的 1.0 (15) 不变。
+- Android TV 接收端是单独的实验性 APK（Android 8.0 / API 26 起，需要 iPhone App 1.0 (20) 或更新版本，或 Android App）：卡片写明尚未通过家用电视和第三方应用验收（小米、索尼配对，YouTube、Netflix 和浏览器里的文字都未验证），电视按键需要启用 Android TV Remote Service，输入文字要在电视上选择 Sofatap 键盘；只链接到它的公开发行版，不承诺一般电视都能用。电脑端二维码要求的 iPhone App 1.0 (15) 不变，只对 iPhone 说。
+- Android 手机/平板 App 是另一条发行线（`android-controller-v…`），和 Android TV 接收端无关：Android 8.0 / API 26 起，直接安装 APK，不经 Google Play，更新时手动覆盖安装。卡片在 iPhone 卡片旁，写明 App 界面只有英文、简体中文和日文；听写使用手机上安装的语音服务，语音如何处理由该服务决定，不承诺在本机识别或不上传；真实电脑和电视上的测试仍在进行。iPhone 的本机识别、不上传音频的说法只对 iPhone 说。常见问题区分：Android App 能控制实验性的 Android/Google TV 接收端，LG webOS 仍只有 iPhone App 的预览。首屏标题和页面标题写「手机」而不是 iPhone；隐私和支持页的原文快照不变。
 - 按网站所有者的决定，营销页面和视频里不放「开发中」「开发预览」「模拟」「示意图」之类的标签，静态检查会阻止它们回来。
 - 未实现或尚待验证的方向（如 Windows 锁屏 PIN、Face ID、语音代操电脑）不作为现有功能出现在页面上。
 - 演示视频和网页演示展示的是草稿 +「发送」这一种流程；网页演示的说明写明了这一点。按网站所有者的决定，视频区不放标题或说明文字。视频的旁白和字幕保持原样。
@@ -78,7 +79,7 @@ npm run preview -- --port 0 --base /sofatap/
 
 开放下载前，请先确认链接能打开、是 Sofatap 的正式页面，再切换状态。
 
-## 电脑端和 Android TV 下载
+## 电脑端、Android TV 和 Android 手机下载
 
 `src/releases.json` 列出 Windows、Mac、Linux 各自的发行版 tag 和安装包。链接由构建脚本固定拼成以下几种地址，数据文件本身不能写任意 URL：
 
@@ -94,7 +95,7 @@ npm run preview -- --port 0 --base /sofatap/
 - 安装说明必须是仓库内的 `.md` 路径；
 - 文件大小（字节）用于显示 MB。
 
-`androidTv` 是单独的一项：tag 形如 `android-tv-v0.1.4-beta.1`，文件必须是 `Sofatap-Android-TV-<版本>.apk`。每个安装包和 APK 都记下 GitHub 报告的字节数和 SHA-256。
+`androidTv` 是单独的一项：tag 形如 `android-tv-v0.1.4-beta.1`，文件必须是 `Sofatap-Android-TV-<版本>.apk`。`androidController`（Android 手机/平板 App）也是单独的一项：tag 形如 `android-controller-v0.1.0-beta.1`，文件必须是 `Sofatap-Android-<版本>.apk`；两种 APK 的链接白名单互不通用。每个安装包和 APK 都记下 GitHub 报告的字节数和 SHA-256。
 
 ### 刷新发行版（构建/发布时，不是定时任务）
 
@@ -107,23 +108,24 @@ npm run build:publish -- --out <候选目录> --media <现有媒体目录>   # �
 
 `npm run build`、测试和冻结的候选构建都不联网，只用已提交的 `src/releases.json`。刷新只在有人运行上面的命令时发生，页面本身从不调用 GitHub API，访客也不会碰到 GitHub 的频率限制；`deploy:prepare` 既不刷新也不构建。要上线新版本，先刷新、审核 `src/releases.json` 的变化并提交，再构建和审核候选。
 
-`scripts/refresh-releases.mjs` 读取 `https://api.github.com/repos/chekusu/sofatap/releases` 的全部分页，电脑端（`v…`）和 Android TV（`android-tv-v…`）两条 tag 线各自选择：
+`scripts/refresh-releases.mjs` 读取 `https://api.github.com/repos/chekusu/sofatap/releases` 的全部分页，电脑端（`v…`）、Android TV（`android-tv-v…`）和 Android 手机 App（`android-controller-v…`）三条 tag 线各自选择：
 
 - 忽略草稿，允许 beta；按版本号排序，不看 `/latest`、列表顺序或发布时间；
-- 只有当每个预期文件（电脑端为现有的五个安装包，Android TV 为该版本的 APK）都已上传、链接正是该 tag 和文件的固定 GitHub 下载地址、并且有校验文件写明这个文件名和 64 位十六进制 SHA-256（GitHub 也报告摘要时两者必须一致）时，才算完整。电脑端用 `<文件>.sha256`；Android TV 依次接受 `<APK>.sha256`、`SHA256SUMS.txt`、`SHA256SUMS`（早期版本的命名不同），不要求清单文件。源码压缩包和其他资源一律不用；
+- 只有当每个预期文件（电脑端为现有的五个安装包，两条 Android 线各为该版本的 APK）都已上传、链接正是该 tag 和文件的固定 GitHub 下载地址、并且有校验文件写明这个文件名和 64 位十六进制 SHA-256（GitHub 也报告摘要时两者必须一致）时，才算完整。电脑端用 `<文件>.sha256`；两条 Android 线依次接受 `<APK>.sha256`、`SHA256SUMS.txt`、`SHA256SUMS`（各版本的命名不同），不要求清单文件。源码压缩包和其他资源一律不用；
 - 选最新的完整版本，但绝不早于当前快照（不会悄悄回退）；
-- 网络错误、超时、频率限制或响应格式不对时，两条线都保留现有快照，命令仍正常结束并给出警告；某条线的新版本不完整或格式不对时，只有这条线保留快照，另一条照常更新；
-- 本地快照本身必须有效（五个安装包同一 tag、架构齐全，Android TV 有效），否则在请求前就失败；写入用同目录临时文件再改名，中断不会截断快照。
+- 网络错误、超时、频率限制或响应格式不对时，所有线都保留现有快照，命令仍正常结束并给出警告；某条线的新版本不完整或格式不对时，只有这条线保留快照，其他线照常更新；
+- 本地快照本身必须有效（五个安装包同一 tag、架构齐全，Android TV 和 Android 手机 App 有效），否则在请求前就失败；写入用同目录临时文件再改名，中断不会截断快照。
 
 页面上的版本号、首屏「最新接收端」、静态检查和测试都从这个文件推导，刷新后不需要改别处的版本号。
 
-页面先把五个安装包全部按平台列出（没有脚本时就是这样）。`src/platform.js` 在本机浏览器里判断电脑类型，同时用于首屏按钮和下载区，不存储、不发送、不探测任何东西：
+页面先把五个安装包全部按平台列出（没有脚本时就是这样）。`src/platform.js` 在本机浏览器里判断设备类型，同时用于首屏按钮和下载区，不存储、不发送、不探测任何东西：
 
-- 操作系统来自 User-Agent，有 UA Client Hints 时两者必须一致，否则不判断。iPhone、iPad（包括请求桌面网站时的 iPad）和 Android 不会被当成 Mac 或 Linux；ChromeOS、FreeBSD 等也不判断。
+- 操作系统来自 User-Agent，有 UA Client Hints 时两者必须一致，否则不判断。iPhone、iPad（包括请求桌面网站时的 iPad）和 Android 不会被当成 Mac 或 Linux；ChromeOS、FreeBSD 等也不判断。电视自带的浏览器（Android TV、Google TV、Fire TV、BRAVIA 等，User-Agent 也写 Android）不当作 Android 手机。
+- Android 手机和平板：首屏的 iPhone 入口换成「获取 Android App」（Android 图标和当前 App 版本），它只链接到下载区的 Android 卡片，不会自动下载；Android 卡片排到最前并标为本机。iPhone 和 iPad 保留 TestFlight 入口，iPhone 卡片标为本机。手机上电脑端卡片都留在原处，因为手机 App 需要电脑端接收端；Android TV 卡片从不作为本机。手机不等待架构结果，脚本一运行就排好。
 - 处理器架构只在浏览器的 `getHighEntropyValues(['architecture', 'bitness'])` 在 600 毫秒内给出完整且一致的 platform、architecture 和 64 位 bitness 时采用。User-Agent 里的 `Intel Mac OS X`、`Linux x86_64` 不作为依据（Apple 芯片上的 Safari 和精简后的 UA 也这样写）。Chromium 在 Rosetta 下报告 arm，所以仍会推荐 Apple 芯片版。
 - 知道系统时，这台电脑的卡片排在最前，其他系统收进原生的「其他下载」（`<details>`）。架构明确时只突出对应的安装包，同系统的另一个安装包连同版本、大小、要求、说明和链接放进「其他下载」里的一张副本卡片（没有重复 id）；架构不明时这台电脑的两个安装包并列。Windows 只有 x64 包：报告 ARM 或 32 位的电脑保持原样，不把 x64 包说成匹配。
 - 首屏的电脑端按钮按系统换成「下载 Mac 版」等文字和左侧的系统图标（四格窗、苹果、企鹅，都是为本站画的简单图形，没有引用外部图标），未知系统和手机显示中性的电脑图标；按钮始终只是指向下载区的链接，不会自动下载。下载区要等架构结果，访客在此之前已经在下载区里点按或聚焦时就不再移动内容。
-- 选择器：`.get-desktop__link[data-os]`、`.os-icon[data-os]`、`#download[data-os][data-arch]`、`.platform--current`、`.downloads-other`、`.downloads-other__list`、`li[data-arch]`。
+- 选择器：`#get-app`、`#get-android`（构建时 `hidden`）、`#platform-android`、`.get-desktop__link[data-os]`、`.os-icon[data-os]`、`#download[data-os][data-arch]`、`.platform--current`、`.downloads-other`、`.downloads-other__list`、`li[data-arch]`。
 
 ## 隐私政策和支持页
 
@@ -212,11 +214,11 @@ wrangler deploy
 | `src/i18n/` | 12 种语言的文案 |
 | `src/demo-core.js` | 演示的手势规则和时间轴（页面、视频、测试共用） |
 | `src/video/cues.json` | 演示视频的字幕时间轴 |
-| `src/releases.json` | 电脑端发行包 |
+| `src/releases.json` | 电脑端、Android TV 和 Android 手机 App 的发行包 |
 | `src/legal/`、`src/legal.html` | 隐私政策和支持页的原文、来源记录和页面模板 |
 | `src/styles.css`、`src/main.js` | 样式；语言菜单、模拟演示和点阵（均为渐进增强） |
 | `src/film-player.js` | 视频的简洁播放器：图标按钮和单独的字幕层（渐进增强） |
-| `src/platform.js` | 在本机判断电脑类型，调整首屏电脑端按钮和下载区（渐进增强） |
+| `src/platform.js` | 在本机判断设备类型，调整首屏按钮和下载区（渐进增强） |
 | `src/assets/` | 标志、产品图片和线稿插图 |
 | `scripts/` | 语言清单、构建、配置与发行包校验、字幕、静态检查、预览服务器、发布准备 |
 | `wrangler.jsonc`、`worker/` | 生产发布配置（Cloudflare Workers Static Assets）和为视频提供字节范围的 Worker |

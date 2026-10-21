@@ -57,5 +57,11 @@
     "file": "Sofatap-Android-TV-0.2.0-beta.1.apk",
     "bytes": 6355464,
     "sha256": "597424d0ffb0e6cfe7c97957452a0db538be6aca4169f03bd61e4191c4811f13"
+  },
+  "androidController": {
+    "tag": "android-controller-v0.1.0-beta.1",
+    "file": "Sofatap-Android-0.1.0-beta.1.apk",
+    "bytes": 2468809,
+    "sha256": "de34400718467d2c135ac03aa6648a5fd54ba5dd78159fffd4d8b04e494795eb"
   }
 }

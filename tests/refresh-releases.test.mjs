@@ -38,9 +38,18 @@ function tv(tag, { checksum = 'SHA256SUMS.txt', draft = false, edit } = {}) {
   return release;
 }
 
+function controller(tag, { checksum = 'SHA256SUMS', draft = false, edit } = {}) {
+  const apk = `Sofatap-Android-${tag.slice('android-controller-v'.length)}.apk`;
+  const assets = [asset(tag, apk, 2.5e6, { digest: `sha256:${hex(tag, apk)}` })];
+  if (checksum) assets.push(sums(tag, checksum, [apk]));
+  const release = { tag_name: tag, draft, prerelease: true, published_at: '2026-10-21T00:00:00Z', assets };
+  edit?.(release);
+  return release;
+}
+
 const LABELS = { 'SofaTap-Windows-x64.zip': 'x64', 'SofaTap-macOS-arm64-notarized.zip': 'Apple Silicon', 'SofaTap-macOS-x64-notarized.zip': 'Intel', 'SofaTap-Linux-x64.tar.gz': 'x64', 'SofaTap-Linux-arm64.tar.gz': 'ARM64' };
 const GUIDES = { windows: 'docs/WINDOWS-START.md', mac: 'docs/MAC-START.md', linux: 'desktop/linux/README.md' };
-function snapshot(tag = 'v0.7.3-beta.1', tvTag = 'android-tv-v0.1.4-beta.1') {
+function snapshot(tag = 'v0.7.3-beta.1', tvTag = 'android-tv-v0.1.4-beta.1', controllerTag = 'android-controller-v0.1.0-beta.1') {
   const pkgs = (files) => files.map((file) => ({ label: LABELS[file], file, bytes: 40e6, sha256: hex(tag, file) }));
   return {
     platforms: [
@@ -49,6 +58,7 @@ function snapshot(tag = 'v0.7.3-beta.1', tvTag = 'android-tv-v0.1.4-beta.1') {
       { id: 'linux', tag, guide: GUIDES.linux, packages: pkgs(DESKTOP_FILES.slice(3)) },
     ],
     androidTv: { tag: tvTag, file: `Sofatap-Android-TV-${tvTag.slice('android-tv-v'.length)}.apk`, bytes: 6e6, sha256: hex(tvTag, 'apk') },
+    androidController: { tag: controllerTag, file: `Sofatap-Android-${controllerTag.slice('android-controller-v'.length)}.apk`, bytes: 2.4e6, sha256: hex(controllerTag, 'apk') },
   };
 }
 const fetchText = async (url) => {
@@ -57,6 +67,7 @@ const fetchText = async (url) => {
 };
 const select = (releases, snap = snapshot()) => selectReleases(releases, snap, fetchText);
 const tags = ({ data }) => [data.platforms.map((p) => p.tag).join(), data.androidTv.tag];
+const controllerTag = ({ data }) => data.androidController.tag;
 
 test('newest complete release per stream by version number, not list order or dates; betas count', async () => {
   const list = [
@@ -141,6 +152,35 @@ test('Android TV checksum files of every published form, naming the exact APK', 
   assert.match(failing.report.androidTv.skipped[0], /unreadable: timeout/);
 });
 
+test('the Android phone controller is its own stream: never the TV APK, never a desktop release', async () => {
+  const result = await select([controller('android-controller-v0.2.0-beta.1'), tv('android-tv-v0.9.0'), desktop('v0.8.0')]);
+  assert.equal(controllerTag(result), 'android-controller-v0.2.0-beta.1');
+  assert.equal(result.data.androidController.file, 'Sofatap-Android-0.2.0-beta.1.apk');
+  assert.equal(result.data.androidController.bytes, 2.5e6);
+  assert.equal(result.data.androidTv.tag, 'android-tv-v0.9.0');
+  // A TV-named APK under a controller tag, or a controller-named APK under a TV tag, is incomplete.
+  const tvApkUnderController = controller('android-controller-v0.3.0', { edit: (r) => {
+    r.assets = [asset('android-controller-v0.3.0', 'Sofatap-Android-TV-0.3.0.apk', 6e6), sums('android-controller-v0.3.0', 'SHA256SUMS', ['Sofatap-Android-TV-0.3.0.apk'])];
+  } });
+  const controllerApkUnderTv = tv('android-tv-v0.9.1', { edit: (r) => {
+    r.assets = [asset('android-tv-v0.9.1', 'Sofatap-Android-0.9.1.apk', 2.5e6), sums('android-tv-v0.9.1', 'SHA256SUMS', ['Sofatap-Android-0.9.1.apk'])];
+  } });
+  const mixed = await select([tvApkUnderController, controllerApkUnderTv]);
+  assert.deepEqual(mixed.data, snapshot());
+  assert.match(mixed.report.androidController.skipped[0], /missing or malformed asset Sofatap-Android-0\.3\.0\.apk/);
+  assert.match(mixed.report.androidTv.skipped[0], /missing or malformed asset Sofatap-Android-TV-0\.9\.1\.apk/);
+  // Drafts, older tags, a missing checksum file or a digest mismatch keep the controller snapshot.
+  const kept = await select([
+    controller('android-controller-v0.4.0', { draft: true }),
+    controller('android-controller-v0.0.9'),
+    controller('android-controller-v0.3.1', { checksum: null }),
+    controller('android-controller-v0.3.2', { edit: (r) => { r.assets[0].digest = `sha256:${'0'.repeat(64)}`; } }),
+  ]);
+  assert.equal(controllerTag(kept), 'android-controller-v0.1.0-beta.1');
+  assert.equal(kept.report.androidController.decision, 'kept');
+  assert.equal(kept.report.androidController.skipped.length, 2);
+});
+
 test('one stream can update while the other has nothing complete', async () => {
   const result = await select([desktop('v0.8.0'), tv('android-tv-v0.2.0', { checksum: null })]);
   assert.deepEqual(tags(result), ['v0.8.0,v0.8.0,v0.8.0', 'android-tv-v0.1.4-beta.1']);
@@ -194,6 +234,9 @@ test('an invalid local snapshot is refused before any request or write', async (
     (s) => { s.platforms[1].packages[1].label = 'x64'; },
     (s) => { s.platforms[1].tag = 'v0.7.2-beta.1'; },
     (s) => { delete s.androidTv; },
+    (s) => { delete s.androidController; },
+    (s) => { s.androidController.file = 'Sofatap-Android-TV-0.1.0-beta.1.apk'; },
+    (s) => { s.androidController.tag = 'android-tv-v0.1.0-beta.1'; },
     (s) => { s.platforms[0].packages[0].file = 'SofaTap-Windows-arm64.zip'; },
   ];
   for (const edit of cases) {
