@@ -69,27 +69,27 @@ test('testflight: one HTTPS link per page, in the single entry', async () => {
   assert.deepEqual((await checkSite(out)).problems, []);
 });
 
-// The committed configuration: the real public TestFlight link, in every language.
-test('site.config.json: every language links the Sofatap TestFlight beta once, with install steps', async () => {
-  const url = 'https://testflight.apple.com/join/e6MuKx9S';
+// The committed configuration: the official App Store listing, in every language.
+test('site.config.json: every language links the Sofatap App Store listing once, with no TestFlight steps', async () => {
+  const url = 'https://apps.apple.com/app/sofatap/id6822188472';
   const config = JSON.parse(await readFile(path.join(ROOT, 'site.config.json'), 'utf8'));
-  assert.deepEqual(config, { mobileDownloadKind: 'testflight', mobileDownloadUrl: url });
+  assert.deepEqual(config, { mobileDownloadKind: 'appstore', mobileDownloadUrl: url });
   const out = path.join(tmp, 'committed');
   await build({ config: path.join(ROOT, 'site.config.json'), out });
   for (const l of LOCALES) {
     const page = await readFile(path.join(out, l.dir, 'index.html'), 'utf8');
-    const copy = downloadCopy('testflight', l.lang);
+    const copy = downloadCopy('appstore', l.lang);
     assert.equal(entryOf(page).match(/<a class="get-app__link" href="([^"]+)">/)?.[1], url, l.lang);
     assert.ok(entryOf(page).includes(`<span>${copy.action}</span>`), l.lang);
     assert.equal(page.split(url).length - 1, 1, l.lang);
     assert.match(iphoneCard(page), /data-state="available"/);
     assert.ok(iphoneCard(page).includes(copy.note), l.lang);
-    // Install TestFlight first, then Sofatap; no App Store listing link for Sofatap itself.
-    assert.ok(copy.note.indexOf('TestFlight') < copy.note.lastIndexOf('Sofatap'), l.lang);
-    assert.ok(copy.note.includes(copy.action), `${l.lang}: the note names the button`);
-    assert.doesNotMatch(page, /apps\.apple\.com/);
-    const closed = downloadCopy('unavailable', l.lang);
-    for (const stale of [closed.action, closed.status, closed.note]) assert.ok(!page.includes(stale), `${l.lang} still says: ${stale}`);
+    // The beta invitation is gone from the marketing page.
+    assert.doesNotMatch(page, /testflight\.apple\.com/);
+    for (const kind of ['unavailable', 'testflight']) {
+      const stale = downloadCopy(kind, l.lang);
+      for (const text of [stale.action, stale.status, stale.note]) assert.ok(!page.includes(text), `${l.lang} still says: ${text}`);
+    }
   }
   assert.deepEqual((await checkSite(out)).problems, []);
 });
