@@ -187,6 +187,21 @@ node scripts/check.mjs --media <网站用视频目录>
 
 生产环境是 Cloudflare Workers Static Assets，配置在 `wrangler.jsonc`：Worker 名 `sofatap-website`，自定义域名 `sofatap.app`，不开 workers.dev 和预览地址，HTML 自动处理末尾斜杠，没有单页应用回退。
 
+### 通过 GitHub Actions 发布（默认方式）
+
+发布不依赖任何个人电脑或服务器：`.github/workflows/deploy.yml` 在每次推送到 `main` 时运行，也可以在 Actions 页面手动运行（可勾选 `dry_run`，只做 `wrangler deploy --dry-run`）。它依次：
+
+1. 跑 `npm run verify`；
+2. 用 `scripts/mirror-live-media.mjs` 从线上 sofatap.app 取回 12 个配音视频、12 张封面和两个宣传视频（这些文件不在 git 里），并从线上 WebVTT 字幕读回实测的字幕时间，写成 `timing.json`；
+3. 用这些媒体做含视频的构建和静态检查，确认重新生成的字幕时间与线上一致，把宣传视频放进 `dist/exports/`；
+4. `npm run deploy:prepare`，`wrangler deploy --dry-run`，然后 `wrangler deploy`。
+
+仓库需要两个 Actions secret：`CLOUDFLARE_API_TOKEN`（Cloudflare 的「Edit Cloudflare Workers」模板令牌，限定到本账户和 sofatap.app 这个 zone）和 `CLOUDFLARE_ACCOUNT_ID`。缺任何一个时工作流在第一步就失败，不会上传。任务使用 `production` 环境，可以在仓库设置里给它加上需要批准的审核人。
+
+要换新的视频或宣传片时，线上还没有这些文件，需要先按下面的手动流程发布一次，之后的发布再由工作流从线上取回。
+
+### 手动发布
+
 发布的是已经审核过、含视频的构建，不要为发布重新运行不带 `--media` 的 `npm run build`（那样的构建没有视频区）：
 
 ```sh
@@ -221,6 +236,7 @@ wrangler deploy
 | `src/platform.js` | 在本机判断设备类型，调整首屏按钮和下载区（渐进增强） |
 | `src/assets/` | 标志、产品图片和线稿插图 |
 | `scripts/` | 语言清单、构建、配置与发行包校验、字幕、静态检查、预览服务器、发布准备 |
+| `.github/workflows/deploy.yml`、`scripts/mirror-live-media.mjs` | 从 GitHub Actions 发布：从线上取回媒体、构建并 `wrangler deploy` |
 | `wrangler.jsonc`、`worker/` | 生产发布配置（Cloudflare Workers Static Assets）和为视频提供字节范围的 Worker |
 | `tools/film/` | 演示视频的录制、配音稿、旁白合成与字幕烧录 |
 | `tools/brand/` | 文字标志生成脚本 |
