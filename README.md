@@ -8,7 +8,7 @@ Sofatap 的公开网站：移动优先的静态页面，共 12 种语言。英�
 
 - 电脑端下载全部来自 `src/releases.json` 里的同一个 tag（Windows x64、Mac Apple Silicon / Intel、Linux x64 / ARM64），文件大小按 GitHub 报告的字节数。接收端的二维码带有电脑类型和名称，需要 iPhone App 1.0 (15) 或更高版本；下载区只用一句话说明这一点并建议两端都更新到最新版，具体改动留给发行说明。首屏电脑端按钮下的「最新接收端」版本由 `src/releases.json` 生成，不在文案里写死。
 - 文字输入分两种：兼容接收端上受支持的 Windows / Mac 输入框是实时编辑（没有「发送」按钮）；其他输入框（包括许多浏览器和自定义控件，但不是全部浏览器）、Linux 和旧接收端使用草稿 +「发送」。Sofatap 不会额外添加回车或提交，但文字里的换行会被输入，在某些输入框里相当于回车。
-- iPhone App 通过 TestFlight 公开测试（`https://testflight.apple.com/join/e6MuKx9S`；2026-10-17 公开邀请开放，当前说明为 build 20），尚未上架 App Store。常见问题「现在可以日常使用吗？」据此写作公开测试，仍保留 beta 的提醒。
+- iPhone App 1.0 已在 App Store 上架（`https://apps.apple.com/app/sofatap/id6822188472`；2026-10-31 通过审核后自动发布，build 23）。下载入口和下载区链接到正式的 App Store 页面，不再链接 TestFlight 公测。常见问题「现在可以日常使用吗？」写明 iPhone App 1.0 已正式发布（不在这两处写 App Store 字样，下载入口才是 App Store 链接），Android App 和电脑接收端仍是 beta。
 - 手动控制和基础语音转文字免费。常见问题里只有一条「Sofatap 要收费吗？」，回答只说这一点，不提付费计划、订阅或自主操作（静态检查会拦住）；其他地方不提价格。LG webOS 和 Android/Google TV 是实验性预览，没有通过验证的电视型号。
 - Android TV 接收端是单独的实验性 APK（Android 8.0 / API 26 起，需要 iPhone App 1.0 (20) 或更新版本，或 Android App）：卡片写明尚未通过家用电视和第三方应用验收（小米、索尼配对，YouTube、Netflix 和浏览器里的文字都未验证），电视按键需要启用 Android TV Remote Service，输入文字要在电视上选择 Sofatap 键盘；只链接到它的公开发行版，不承诺一般电视都能用。电脑端二维码要求的 iPhone App 1.0 (15) 不变，只对 iPhone 说。
 - Android 手机/平板 App 是另一条发行线（`android-controller-v…`），和 Android TV 接收端无关：Android 8.0 / API 26 起，直接安装 APK，不经 Google Play，更新时手动覆盖安装。卡片在 iPhone 卡片旁，写明 App 界面只有英文、简体中文和日文；听写使用手机上安装的语音服务，语音如何处理由该服务决定，不承诺在本机识别或不上传；真实电脑和电视上的测试仍在进行。iPhone 的本机识别、不上传音频的说法只对 iPhone 说。常见问题区分：Android App 能控制实验性的 Android/Google TV 接收端，LG webOS 仍只有 iPhone App 的预览。首屏标题和页面标题写「手机」而不是 iPhone；隐私和支持页的原文快照不变。
@@ -54,8 +54,8 @@ npm run preview -- --port 0 --base /sofatap/
 
 ```json
 {
-  "mobileDownloadKind": "testflight",
-  "mobileDownloadUrl": "https://testflight.apple.com/join/e6MuKx9S"
+  "mobileDownloadKind": "appstore",
+  "mobileDownloadUrl": "https://apps.apple.com/app/sofatap/id6822188472"
 }
 ```
 
