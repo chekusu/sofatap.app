@@ -25,3 +25,32 @@ jobs:
         run: npm run verify
       - name: Build
         run: npm run build
+
+  # Production deploys happen only here: after CI passes on main, on the sandbank-tyo
+  # runner reserved for public repositories. It builds the release with the reviewed
+  # media kept on the server in /srv/site-media/sofatap.app (media/ for the narrated
+  # videos and timing.json, exports/ for the two promo videos; to change them, replace
+  # the files there, then push), and deploys with the Cloudflare token from the key store
+  # (deploy.sofatap.app). Pull requests and other branches never reach this runner.
+  deploy:
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, tyo-deploy-public]
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build the release with the server media
+        run: |
+          node scripts/build.mjs --out "$RUNNER_TEMP/dist" --media /srv/site-media/sofatap.app/media
+          mkdir -p "$RUNNER_TEMP/dist/exports"
+          cp /srv/site-media/sofatap.app/exports/sofatap-promo-en.mp4 /srv/site-media/sofatap.app/exports/sofatap-promo-zh-cn.mp4 "$RUNNER_TEMP/dist/exports/"
+          node scripts/prepare-deploy.mjs --dist "$RUNNER_TEMP/dist"
+      - name: Load deploy keys
+        run: vas-ci-env deploy.sofatap.app
+      - name: Deploy to Cloudflare Workers
+        run: npx --yes wrangler@4.92.0 deploy --message "sofatap.app ${GITHUB_SHA::7}"

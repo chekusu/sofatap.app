@@ -187,35 +187,7 @@ node scripts/check.mjs --media <网站用视频目录>
 
 生产环境是 Cloudflare Workers Static Assets，配置在 `wrangler.jsonc`：Worker 名 `sofatap-website`，自定义域名 `sofatap.app`，不开 workers.dev 和预览地址，HTML 自动处理末尾斜杠，没有单页应用回退。
 
-### 通过 GitHub Actions 发布（默认方式）
-
-发布不依赖任何个人电脑或服务器：`.github/workflows/deploy.yml` 在每次推送到 `main` 时运行，也可以在 Actions 页面手动运行（可勾选 `dry_run`，只做 `wrangler deploy --dry-run`）。它依次：
-
-1. 跑 `npm run verify`；
-2. 用 `scripts/mirror-live-media.mjs` 从线上 sofatap.app 取回 12 个配音视频、12 张封面和两个宣传视频（这些文件不在 git 里），并从线上 WebVTT 字幕读回实测的字幕时间，写成 `timing.json`；
-3. 用这些媒体做含视频的构建和静态检查，确认重新生成的字幕时间与线上一致，把宣传视频放进 `dist/exports/`；
-4. `npm run deploy:prepare`，`wrangler deploy --dry-run`，然后 `wrangler deploy`。
-
-仓库需要两个 Actions secret：`CLOUDFLARE_API_TOKEN`（Cloudflare 的「Edit Cloudflare Workers」模板令牌，限定到本账户和 sofatap.app 这个 zone）和 `CLOUDFLARE_ACCOUNT_ID`。缺任何一个时工作流在第一步就失败，不会上传。任务使用 `production` 环境，可以在仓库设置里给它加上需要批准的审核人。
-
-要换新的视频或宣传片时，线上还没有这些文件，需要先按下面的手动流程发布一次，之后的发布再由工作流从线上取回。
-
-### 手动发布
-
-发布的是已经审核过、含视频的构建，不要为发布重新运行不带 `--media` 的 `npm run build`（那样的构建没有视频区）：
-
-```sh
-# 1. 含媒体的构建（已审核的 dist/ 就是这样得到的）
-node scripts/build.mjs --out dist --media <网站用视频目录>
-#    并把两个分享用的宣传视频放进 dist/exports/（sofatap-promo-en.mp4、sofatap-promo-zh-cn.mp4）
-
-# 2. 检查并原样复制到 .wrangler/production-assets/（已在 .gitignore 中）
-npm run deploy:prepare            # 或 node scripts/prepare-deploy.mjs --dist <构建目录>
-
-# 3. 发布（需要有权限的 Cloudflare 登录）
-wrangler deploy --dry-run         # 只检查配置和文件，不上传
-wrangler deploy
-```
+发布是自动的：推到 `main` 后，CI 先在 GitHub 托管机器上跑测试和构建，通过后由 `.github/workflows/ci.yml` 里的 deploy 任务在 sandbank-tyo 上专给公开仓库用的部署 runner 上发布。它用服务器上 `/srv/site-media/sofatap.app` 里已审核的媒体（`media/` 是配音视频、封面和 timing.json，`exports/` 是两个宣传视频）构建，再跑 `deploy:prepare`，最后用服务器 key store 里的 Cloudflare token（`deploy.sofatap.app`）发布。不要手动发布；要换视频，先替换服务器上那个目录里的文件，再推送。
 
 `deploy:prepare` 不会构建：12 种语言的视频、封面和 18 条字幕的 WebVTT、两个宣传视频缺一不可，否则直接失败。它不复制构建记录 `.sofatap-build`，逐字节核对复制结果，并只加一份 `_headers`：`/exports/` 下的两个宣传视频以附件方式下载；网站 `/media/` 里的视频照常在页面内播放。MIME 和缓存使用平台默认。
 
@@ -236,7 +208,6 @@ wrangler deploy
 | `src/platform.js` | 在本机判断设备类型，调整首屏按钮和下载区（渐进增强） |
 | `src/assets/` | 标志、产品图片和线稿插图 |
 | `scripts/` | 语言清单、构建、配置与发行包校验、字幕、静态检查、预览服务器、发布准备 |
-| `.github/workflows/deploy.yml`、`scripts/mirror-live-media.mjs` | 从 GitHub Actions 发布：从线上取回媒体、构建并 `wrangler deploy` |
 | `wrangler.jsonc`、`worker/` | 生产发布配置（Cloudflare Workers Static Assets）和为视频提供字节范围的 Worker |
 | `tools/film/` | 演示视频的录制、配音稿、旁白合成与字幕烧录 |
 | `tools/brand/` | 文字标志生成脚本 |
