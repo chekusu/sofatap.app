@@ -187,20 +187,7 @@ node scripts/check.mjs --media <网站用视频目录>
 
 生产环境是 Cloudflare Workers Static Assets，配置在 `wrangler.jsonc`：Worker 名 `sofatap-website`，自定义域名 `sofatap.app`，不开 workers.dev 和预览地址，HTML 自动处理末尾斜杠，没有单页应用回退。
 
-发布的是已经审核过、含视频的构建，不要为发布重新运行不带 `--media` 的 `npm run build`（那样的构建没有视频区）：
-
-```sh
-# 1. 含媒体的构建（已审核的 dist/ 就是这样得到的）
-node scripts/build.mjs --out dist --media <网站用视频目录>
-#    并把两个分享用的宣传视频放进 dist/exports/（sofatap-promo-en.mp4、sofatap-promo-zh-cn.mp4）
-
-# 2. 检查并原样复制到 .wrangler/production-assets/（已在 .gitignore 中）
-npm run deploy:prepare            # 或 node scripts/prepare-deploy.mjs --dist <构建目录>
-
-# 3. 发布（需要有权限的 Cloudflare 登录）
-wrangler deploy --dry-run         # 只检查配置和文件，不上传
-wrangler deploy
-```
+发布是自动的：推到 `main` 后，CI 先在 GitHub 托管机器上跑测试和构建，通过后由 `.github/workflows/ci.yml` 里的 deploy 任务在 sandbank-tyo 上专给公开仓库用的部署 runner 上发布。它用服务器上 `/srv/site-media/sofatap.app` 里已审核的媒体（`media/` 是配音视频、封面和 timing.json，`exports/` 是两个宣传视频）构建，再跑 `deploy:prepare`，最后用服务器 key store 里的 Cloudflare token（`deploy.sofatap.app`）发布。不要手动发布；要换视频，先替换服务器上那个目录里的文件，再推送。
 
 `deploy:prepare` 不会构建：12 种语言的视频、封面和 18 条字幕的 WebVTT、两个宣传视频缺一不可，否则直接失败。它不复制构建记录 `.sofatap-build`，逐字节核对复制结果，并只加一份 `_headers`：`/exports/` 下的两个宣传视频以附件方式下载；网站 `/media/` 里的视频照常在页面内播放。MIME 和缓存使用平台默认。
 
