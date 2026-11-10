@@ -24,6 +24,9 @@ const reEscape = (v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'sofatap-test-'));
 after(() => rm(tmp, { recursive: true, force: true }));
 
+// The JSON-LD block names the App Store listing as data; links are counted in the page itself.
+const withoutJsonLd = (html) => html.replace(/<script type="application\/ld\+json">.*?<\/script>/s, '');
+
 async function buildWith(name, config) {
   const configPath = path.join(tmp, `${name}.json`);
   await writeFile(configPath, JSON.stringify(config));
@@ -59,7 +62,7 @@ test('testflight: one HTTPS link per page, in the single entry', async () => {
   const { out, html, zh } = await buildWith('testflight', { mobileDownloadKind: 'testflight', mobileDownloadUrl: url });
   for (const page of [html, zh]) {
     assert.match(entryOf(page), new RegExp(`<a class="get-app__link" href="${url}">`));
-    assert.equal(page.split(url).length - 1, 1);
+    assert.equal(withoutJsonLd(page).split(url).length - 1, 1);
     assert.doesNotMatch(page, /not open yet|尚未开放/);
   }
   assert.match(entryOf(html), /Join the TestFlight Beta/);
@@ -81,7 +84,7 @@ test('site.config.json: every language links the Sofatap App Store listing once,
     const copy = downloadCopy('appstore', l.lang);
     assert.equal(entryOf(page).match(/<a class="get-app__link" href="([^"]+)">/)?.[1], url, l.lang);
     assert.ok(entryOf(page).includes(`<span>${copy.action}</span>`), l.lang);
-    assert.equal(page.split(url).length - 1, 1, l.lang);
+    assert.equal(withoutJsonLd(page).split(url).length - 1, 1, l.lang);
     assert.match(iphoneCard(page), /data-state="available"/);
     assert.ok(iphoneCard(page).includes(copy.note), l.lang);
     // The beta invitation is gone from the marketing page.
@@ -100,7 +103,7 @@ test('appstore: link with text, no badge image', async () => {
   assert.match(entryOf(html), /View on the App Store/);
   assert.match(entryOf(zh), /前往 App Store/);
   for (const page of [html, zh]) {
-    assert.equal(page.split(url).length - 1, 1);
+    assert.equal(withoutJsonLd(page).split(url).length - 1, 1);
     assert.doesNotMatch(page, /badge[^"]*\.(png|svg|webp)/);
   }
   assert.deepEqual((await checkSite(out)).problems, []);
@@ -218,7 +221,10 @@ test('sitemap.xml lists every page once with full URLs; robots.txt allows crawli
   assert.ok(sitemap.includes(`<xhtml:link rel="alternate" hreflang="x-default" href="${pageUrl('en')}"/>`));
   const robots = await readFile(path.join(out, 'robots.txt'), 'utf8');
   assert.equal(robots, ROBOTS);
-  assert.equal(robots, 'User-agent: *\nAllow: /\n\nSitemap: https://sofatap.app/sitemap.xml\n');
+  assert.ok(robots.startsWith('User-agent: *\nAllow: /\n'));
+  assert.doesNotMatch(robots, /^Disallow:/m);
+  for (const ua of ['GPTBot', 'OAI-SearchBot', 'ClaudeBot', 'PerplexityBot', 'Bingbot']) assert.match(robots, new RegExp(`^User-agent: ${ua}$`, 'm'));
+  assert.ok(robots.endsWith('Sitemap: https://sofatap.app/sitemap.xml\n'));
 });
 
 test('privacy and support pages carry their own canonical and full-URL alternates', async () => {
@@ -448,4 +454,26 @@ test('refuses a media directory inside (or containing) the output, without delet
   const fresh = path.join(tmp, 'broken-out');
   await assert.rejects(build({ config: configPath, out: fresh, media: broken }), /格式不正确/);
   assert.equal(existsSync(fresh), false);
+});
+
+test('every home page carries JSON-LD for the app and its own FAQ; llms.txt and the IndexNow key are built', async () => {
+  const { out } = await buildWith('discovery', { mobileDownloadKind: 'appstore', mobileDownloadUrl: 'https://apps.apple.com/app/sofatap/id6822188472' });
+  for (const l of LOCALES) {
+    const page = await readFile(path.join(out, l.dir, 'index.html'), 'utf8');
+    const m = page.match(/<script type="application\/ld\+json">(.*?)<\/script>/s);
+    assert.ok(m, `${l.lang}: JSON-LD`);
+    const graph = JSON.parse(m[1])['@graph'];
+    const app = graph.find((n) => n['@type'] === 'SoftwareApplication');
+    assert.equal(app.downloadUrl, 'https://apps.apple.com/app/sofatap/id6822188472');
+    const faq = graph.find((n) => n['@type'] === 'FAQPage');
+    assert.equal(faq.inLanguage, l.lang);
+    assert.equal(faq.mainEntity.length, 7);
+    for (const q of faq.mainEntity) assert.ok(q.name && q.acceptedAnswer.text && !/[<>]/.test(q.acceptedAnswer.text), `${l.lang}: plain FAQ text`);
+  }
+  const llms = await readFile(path.join(out, 'llms.txt'), 'utf8');
+  assert.ok(llms.startsWith('# Sofatap\n\n> '));
+  assert.ok(llms.includes('https://apps.apple.com/app/sofatap/id6822188472'));
+  assert.doesNotMatch(llms, /<[a-z]/i);
+  const { INDEXNOW_FILE, INDEXNOW_KEY } = await import('../scripts/discovery.mjs');
+  assert.equal(await readFile(path.join(out, INDEXNOW_FILE), 'utf8'), INDEXNOW_KEY);
 });

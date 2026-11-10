@@ -462,7 +462,7 @@ export async function checkSite(dir) {
   }
 
   // Private paths, credentials and process wording never ship in any file.
-  const files = ['styles.css', 'main.js', 'demo-core.js', 'film-player.js', 'platform.js', 'sitemap.xml', 'robots.txt', ...[...PAGES, ...LEGAL_PAGES].map((p) => path.join(p.dir, 'index.html'))];
+  const files = ['styles.css', 'main.js', 'demo-core.js', 'film-player.js', 'platform.js', 'sitemap.xml', 'robots.txt', 'llms.txt', ...[...PAGES, ...LEGAL_PAGES].map((p) => path.join(p.dir, 'index.html'))];
   if (existsSync(path.join(dir, 'media'))) {
     for (const name of await readdir(path.join(dir, 'media'))) if (name.endsWith('.vtt')) files.push(path.join('media', name));
   }
