@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LEGAL_KINDS, LEGAL_PAGES, PAGES, build, loadLegalDocuments } from './build.mjs';
-import { LOCALES } from './locales.mjs';
+import { LOCALES, SITE_URL } from './locales.mjs';
 import { REPO_URL, compareTags, displayVersion, isRepoLink, validateAndroidController, validateAndroidTv, validateReleases } from './releases.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -125,9 +125,12 @@ function checkLanguageMenu(html, page, fail) {
     fail('语言菜单必须标出当前语言');
   }
   for (const l of LOCALES) {
-    if (!html.includes(`<link rel="alternate" hreflang="${l.lang}" href="${page.links[l.lang]}">`)) fail(`缺少 hreflang 备用链接：${l.lang}`);
+    if (!html.includes(`<link rel="alternate" hreflang="${l.lang}" href="${page.urls[l.lang]}">`)) fail(`缺少 hreflang 备用链接：${l.lang}`);
   }
-  if (!html.includes(`<link rel="alternate" hreflang="x-default" href="${page.links.en}">`)) fail('缺少 x-default 备用链接');
+  if (!html.includes(`<link rel="alternate" hreflang="x-default" href="${page.urls.en}">`)) fail('缺少 x-default 备用链接');
+  // Search engines need full URLs here, and exactly one canonical: this page's own address.
+  const canonicals = [...html.matchAll(/<link rel="canonical" href="([^"]*)">/g)].map((m) => m[1]);
+  if (canonicals.length !== 1 || canonicals[0] !== page.urls[page.lang]) fail('canonical 必须恰好一个，并指向本页的完整地址');
   const rtl = LOCALES.find((l) => l.lang === lang)?.rtl;
   if (!html.includes(`<html lang="${lang}" dir="${rtl ? 'rtl' : 'ltr'}"`)) fail('<html> 的 dir 不正确');
 
@@ -443,8 +446,23 @@ export async function checkSite(dir) {
     for (const [lang, sh] of shapes.slice(1)) if (sh !== shapes[0][1]) problems.push(`[${kind} ${lang}] 页面结构与 ${shapes[0][0]} 不一致`);
   }
 
+  // Search engines: the sitemap names every page by its full address, and robots.txt names the sitemap.
+  const sitemapFile = path.join(dir, 'sitemap.xml');
+  if (!existsSync(sitemapFile)) problems.push('缺少 sitemap.xml');
+  else {
+    const locs = [...(await readFile(sitemapFile, 'utf8')).matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+    const want = [...PAGES, ...LEGAL_PAGES].map((p) => p.urls[p.lang]);
+    if (locs.join('\n') !== want.join('\n')) problems.push('sitemap.xml 必须恰好列出全部页面的完整地址');
+  }
+  const robotsFile = path.join(dir, 'robots.txt');
+  if (!existsSync(robotsFile)) problems.push('缺少 robots.txt');
+  else {
+    const robots = await readFile(robotsFile, 'utf8');
+    if (/^Disallow:\s*\S/m.test(robots) || !robots.includes(`Sitemap: ${SITE_URL}sitemap.xml`)) problems.push('robots.txt 不应禁止抓取，并且要写明 sitemap 的地址');
+  }
+
   // Private paths, credentials and process wording never ship in any file.
-  const files = ['styles.css', 'main.js', 'demo-core.js', 'film-player.js', 'platform.js', ...[...PAGES, ...LEGAL_PAGES].map((p) => path.join(p.dir, 'index.html'))];
+  const files = ['styles.css', 'main.js', 'demo-core.js', 'film-player.js', 'platform.js', 'sitemap.xml', 'robots.txt', ...[...PAGES, ...LEGAL_PAGES].map((p) => path.join(p.dir, 'index.html'))];
   if (existsSync(path.join(dir, 'media'))) {
     for (const name of await readdir(path.join(dir, 'media'))) if (name.endsWith('.vtt')) files.push(path.join('media', name));
   }

@@ -38,5 +38,15 @@ export function hrefBetween(from, to) {
   return b.dir ? `${up}${b.dir}/` : (up || './');
 }
 
+// The public address of the site. Canonical links, hreflang alternates, the sitemap and the
+// link-preview tags need full URLs; everything else on the pages stays relative.
+export const SITE_URL = 'https://sofatap.app/';
+
+/** Full public URL of a language's home page, or of its `kind` page (privacy, support). */
+export function pageUrl(lang, kind = '') {
+  const { dir } = locale(lang);
+  return `${SITE_URL}${dir ? `${dir}/` : ''}${kind ? `${kind}/` : ''}`;
+}
+
 /** Lowercase file-name tag for per-language media (en, zh-cn, pt-br …). */
 export const mediaTag = (lang) => lang.toLowerCase();
