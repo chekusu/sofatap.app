@@ -45,7 +45,7 @@ npm run preview -- --port 0 --base /sofatap/
 - 模板中的 `{{t:键}}` 原样插入文案，`{{a:键}}` 用于属性，会去掉标签并转义。
 - 所有文件的键必须完全一致，否则构建失败。文案不能为空（中文昵称相关的两个键除外），也不能包含脚本。测试会检查新增语言没有残留英文、占位符和链接没有丢失。
 - iPhone 下载入口的三种状态文案在 `scripts/download-config.mjs`，同样覆盖 12 种语言。
-- 页头的语言菜单是一组普通链接（`<details>`，不需要脚本），每个链接带 `hreflang` 和 `lang`，当前语言用 `aria-current` 标出；`<head>` 里有本页的 `canonical`、全部语言和 `x-default` 的备用链接，都是完整地址（搜索引擎不接受相对地址；站点地址是 `scripts/locales.mjs` 里的 `SITE_URL`）。首页另有链接预览用的 `og:` 标签，图片是该语言的视频封面，所以只有带 `--media` 的构建才有。构建还会生成 `sitemap.xml`（全部 36 个页面）和 `robots.txt`（允许抓取，写明 sitemap 地址）。阿拉伯语页面为 `dir="rtl"`，样式使用逻辑属性；版本号、文件大小等技术信息单独按从左到右显示。
+- 页头的语言菜单是一组普通链接（`<details>`，不需要脚本），每个链接带 `hreflang` 和 `lang`，当前语言用 `aria-current` 标出；`<head>` 里有本页的 `canonical`、全部语言和 `x-default` 的备用链接，都是完整地址（搜索引擎不接受相对地址；站点地址是 `scripts/locales.mjs` 里的 `SITE_URL`）。首页另有链接预览用的 `og:` 标签，图片是该语言的视频封面，所以只有带 `--media` 的构建才有。构建还会生成 `sitemap.xml`（全部 36 个页面）和 `robots.txt`（允许所有抓取，并点名常见搜索引擎和 AI 助手的爬虫，写明 sitemap 地址）。给搜索引擎和 AI 助手的机读信息在 `scripts/discovery.mjs`：每种语言首页的 JSON-LD（组织、网站、App 和本页 FAQ，只写页面上已有的事实）、英文的 `/llms.txt`（从英文文案和 releases.json 生成），以及 IndexNow 的公开密钥文件；部署后 `scripts/indexnow.mjs` 把 sitemap 里的地址提交给 IndexNow（Bing 等），失败不影响部署。阿拉伯语页面为 `dir="rtl"`，样式使用逻辑属性；版本号、文件大小等技术信息单独按从左到右显示。
 - 静态检查（`scripts/check.mjs`）对每种语言都检查必须出现的事实（如 300 毫秒、右键、当前发行版版本号、1.0 (15)、「其他输入框、Linux 和旧版接收端」、换行）和不允许的说法（如 alpha、0.7.1 以及任何不是当前发行版的版本号、「所有浏览器」、价格；价格只允许出现在常见问题里关于费用的那一条）。
 
 ## iPhone 下载入口

@@ -15,6 +15,9 @@ import { REPO_URL, ReleaseDataError, compareTags, displayVersion, validateAndroi
 import { renderMarkdown, resolveRepoPath } from './markdown.mjs';
 import { loadCues, toVtt } from './captions.mjs';
 import { renderDemoTiles } from './demo-art.mjs';
+import { INDEXNOW_FILE, INDEXNOW_KEY, ROBOTS, renderLlmsTxt, renderStructuredData } from './discovery.mjs';
+
+export { ROBOTS };
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'src');
@@ -176,8 +179,6 @@ export function renderSitemap() {
   ].join('\n');
 }
 
-/** robots.txt: everything may be crawled, and the sitemap is named. */
-export const ROBOTS = `User-agent: *\nAllow: /\n\nSitemap: ${SITE_URL}sitemap.xml\n`;
 
 /** The language menu: real links with native names, the current page marked. */
 export function renderLangLinks(page) {
@@ -543,6 +544,7 @@ export async function build({ config: configPath, out, media = null }) {
       ROOT: page.root,
       ALTERNATES: renderAlternates(page),
       SOCIAL: renderSocial(page, strings, Boolean(mediaSizes)),
+      STRUCTURED_DATA: renderStructuredData(page, strings, download),
       LANG_SHORT: locale(page.lang).short,
       LANG_LINKS: renderLangLinks(page),
       DEMO_TILES: renderDemoTiles(strings),
@@ -609,6 +611,8 @@ export async function build({ config: configPath, out, media = null }) {
     ...pages.map((p) => writeFile(path.join(out, p.file), p.html)),
     writeFile(path.join(out, 'sitemap.xml'), renderSitemap()),
     writeFile(path.join(out, 'robots.txt'), ROBOTS),
+    writeFile(path.join(out, 'llms.txt'), renderLlmsTxt(tables.en, { download, platforms, androidTv, androidController })),
+    writeFile(path.join(out, INDEXNOW_FILE), INDEXNOW_KEY),
     writeFile(path.join(out, 'styles.css'), styles),
     writeFile(path.join(out, 'main.js'), script),
     writeFile(path.join(out, 'demo-core.js'), core),

@@ -9,6 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LEGAL_PAGES, PAGES, mediaPosterFor, mediaVideoFor, mediaVttFor } from './build.mjs';
 import { loadCues } from './captions.mjs';
+import { INDEXNOW_FILE } from './discovery.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const DEPLOY_DIR = path.join(ROOT, '.wrangler', 'production-assets');
@@ -36,7 +37,7 @@ const sha256 = async (file) => createHash('sha256').update(await readFile(file))
 /** Every public file of a release build: the pages, scripts and styles, source assets, media and exports. */
 export async function publicFiles() {
   const list = [...PAGES, ...LEGAL_PAGES].map((p) => `${p.dir ? `${p.dir}/` : ''}index.html`);
-  list.push('demo-core.js', 'film-player.js', 'platform.js', 'main.js', 'styles.css', 'sitemap.xml', 'robots.txt');
+  list.push('demo-core.js', 'film-player.js', 'platform.js', 'main.js', 'styles.css', 'sitemap.xml', 'robots.txt', 'llms.txt', INDEXNOW_FILE);
   for (const name of await listFiles(path.join(ROOT, 'src', 'assets'))) list.push(`assets/${name}`);
   for (const p of PAGES) list.push(`media/${mediaVideoFor(p.lang)}`, `media/${mediaPosterFor(p.lang)}`, `media/${mediaVttFor(p.lang)}`);
   for (const name of EXPORTS) list.push(`exports/${name}`);

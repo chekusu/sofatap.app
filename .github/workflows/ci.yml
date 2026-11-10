@@ -54,3 +54,8 @@ jobs:
         run: vas-ci-env deploy.sofatap.app
       - name: Deploy to Cloudflare Workers
         run: npx --yes wrangler@4.92.0 deploy --message "sofatap.app ${GITHUB_SHA::7}"
+      # Ask Bing and the other IndexNow engines to recrawl the pages that were just deployed.
+      # Best effort: a failure here never marks the deploy as failed.
+      - name: Notify IndexNow
+        continue-on-error: true
+        run: node scripts/indexnow.mjs --dist "$RUNNER_TEMP/dist"
