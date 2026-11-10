@@ -5,12 +5,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { MEDIA_TIMING, build, latestTag, mediaPosterFor, mediaVideoFor, renderPage, resolveSafeOutDir, validateStrings } from '../scripts/build.mjs';
+import { LEGAL_PAGES, MEDIA_TIMING, ROBOTS, build, latestTag, mediaPosterFor, mediaVideoFor, renderPage, resolveSafeOutDir, validateStrings } from '../scripts/build.mjs';
 import { displayVersion, validateAndroidController, validateAndroidTv, validateReleases } from '../scripts/releases.mjs';
 import { ART, checkSite } from '../scripts/check.mjs';
 import { publicFiles } from '../scripts/prepare-deploy.mjs';
 import { downloadCopy } from '../scripts/download-config.mjs';
-import { LANGS, LOCALES, hrefBetween } from '../scripts/locales.mjs';
+import { LANGS, LOCALES, SITE_URL, hrefBetween, pageUrl } from '../scripts/locales.mjs';
 import { loadCues } from '../scripts/captions.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -184,8 +184,12 @@ test('language pages: twelve locales, English default, Chinese still in zh/, eac
     for (const other of LOCALES) {
       const href = hrefBetween(l.lang, other.lang);
       assert.ok(page.includes(`<a href="${href}" hreflang="${other.lang}" lang="${other.lang}"`), `${l.lang} → ${other.lang}`);
-      assert.ok(page.includes(`<link rel="alternate" hreflang="${other.lang}" href="${href}">`), `${l.lang} alternate ${other.lang}`);
+      assert.ok(page.includes(`<link rel="alternate" hreflang="${other.lang}" href="${pageUrl(other.lang)}">`), `${l.lang} alternate ${other.lang}`);
     }
+    assert.ok(page.includes(`<link rel="canonical" href="${pageUrl(l.lang)}">`), `${l.lang} canonical`);
+    assert.ok(page.includes(`<meta property="og:url" content="${pageUrl(l.lang)}">`), `${l.lang} og:url`);
+    assert.match(page, /<meta property="og:title" content="[^"]+">/, l.lang);
+    assert.doesNotMatch(page, /og:image/, `${l.lang}: no poster without --media`);
     assert.equal(page.split('aria-current="page"').length - 1, 1, l.lang);
     assert.ok(page.includes(`<span class="lang-menu__name">${l.short}</span>`), l.lang);
   }
@@ -193,6 +197,39 @@ test('language pages: twelve locales, English default, Chinese still in zh/, eac
   assert.equal(hrefBetween('pt-BR', 'en'), '../');
   assert.equal(hrefBetween('ar', 'ja'), '../ja/');
   assert.equal(hrefBetween('fr', 'fr'), './');
+  assert.equal(pageUrl('en'), 'https://sofatap.app/');
+  assert.equal(pageUrl('zh-CN'), 'https://sofatap.app/zh/');
+  assert.equal(pageUrl('pt-BR', 'privacy'), 'https://sofatap.app/pt-br/privacy/');
+});
+
+test('sitemap.xml lists every page once with full URLs; robots.txt allows crawling and names it', async () => {
+  const { out } = await buildWith('sitemap', { mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' });
+  const sitemap = await readFile(path.join(out, 'sitemap.xml'), 'utf8');
+  const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  const expected = [...LOCALES.map((l) => pageUrl(l.lang)), ...LEGAL_PAGES.map((p) => pageUrl(p.lang, p.kind))];
+  assert.deepEqual(locs, expected);
+  assert.equal(new Set(locs).size, LOCALES.length * 3);
+  for (const loc of locs) {
+    const file = path.join(out, new URL(loc).pathname, 'index.html');
+    assert.ok(existsSync(file), `${loc} is a built page`);
+  }
+  // Each home page names all its language versions, itself included.
+  assert.equal(sitemap.split('<xhtml:link rel="alternate"').length - 1, LOCALES.length * (LOCALES.length + 1));
+  assert.ok(sitemap.includes(`<xhtml:link rel="alternate" hreflang="x-default" href="${pageUrl('en')}"/>`));
+  const robots = await readFile(path.join(out, 'robots.txt'), 'utf8');
+  assert.equal(robots, ROBOTS);
+  assert.equal(robots, 'User-agent: *\nAllow: /\n\nSitemap: https://sofatap.app/sitemap.xml\n');
+});
+
+test('privacy and support pages carry their own canonical and full-URL alternates', async () => {
+  const { out } = await buildWith('legal-links', { mobileDownloadKind: 'unavailable', mobileDownloadUrl: '' });
+  for (const p of LEGAL_PAGES) {
+    const page = await readFile(path.join(out, p.dir, 'index.html'), 'utf8');
+    assert.ok(page.includes(`<link rel="canonical" href="${pageUrl(p.lang, p.kind)}">`), `${p.lang} ${p.kind}`);
+    for (const other of LOCALES) {
+      assert.ok(page.includes(`<link rel="alternate" hreflang="${other.lang}" href="${pageUrl(other.lang, p.kind)}">`), `${p.lang} ${p.kind} → ${other.lang}`);
+    }
+  }
 });
 
 test('every locale gets its own iPhone status in all three download states', async () => {
@@ -303,6 +340,8 @@ test('with --media: each page plays its own narrated video with its own captions
     assert.deepEqual(tracks.map((t) => [t[1], t[0].includes(' default')]), [[l.lang, true]], l.lang);
     assert.ok(page.includes(`<source src="${l.dir ? '../' : ''}media/${mediaVideoFor(l.lang)}" type="video/mp4">`), l.lang);
     assert.ok(page.includes(`poster="${l.dir ? '../' : ''}media/${mediaPosterFor(l.lang)}"`), l.lang);
+    assert.ok(page.includes(`<meta property="og:image" content="${SITE_URL}media/${mediaPosterFor(l.lang)}">`), `${l.lang} og:image`);
+    assert.ok(page.includes('<meta name="twitter:card" content="summary_large_image">'), l.lang);
     assert.match(page, /controlslist="nodownload"/);
     assert.doesNotMatch(page, /<a\b[^>]*href="(?:\.\.\/)?media\/|\sdownload[\s>]/, l.lang);
     // The film has no visible heading or explanation: a localized name, the native player as the

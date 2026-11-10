@@ -10,7 +10,7 @@ import { cp, lstat, mkdir, readdir, readFile, realpath, rm, writeFile } from 'no
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DownloadConfigError, downloadCopy, validateDownloadConfig } from './download-config.mjs';
-import { LANGS, LOCALES, hrefBetween, locale, mediaTag } from './locales.mjs';
+import { LANGS, LOCALES, SITE_URL, hrefBetween, locale, mediaTag, pageUrl } from './locales.mjs';
 import { REPO_URL, ReleaseDataError, compareTags, displayVersion, validateAndroidController, validateAndroidTv, validateReleases } from './releases.mjs';
 import { renderMarkdown, resolveRepoPath } from './markdown.mjs';
 import { loadCues, toVtt } from './captions.mjs';
@@ -46,7 +46,8 @@ const DOWNLOAD = '<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
 
 /**
  * The pages that are built, one per language: English at the root, the others in their
- * directories. `links` maps every language (including this one) to its relative URL.
+ * directories. `links` maps every language (including this one) to its relative URL,
+ * `urls` to its full public URL.
  */
 export const PAGES = LOCALES.map((l) => ({
   lang: l.lang,
@@ -54,6 +55,7 @@ export const PAGES = LOCALES.map((l) => ({
   root: l.dir ? '../' : '',
   rtl: Boolean(l.rtl),
   links: Object.fromEntries(LOCALES.map((o) => [o.lang, hrefBetween(l.lang, o.lang)])),
+  urls: Object.fromEntries(LOCALES.map((o) => [o.lang, pageUrl(o.lang)])),
 }));
 // Keys that may be empty in one language (for example the Chinese nickname).
 const OPTIONAL_KEYS = new Set(['brand.nickname', 'footer.nickname', 'legal.english']);
@@ -82,6 +84,7 @@ export const LEGAL_PAGES = LEGAL_KINDS.flatMap((kind) => LOCALES.map((l) => ({
   root: l.dir ? '../../' : '../',
   rtl: Boolean(l.rtl),
   links: Object.fromEntries(LOCALES.map((o) => [o.lang, legalHref(l.lang, o.lang, kind)])),
+  urls: Object.fromEntries(LOCALES.map((o) => [o.lang, pageUrl(o.lang, kind)])),
 })));
 
 /** Reads the pinned product documents and checks they are exactly the recorded files. */
@@ -123,12 +126,58 @@ export function legalLink(docPath, href) {
   return `${REPO_URL}/blob/main/${resolved}`;
 }
 
-/** <link rel="alternate"> for every language, plus x-default (English). */
+/**
+ * The page's canonical link, then <link rel="alternate"> for every language plus x-default
+ * (English). Full URLs: search engines do not accept relative ones here.
+ */
 export function renderAlternates(page) {
-  const lines = LOCALES.map((l) => `  <link rel="alternate" hreflang="${l.lang}" href="${page.links[l.lang]}">`);
-  lines.push(`  <link rel="alternate" hreflang="x-default" href="${page.links.en}">`);
+  const lines = [`  <link rel="canonical" href="${page.urls[page.lang]}">`];
+  lines.push(...LOCALES.map((l) => `  <link rel="alternate" hreflang="${l.lang}" href="${page.urls[l.lang]}">`));
+  lines.push(`  <link rel="alternate" hreflang="x-default" href="${page.urls.en}">`);
   return lines.join('\n');
 }
+
+/**
+ * Link-preview tags for a language's home page: its own title, description and address. The
+ * picture is the language's video poster, so it is only there in a build with --media.
+ */
+export function renderSocial(page, strings, hasMedia) {
+  const text = (key) => escapeHtml(strings[key].replace(/<[^>]+>/g, ''));
+  const lines = [
+    '  <meta property="og:type" content="website">',
+    '  <meta property="og:site_name" content="Sofatap">',
+    `  <meta property="og:title" content="${text('meta.title')}">`,
+    `  <meta property="og:description" content="${text('meta.description')}">`,
+    `  <meta property="og:url" content="${page.urls[page.lang]}">`,
+  ];
+  if (hasMedia) lines.push(`  <meta property="og:image" content="${SITE_URL}media/${mediaPosterFor(page.lang)}">`);
+  lines.push(`  <meta name="twitter:card" content="${hasMedia ? 'summary_large_image' : 'summary'}">`);
+  return lines.join('\n');
+}
+
+/** sitemap.xml: every page of every language, each home page with its language alternates. */
+export function renderSitemap() {
+  const entry = (page, withAlternates) => [
+    '  <url>',
+    `    <loc>${page.urls[page.lang]}</loc>`,
+    ...(withAlternates ? [
+      ...LOCALES.map((l) => `    <xhtml:link rel="alternate" hreflang="${l.lang}" href="${page.urls[l.lang]}"/>`),
+      `    <xhtml:link rel="alternate" hreflang="x-default" href="${page.urls.en}"/>`,
+    ] : []),
+    '  </url>',
+  ].join('\n');
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
+    ...PAGES.map((p) => entry(p, true)),
+    ...LEGAL_PAGES.map((p) => entry(p, false)),
+    '</urlset>',
+    '',
+  ].join('\n');
+}
+
+/** robots.txt: everything may be crawled, and the sitemap is named. */
+export const ROBOTS = `User-agent: *\nAllow: /\n\nSitemap: ${SITE_URL}sitemap.xml\n`;
 
 /** The language menu: real links with native names, the current page marked. */
 export function renderLangLinks(page) {
@@ -493,6 +542,7 @@ export async function build({ config: configPath, out, media = null }) {
       DIR: page.rtl ? 'rtl' : 'ltr',
       ROOT: page.root,
       ALTERNATES: renderAlternates(page),
+      SOCIAL: renderSocial(page, strings, Boolean(mediaSizes)),
       LANG_SHORT: locale(page.lang).short,
       LANG_LINKS: renderLangLinks(page),
       DEMO_TILES: renderDemoTiles(strings),
@@ -557,6 +607,8 @@ export async function build({ config: configPath, out, media = null }) {
   await Promise.all([
     writeFile(path.join(out, MARKER), 'Generated by scripts/build.mjs; safe to delete.\n'),
     ...pages.map((p) => writeFile(path.join(out, p.file), p.html)),
+    writeFile(path.join(out, 'sitemap.xml'), renderSitemap()),
+    writeFile(path.join(out, 'robots.txt'), ROBOTS),
     writeFile(path.join(out, 'styles.css'), styles),
     writeFile(path.join(out, 'main.js'), script),
     writeFile(path.join(out, 'demo-core.js'), core),
