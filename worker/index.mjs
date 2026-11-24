@@ -47,7 +47,8 @@ export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
     if (!MP4.test(pathname) || (request.method !== 'GET' && request.method !== 'HEAD')) return env.ASSETS.fetch(request);
-    const range = request.headers.get('Range');
+    // RFC 9110 §14.2 defines Range only for GET. HEAD describes the whole representation.
+    const range = request.method === 'GET' ? request.headers.get('Range') : null;
     // Ask static assets for the whole file, exactly as before (Range and If-Range removed).
     const headers = new Headers(request.headers);
     headers.delete('Range');
@@ -83,15 +84,15 @@ export default {
       }
       return new Response(fixedLength(body, size), { status: 200, headers: out });
     }
-    if (span === 'unsatisfiable' || request.method === 'HEAD') await body?.cancel().catch(() => {});
     if (span === 'unsatisfiable') {
+      await body?.cancel().catch(() => {});
       out.set('Content-Range', `bytes */${size}`);
       out.set('Content-Length', '0');
       out.delete('Content-Type');
-      return new Response(request.method === 'HEAD' ? null : new Uint8Array(0), { status: 416, headers: out });
+      return new Response(new Uint8Array(0), { status: 416, headers: out });
     }
     out.set('Content-Range', `bytes ${span.start}-${span.end}/${size}`);
     out.set('Content-Length', String(span.end - span.start + 1));
-    return new Response(request.method === 'HEAD' ? null : fixedLength(slice(body, span.start, span.end), span.end - span.start + 1), { status: 206, headers: out });
+    return new Response(fixedLength(slice(body, span.start, span.end), span.end - span.start + 1), { status: 206, headers: out });
   },
 };
