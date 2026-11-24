@@ -83,9 +83,9 @@ test('whole file without Range, 416 for an unsatisfiable range, and HEAD without
   assert.equal(several.status, 200);
   assert.deepEqual(await bytes(several), video);
   const head = await get(env, '/media/sofatap-demo-en.mp4', { Range: 'bytes=0-1023' }, 'HEAD');
-  assert.equal(head.status, 206);
-  assert.equal(head.headers.get('Content-Range'), 'bytes 0-1023/5000');
-  assert.equal(head.headers.get('Content-Length'), '1024');
+  assert.equal(head.status, 200);
+  assert.equal(head.headers.get('Content-Range'), null);
+  assert.equal(head.headers.get('Content-Length'), '5000');
   assert.equal(head.body, null);
   const headWhole = await get(env, '/media/sofatap-demo-en.mp4', {}, 'HEAD');
   assert.equal(headWhole.status, 200);
@@ -124,8 +124,11 @@ test('HEAD reports the full length even when static assets give none', async () 
   assert.equal(head.headers.get('Content-Type'), 'video/mp4');
   assert.equal(head.body, null);
   const ranged = await get(env, '/media/sofatap-demo-en.mp4', { Range: 'bytes=-10' }, 'HEAD');
-  assert.equal(ranged.status, 206);
-  assert.equal(ranged.headers.get('Content-Range'), 'bytes 4990-4999/5000');
-  assert.equal(ranged.headers.get('Content-Length'), '10');
+  assert.equal(ranged.status, 200);
+  assert.equal(ranged.headers.get('Content-Range'), null);
+  assert.equal(ranged.headers.get('Content-Length'), '5000');
   assert.equal(ranged.body, null);
+  const outside = await get(env, '/media/sofatap-demo-en.mp4', { Range: 'bytes=6000-' }, 'HEAD');
+  assert.equal(outside.status, 200);
+  assert.equal(outside.headers.get('Content-Length'), '5000');
 });
